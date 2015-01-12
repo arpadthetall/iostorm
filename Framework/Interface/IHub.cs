@@ -8,6 +8,6 @@ namespace Storm
 {
     public interface IHub
     {
-        void BroadcastPayload(IThing sender, Payload.IPayload payload);
+        void BroadcastPayload(IDevice sender, Payload.IPayload payload);
     }
 }

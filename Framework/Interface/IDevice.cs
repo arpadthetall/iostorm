@@ -7,7 +7,7 @@ using System.Reactive;
 
 namespace Storm
 {
-    public interface IThing
+    public interface IDevice
     {
         string InstanceId { get; set; }
     }

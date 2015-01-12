@@ -56,7 +56,7 @@ namespace Storm
         }
 
         private void WireUpPlugin(
-            IThing plugin,
+            IDevice plugin,
             IObservable<Payload.IPayload> externalIncoming,
             IObservable<Payload.InternalMessage> internalIncoming)
         {
@@ -90,7 +90,7 @@ namespace Storm
             }
         }
 
-        public T LoadPlugin<T>(params ParameterOverride[] overrides) where T : IThing
+        public T LoadPlugin<T>(params ParameterOverride[] overrides) where T : IDevice
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
@@ -132,7 +132,7 @@ namespace Storm
             }
         }
 
-        public void BroadcastPayload(IThing sender, Payload.IPayload payload)
+        public void BroadcastPayload(IDevice sender, Payload.IPayload payload)
         {
             this.broadcastQueue.OnNext(new Payload.InternalMessage(sender.InstanceId, payload));
         }

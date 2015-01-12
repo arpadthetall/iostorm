@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Storm
 {
-    public abstract class BaseDevice : IThing
+    public abstract class BaseDevice : IDevice
     {
         public string InstanceId { get; set; }
     }
