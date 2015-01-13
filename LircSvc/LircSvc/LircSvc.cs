@@ -114,6 +114,15 @@ namespace LircSvc
         {
             switch (command)
             {
+                // Audio
+                case LircCommands.Audio.Mute:
+                    return new Storm.Payload.Audio.MuteToggle();
+                case LircCommands.Audio.VolumeUp:
+                    return new Storm.Payload.Audio.VolumeUp();
+                case LircCommands.Audio.VolumeDown:
+                    return new Storm.Payload.Audio.VolumeDown();
+
+                // Navigation
                 case LircCommands.Navigation.Up:
                     return new Storm.Payload.Navigation.Up();
                 case LircCommands.Navigation.Down:
@@ -142,10 +151,20 @@ namespace LircSvc
                     return new Storm.Payload.Navigation.Number8();
                 case LircCommands.Navigation.Num9:
                     return new Storm.Payload.Navigation.Number9();
+                case LircCommands.Navigation.Guide:
+                    return new Storm.Payload.Navigation.Guide();
+                case LircCommands.Navigation.Back:
+                    return new Storm.Payload.Navigation.Back();
+                case LircCommands.Navigation.Enter:
+                    return new Storm.Payload.Navigation.Enter();
+                case LircCommands.Navigation.Home:
+                    return new Storm.Payload.Navigation.Home();
 
+                // Power
                 case LircCommands.Power.Toggle:
                     return new Storm.Payload.Power.Toggle();
 
+                // Transport
                 case LircCommands.Transport.Advance:
                     return new Storm.Payload.Transport.Advance();
                 case LircCommands.Transport.FastForward:
@@ -158,16 +177,16 @@ namespace LircSvc
                     return new Storm.Payload.Transport.Play();
                 case LircCommands.Transport.Previous:
                     return new Storm.Payload.Transport.Previous();
-                case LircCommands.Transport.Repeat:
-                    return new Storm.Payload.Transport.Repeat();
-                case LircCommands.Transport.Replay:
-                    return new Storm.Payload.Transport.Replay();
                 case LircCommands.Transport.Rewind:
                     return new Storm.Payload.Transport.Rewind();
-                case LircCommands.Transport.Shuffle:
-                    return new Storm.Payload.Transport.Shuffle();
                 case LircCommands.Transport.Stop:
                     return new Storm.Payload.Transport.Stop();
+
+                // TV
+                case LircCommands.TV.ChannelUp:
+                    return new Storm.Payload.TV.ChannelInc();
+                case LircCommands.TV.ChannelDown:
+                    return new Storm.Payload.TV.ChannelDec();
             }
 
             return null;

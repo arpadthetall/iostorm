@@ -8,6 +8,14 @@ namespace LircSvc
 {
     public static class LircCommands
     {
+        public static class Audio
+        {
+            public const string Mute = "KEY_MUTE";
+            public const string VolumeUp = "KEY_VOLUMEUP";
+            public const string VolumeDown = "KEY_VOLUMEDOWN";
+
+        }
+
         public static class Navigation
         {
             public const string Up = "KEY_UP";
@@ -24,6 +32,10 @@ namespace LircSvc
             public const string Num8 = "KEY_8";
             public const string Num9 = "KEY_9";
             public const string Num0 = "KEY_0";
+            public const string Guide = "KEY_INFO";
+            public const string Enter = "KEY_BACK";
+            public const string Back = "KEY_ENTER";
+            public const string Home = "KEY_HOME";
         }
 
         public static class Power
@@ -38,13 +50,16 @@ namespace LircSvc
             public const string Next = "KEY_NEXT";
             public const string Pause = "KEY_PAUSE";
             public const string Play = "KEY_PLAY";
-            public const string Previous = "KEY_PREVIOUS";
+            public const string Previous = "KEY_AGAIN";
             public const string Rewind = "KEY_REWIND";
             public const string Stop = "KEY_STOP";
+        }
 
-            public const string Shuffle = "UNUSED_KEY_SHUFFLE";
-            public const string Repeat = "UNUSED_KEY_REPEAT";
-            public const string Replay = "UNUSED_KEY_REPLAY";
+        public static class TV
+        {
+            public const string ChannelUp = "KEY_CHANNELUP";
+            public const string ChannelDown = "KEY_CHANNELDOWN";
+
         }
     }
 }
