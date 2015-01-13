@@ -8,8 +8,9 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.IO.Ports;
+using Qlue.Logging;
 
-namespace Storm
+namespace Storm.Plugins
 {
     public class IrmanReceiver : BaseDevice, IDisposable
     {
@@ -33,7 +34,7 @@ namespace Storm
         private Dictionary<string, Func<Payload.IPayload>> irCommands;
         private Timer keepAliveTimer;
 
-        public IrmanReceiver(Qlue.Logging.ILogFactory logFactory, IHub hub, string serialPortName)
+        public IrmanReceiver(ILogFactory logFactory, IHub hub, string serialPortName)
         {
             this.hub = hub;
 

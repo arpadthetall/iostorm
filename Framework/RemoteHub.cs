@@ -9,7 +9,7 @@ using RabbitMQ.Client.Events;
 
 namespace Storm
 {
-    public class Amqp : IDisposable
+    public class RemoteHub : IDisposable
     {
         private Qlue.Logging.ILog log;
         private string hostName;
@@ -19,9 +19,9 @@ namespace Storm
         private IConnection connection;
         private string ourDeviceId;
 
-        public Amqp(Qlue.Logging.ILogFactory logFactory, string hostName, string ourDeviceId)
+        public RemoteHub(Qlue.Logging.ILogFactory logFactory, string hostName, string ourDeviceId)
         {
-            this.log = logFactory.GetLogger("Amqp");
+            this.log = logFactory.GetLogger("RemoteHub");
             this.hostName = hostName;
             this.ourDeviceId = ourDeviceId;
 
@@ -135,7 +135,7 @@ namespace Storm
             this.log.Trace("Sent {0} bytes", body.Length);
         }
 
-        public void Receiver(string channelName, CancellationToken cancelToken, IObserver<Payload.IPayload> bus)
+        public void Receiver(string channelName, CancellationToken cancelToken, IObserver<Payload.BusPayload> bus)
         {
             var channel = GetChannel(channelName);
 
@@ -145,7 +145,7 @@ namespace Storm
             var consumer = new QueueingBasicConsumer(channel);
             channel.BasicConsume(queueName, true, consumer);
 
-            this.log.Info("Waiting for messages");
+            this.log.Debug("Waiting for messages");
             while (!cancelToken.IsCancellationRequested)
             {
                 try
@@ -155,7 +155,7 @@ namespace Storm
                     {
                         var body = result.Body;
 
-                        this.log.Debug("Received {0} bytes", body.Length);
+                        this.log.Trace("Received {0} bytes", body.Length);
 
                         object obj = this.serializer.DeserializeString(Encoding.UTF8.GetString(body));
 
@@ -166,7 +166,7 @@ namespace Storm
                             continue;
 
                         if (payload != null)
-                            bus.OnNext(payload.Payload);
+                            bus.OnNext(payload);
                     }
                 }
                 catch (System.IO.EndOfStreamException)

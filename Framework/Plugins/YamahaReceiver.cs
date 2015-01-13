@@ -4,16 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reactive;
+using Qlue.Logging;
 
-namespace Storm
+namespace Storm.Plugins
 {
     public class YamahaReceiver : BaseDevice
     {
+        private ILog log;
         private IHub hub;
         private double currentVolume;
 
-        public YamahaReceiver(IHub hub)
+        public YamahaReceiver(ILogFactory logFactory, IHub hub)
         {
+            this.log = logFactory.GetLogger("YamahaReceiver");
             this.hub = hub;
         }
 
@@ -26,7 +29,7 @@ namespace Storm
             if (this.currentVolume > 1)
                 this.currentVolume = 1;
 
-            Console.WriteLine("Current volume: {0:P}", this.currentVolume);
+            this.log.Info("Current volume: {0:P}", this.currentVolume);
         }
 
         public void Incoming(Payload.Audio.SetVolume payload)
@@ -38,7 +41,7 @@ namespace Storm
             if (this.currentVolume > 1)
                 this.currentVolume = 1;
 
-            Console.WriteLine("Set current volume: {0:P}", this.currentVolume);
+            this.log.Info("Set current volume: {0:P}", this.currentVolume);
         }
 
         // Example

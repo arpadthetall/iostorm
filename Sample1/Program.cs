@@ -11,7 +11,7 @@ namespace Storm.Sample1
     public class Program
     {
         private static IUnityContainer container;
-        const string hubServer = "192.168.1.113";
+        const string hubServer = "localhost";
 
         public static void Main(string[] args)
         {
@@ -31,17 +31,17 @@ namespace Storm.Sample1
 
             string deviceId = Storm.DeviceId.GetDeviceId();
 
-            using (var hub = new Storm.StormHub(container, deviceId, hubServer: hubServer))
+            using (var hub = new Storm.StormHub(container, deviceId, remoteHubHost: hubServer))
             {
-                hub.LoadPlugin<Storm.YamahaReceiver>();
+                hub.LoadPlugin<Storm.Plugins.YamahaReceiver>();
 
                 if (!string.IsNullOrEmpty(command))
                 {
-                    var irMan = hub.LoadPlugin<Storm.IrmanReceiver>(new ParameterOverride("serialPortName", command));
+                    var irMan = hub.LoadPlugin<Storm.Plugins.IrmanReceiver>(new ParameterOverride("serialPortName", command));
 
                     // Map remote controls
-                    RemoteControl.MapRemoteControl(irMan);
-                    RemoteControlYamahaReceiver.MapRemoteControl(irMan);
+                    Plugins.RemoteControlSB.MapRemoteControl(irMan);
+                    Plugins.RemoteControlYamahaReceiver.MapRemoteControl(irMan);
                 }
 
                 hub.LoadPlugin<Storm.Sonos.Sonos>();

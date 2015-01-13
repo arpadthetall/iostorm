@@ -15,49 +15,71 @@ namespace Storm
 {
     public class StormHub : IDisposable, IHub
     {
+        private ILog log;
         private IUnityContainer container;
         private string ourDeviceId;
         private CancellationTokenSource cts;
-        private Amqp amqp;
+        private RemoteHub remoteHub;
         private Task amqpReceivingTask;
         private ISubject<Payload.InternalMessage> localQueue;
-        private IObservable<Payload.IPayload> externalIncomingQueue;
+        private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
 
-        public StormHub(IUnityContainer container, string ourDeviceId, string hubServer = "localhost")
+        public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = "localhost")
         {
             this.container = container;
             this.ourDeviceId = ourDeviceId;
 
+            this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
+
             this.cts = new CancellationTokenSource();
-            this.amqp = new Amqp(container.Resolve<ILogFactory>(), hubServer, ourDeviceId);
+            this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), remoteHubHost, ourDeviceId);
 
             this.localQueue = new Subject<Payload.InternalMessage>();
-            var externalIncomingSubject = new Subject<Payload.IPayload>();
+            var externalIncomingSubject = new Subject<Payload.BusPayload>();
 
             this.broadcastQueue = Observer.Create<Payload.InternalMessage>(p =>
                 {
-                    // Broadcast on amqp
-                    this.amqp.SendPayload("Global", p.Payload);
+                    string displayTypeName = p.Payload.GetType().FullName;
+                    if (displayTypeName.StartsWith("Storm.Payload."))
+                        displayTypeName = displayTypeName.Substring(14);
+
+                    this.log.Debug("Received local payload {0}", displayTypeName);
 
                     // Send locally
                     this.localQueue.OnNext(p);
+
+                    // Broadcast on amqp
+                    try
+                    {
+                        this.remoteHub.SendPayload("Global", p.Payload);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.log.WarnException(ex, "Failed to send message on Amqp queue");
+                    }
                 });
+
+            this.externalIncomingQueue = externalIncomingSubject.AsObservable();
 
             this.amqpReceivingTask = Task.Run(() =>
             {
-                this.amqp.Receiver("Global", cts.Token, externalIncomingSubject.AsObserver());
+                this.remoteHub.Receiver("Global", cts.Token, externalIncomingSubject.AsObserver());
             }, cts.Token);
 
-            //            this.localQueue = localSubject.AsObservable();
-            this.externalIncomingQueue = externalIncomingSubject.AsObservable();
+            this.externalIncomingQueue.Subscribe(p =>
+                {
+                    string displayTypeName = p.Payload.GetType().FullName;
+                    if (displayTypeName.StartsWith("Storm.Payload."))
+                        displayTypeName = displayTypeName.Substring(14);
 
-            //            this.container.RegisterInstance<IObserver<Payload.IPayload>>(outgoingQueue);
+                    this.log.Debug("Received external payload {0} from {1}", displayTypeName, p.OriginDeviceId);
+                });
         }
 
         private void WireUpPlugin(
             IDevice plugin,
-            IObservable<Payload.IPayload> externalIncoming,
+            IObservable<Payload.BusPayload> externalIncoming,
             IObservable<Payload.InternalMessage> internalIncoming)
         {
             var methods = plugin.GetType().GetMethods().Where(x => x.Name == "Incoming");
@@ -77,7 +99,7 @@ namespace Storm
                 externalIncoming.Where(x => parameterType.IsInstanceOfType(x))
                     .Subscribe(x =>
                     {
-                        method.Invoke(plugin, new object[] { x });
+                        method.Invoke(plugin, new object[] { x.Payload });
                     });
 
                 // Filter out our own messages
@@ -124,10 +146,10 @@ namespace Storm
                     cts = null;
                 }
 
-                if (this.amqp != null)
+                if (this.remoteHub != null)
                 {
-                    this.amqp.Dispose();
-                    this.amqp = null;
+                    this.remoteHub.Dispose();
+                    this.remoteHub = null;
                 }
             }
         }

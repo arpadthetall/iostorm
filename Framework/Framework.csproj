@@ -73,19 +73,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Amqp.cs" />
+    <Compile Include="RemoteHub.cs" />
     <Compile Include="BaseDevice.cs" />
     <Compile Include="DeviceId.cs" />
     <Compile Include="Interface\IHub.cs" />
     <Compile Include="RemoteControlYamahaReceiver.cs" />
-    <Compile Include="RemoteControl.cs" />
-    <Compile Include="IrManReceiver.cs" />
+    <Compile Include="RemoteControlSB.cs" />
+    <Compile Include="Plugins\IrManReceiver.cs" />
     <Compile Include="Interface\IDevice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="SerialManager.cs" />
     <Compile Include="StormHub.cs" />
-    <Compile Include="YamahaReceiver.cs" />
+    <Compile Include="Plugins\YamahaReceiver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -41,12 +41,47 @@
   <ItemGroup>
     <Compile Include="Audio\ChangeVolume.cs" />
     <Compile Include="Audio\SetVolume.cs" />
+    <Compile Include="Dummy.cs" />
     <Compile Include="InternalMessage.cs" />
     <Compile Include="IPayload.cs" />
+    <Compile Include="Navigation\Add.cs" />
+    <Compile Include="Navigation\DisplayBrightness.cs" />
+    <Compile Include="Navigation\DisplaySize.cs" />
+    <Compile Include="Navigation\Search.cs" />
+    <Compile Include="Navigation\Favorites.cs" />
+    <Compile Include="Navigation\Down.cs" />
+    <Compile Include="Navigation\Left.cs" />
+    <Compile Include="Navigation\Back.cs" />
+    <Compile Include="Navigation\NowPlaying.cs" />
+    <Compile Include="Navigation\Select.cs" />
+    <Compile Include="Navigation\Right.cs" />
+    <Compile Include="Navigation\Up.cs" />
+    <Compile Include="Power\Sleep.cs" />
+    <Compile Include="Power\Set.cs" />
+    <Compile Include="Power\Toggle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BusPayload.cs" />
     <Compile Include="RoomPayload.cs" />
-    <Compile Include="Transport\PauseTransport.cs" />
+    <Compile Include="Transport\Repeat.cs" />
+    <Compile Include="Transport\Shuffle.cs" />
+    <Compile Include="Navigation\Number2.cs" />
+    <Compile Include="Navigation\Number3.cs" />
+    <Compile Include="Navigation\Number4.cs" />
+    <Compile Include="Navigation\Number5.cs" />
+    <Compile Include="Navigation\Number6.cs" />
+    <Compile Include="Navigation\Number8.cs" />
+    <Compile Include="Navigation\Number9.cs" />
+    <Compile Include="Navigation\Number0.cs" />
+    <Compile Include="Navigation\Number7.cs" />
+    <Compile Include="Navigation\Number1.cs" />
+    <Compile Include="Transport\FastForward.cs" />
+    <Compile Include="Transport\Rewind.cs" />
+    <Compile Include="Transport\Stop.cs" />
+    <Compile Include="Transport\Play.cs" />
+    <Compile Include="Transport\Pause.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Light\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

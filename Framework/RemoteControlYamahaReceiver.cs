@@ -9,7 +9,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.IO.Ports;
 
-namespace Storm
+namespace Storm.Plugins
 {
     public static class RemoteControlYamahaReceiver
     {
@@ -25,7 +25,7 @@ namespace Storm
                         Steps = 1
                     });
 
-            receiver.AddIrCommand("PsFapQAA", () => new Payload.Transport.PauseTransport());
+            receiver.AddIrCommand("PsFapQAA", () => new Payload.Transport.Pause());
         }
     }
 }

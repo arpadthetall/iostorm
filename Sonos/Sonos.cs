@@ -30,23 +30,27 @@ namespace Storm.Sonos
         {
         }
 
-        public void Incoming(Payload.IPayload payload)
+        public void Incoming(Payload.Transport.Play payload)
         {
-            if (payload is Payload.Transport.PauseTransport)
+            var player = this.discovery.Players.FirstOrDefault();
+
+            if (player != null)
             {
-                var cmd = (Payload.Transport.PauseTransport)payload;
+                this.log.Info("Playing player {0}", player.Name);
 
-                var player = this.discovery.Players.FirstOrDefault();
+                player.Play();
+            }
+        }
 
-                if (player != null)
-                {
-                    this.log.Info("Pausing player {0}", player.Name);
+        public void Incoming(Payload.Transport.Pause payload)
+        {
+            var player = this.discovery.Players.FirstOrDefault();
 
-                    //player.Play();
-                    player.Pause();
+            if (player != null)
+            {
+                this.log.Info("Pausing player {0}", player.Name);
 
-                    //                    player.RenderingControl.
-                }
+                player.Pause();
             }
         }
     }

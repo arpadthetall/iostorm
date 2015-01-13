@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Storm.Payload.Transport
+namespace Storm.Payload
 {
-    public class PauseTransport : IPayload
+    public class Dummy : IPayload
     {
     }
 }
