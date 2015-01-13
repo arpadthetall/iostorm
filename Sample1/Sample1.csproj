@@ -80,7 +80,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -94,7 +96,7 @@
     </ProjectReference>
     <ProjectReference Include="..\Framework\Framework.csproj">
       <Project>{13f28e19-a026-457c-be49-d140cb1f33d3}</Project>
-      <Name>ThingStorm</Name>
+      <Name>Framework</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

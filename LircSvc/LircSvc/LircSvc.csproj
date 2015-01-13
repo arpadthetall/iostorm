@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LircSvc</RootNamespace>
     <AssemblyName>LircSvc</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,11 +33,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NLog">
-      <HintPath>..\..\_build\NuGet_Packages\packages\NLog.3.2.0.0\lib\net45\NLog.dll</HintPath>
+    <Reference Include="Logging.NLog">
+      <HintPath>..\..\_build\NuGet_Packages\Qlue.Logging.NLog.1.0.0\lib\net45\Logging.NLog.dll</HintPath>
     </Reference>
-    <Reference Include="RabbitMQ.Client">
-      <HintPath>..\..\lib\RabbitMQ.Client.dll</HintPath>
+    <Reference Include="NLog">
+      <HintPath>..\..\_build\NuGet_Packages\NLog.3.2.0.0\lib\net45\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="Qlue.Logging">
+      <HintPath>..\..\_build\NuGet_Packages\Qlue.Logging.1.0.0\lib\net45\Qlue.Logging.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -51,6 +55,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LircCommands.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -67,13 +72,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="NLog.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -85,6 +89,14 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Framework\Framework.csproj">
+      <Project>{13f28e19-a026-457c-be49-d140cb1f33d3}</Project>
+      <Name>Framework</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Payload\Payload.csproj">
+      <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
+      <Name>Payload</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LircSharp\LircSharp.csproj">
       <Project>{c686f27d-bbdb-4ede-ba2d-6ea483e592ff}</Project>
       <Name>LircSharp</Name>

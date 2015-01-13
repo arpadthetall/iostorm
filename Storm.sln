@@ -11,6 +11,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payload", "Payload\Payload.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sonos", "Sonos\Sonos.csproj", "{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LircSvc", "LircSvc\LircSvc\LircSvc.csproj", "{7D39C43F-C2D7-441A-8D83-EDA44EE61571}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LircSharp", "LircSvc\LircSharp\LircSharp.csproj", "{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{4134BE18-CF08-4E48-ABDB-1D886927F7B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,8 +39,19 @@ Global
 		{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D39C43F-C2D7-441A-8D83-EDA44EE61571}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D39C43F-C2D7-441A-8D83-EDA44EE61571}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D39C43F-C2D7-441A-8D83-EDA44EE61571}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D39C43F-C2D7-441A-8D83-EDA44EE61571}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF} = {4134BE18-CF08-4E48-ABDB-1D886927F7B1}
 	EndGlobalSection
 EndGlobal

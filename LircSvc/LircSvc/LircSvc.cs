@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Configuration;
 using System.ServiceProcess;
-using System.Text;
 using Ben.LircSharp;
 using NLog;
-using NLog.Fluent;
-using RabbitMQ.Client;
+//using RabbitMQ.Client;
+using Qlue.Logging;
+using Storm;
+using Storm.Payload;
 
 
 namespace LircSvc
 {
     public partial class LircSvc : ServiceBase
     {
-        readonly Logger _logger = LogManager.GetLogger("LircSvc");
+        private static readonly ILogFactory LogFactory = new NLogFactoryProvider();
+        private readonly ILog _logger = LogFactory.GetLogger("LircSvc");
 
         public List<string> SelectedRemoteCommands { get; private set; }
         public LircClient Client { get; private set; }
@@ -23,10 +24,7 @@ namespace LircSvc
         private string LircHost { get; set; }
         private int LircPort { get; set; }
         private string RabbitHost { get; set; }
-        private int RabbitPort { get; set; }
-        private string RabbitUser { get; set; }
-        private string RabbitPass { get; set; }
-        private string RabbitQueue { get; set; }
+        private string RabbitChannel { get; set; }
 
         public LircSvc()
         {
@@ -44,10 +42,7 @@ namespace LircSvc
             LircHost = ConfigurationManager.AppSettings["LircHost"];
             LircPort = int.Parse(ConfigurationManager.AppSettings["LircPort"]);
             RabbitHost = ConfigurationManager.AppSettings["RabbitHost"];
-            RabbitPort = int.Parse(ConfigurationManager.AppSettings["RabbitPort"]);
-            RabbitUser = ConfigurationManager.AppSettings["RabbitUser"];
-            RabbitPass = ConfigurationManager.AppSettings["RabbitPass"];
-            RabbitQueue = ConfigurationManager.AppSettings["RabbitQueue"];
+            RabbitChannel = ConfigurationManager.AppSettings["RabbitChannel"];
         }
 
         protected override void OnStop()
@@ -92,32 +87,90 @@ namespace LircSvc
 
         private void Client_CommandCompleted(object sender, LircCommandEventArgs e)
         {
-            _logger.Debug(e.Command.Command + " Completed");
             PublishCommand(e.Command.Command);
         }
 
         private void PublishCommand(string command)
         {
-            var factory = new ConnectionFactory
-            {
-                HostName = RabbitHost,
-                Port = RabbitPort,
-                UserName = RabbitUser,
-                Password = RabbitPass
-            };
+            _logger.Info("Received command: {0}", command);
 
-            using (var connection = factory.CreateConnection())
+            var hub = new RemoteHub(LogFactory, RabbitHost, "LircSvc");
+            var payload = GetPayloadFromLircCommand(command);
+            if (payload != null)
             {
-                using (var channel = connection.CreateModel())
+                try
                 {
-                    channel.QueueDeclare(RabbitQueue, false, false, false, null);
-
-                    var body = Encoding.UTF8.GetBytes(command);
-
-                    channel.BasicPublish("", RabbitQueue, null, body);
-                    _logger.Info(" [x] Sent {0}", command);
+                    hub.SendPayload(RabbitChannel, payload);
+                    _logger.Info("Sent {0}", command);
+                }
+                catch(Exception ex)
+                {
+                    _logger.ErrorException("Failed to send payload", ex);
                 }
             }
+        }
+
+        private static IPayload GetPayloadFromLircCommand(string command)
+        {
+            switch (command)
+            {
+                case LircCommands.Navigation.Up:
+                    return new Storm.Payload.Navigation.Up();
+                case LircCommands.Navigation.Down:
+                    return new Storm.Payload.Navigation.Down();
+                case LircCommands.Navigation.Left:
+                    return new Storm.Payload.Navigation.Left();
+                case LircCommands.Navigation.Right:
+                    return new Storm.Payload.Navigation.Right();
+                case LircCommands.Navigation.Num0:
+                    return new Storm.Payload.Navigation.Number0();
+                case LircCommands.Navigation.Num1:
+                    return new Storm.Payload.Navigation.Number1();
+                case LircCommands.Navigation.Num2:
+                    return new Storm.Payload.Navigation.Number2();
+                case LircCommands.Navigation.Num3:
+                    return new Storm.Payload.Navigation.Number3();
+                case LircCommands.Navigation.Num4:
+                    return new Storm.Payload.Navigation.Number4();
+                case LircCommands.Navigation.Num5:
+                    return new Storm.Payload.Navigation.Number5();
+                case LircCommands.Navigation.Num6:
+                    return new Storm.Payload.Navigation.Number6();
+                case LircCommands.Navigation.Num7:
+                    return new Storm.Payload.Navigation.Number7();
+                case LircCommands.Navigation.Num8:
+                    return new Storm.Payload.Navigation.Number8();
+                case LircCommands.Navigation.Num9:
+                    return new Storm.Payload.Navigation.Number9();
+
+                case LircCommands.Power.Toggle:
+                    return new Storm.Payload.Power.Toggle();
+
+                case LircCommands.Transport.Advance:
+                    return new Storm.Payload.Transport.Advance();
+                case LircCommands.Transport.FastForward:
+                    return new Storm.Payload.Transport.FastForward();
+                case LircCommands.Transport.Next:
+                    return new Storm.Payload.Transport.Next();
+                case LircCommands.Transport.Pause:
+                    return new Storm.Payload.Transport.Pause();
+                case LircCommands.Transport.Play:
+                    return new Storm.Payload.Transport.Play();
+                case LircCommands.Transport.Previous:
+                    return new Storm.Payload.Transport.Previous();
+                case LircCommands.Transport.Repeat:
+                    return new Storm.Payload.Transport.Repeat();
+                case LircCommands.Transport.Replay:
+                    return new Storm.Payload.Transport.Replay();
+                case LircCommands.Transport.Rewind:
+                    return new Storm.Payload.Transport.Rewind();
+                case LircCommands.Transport.Shuffle:
+                    return new Storm.Payload.Transport.Shuffle();
+                case LircCommands.Transport.Stop:
+                    return new Storm.Payload.Transport.Stop();
+            }
+
+            return null;
         }
 
         private void Client_Error(object sender, LircErrorEventArgs e)
