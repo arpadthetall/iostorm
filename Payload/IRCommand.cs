@@ -10,9 +10,11 @@ namespace Storm.Payload
     {
         public IIRProtocol Command { get; set; }
 
+        public int Repeat { get; set; }
+
         public override string GetDebugInfo()
         {
-            return string.Format("IRCommand {0} [{1}]", Command.GetType().Name, Command.ToString());
+            return string.Format("IRCommand {0} [{1}]/{2}", Command.GetType().Name, Command.ToString(), Repeat);
         }
     }
 }

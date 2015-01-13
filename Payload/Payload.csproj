@@ -39,6 +39,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Audio\MuteToggle.cs" />
+    <Compile Include="Audio\Sound.cs" />
+    <Compile Include="Audio\Theater.cs" />
     <Compile Include="Audio\VolumeDown.cs" />
     <Compile Include="Audio\VolumeUp.cs" />
     <Compile Include="Audio\ChangeVolume.cs" />
@@ -49,7 +52,24 @@
     <Compile Include="InternalMessage.cs" />
     <Compile Include="Interface\IPayload.cs" />
     <Compile Include="IRCommand.cs" />
+    <Compile Include="Navigation\Jump.cs" />
+    <Compile Include="Navigation\Options.cs" />
+    <Compile Include="Navigation\Return.cs" />
+    <Compile Include="Navigation\Home.cs" />
+    <Compile Include="Navigation\Guide.cs" />
+    <Compile Include="Navigation\DMeX.cs" />
+    <Compile Include="Navigation\SyncMenu.cs" />
     <Compile Include="Navigation\Period.cs" />
+    <Compile Include="Transport\Next.cs" />
+    <Compile Include="Transport\Previous.cs" />
+    <Compile Include="Transport\Advance.cs" />
+    <Compile Include="Transport\Replay.cs" />
+    <Compile Include="TV\Wide.cs" />
+    <Compile Include="TV\Input.cs" />
+    <Compile Include="TV\Picture.cs" />
+    <Compile Include="TV\Freeze.cs" />
+    <Compile Include="TV\CC.cs" />
+    <Compile Include="TV\Display.cs" />
     <Compile Include="TV\ChannelDec.cs" />
     <Compile Include="TV\ChannelInc.cs" />
     <Compile Include="Navigation\Add.cs" />

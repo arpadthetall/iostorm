@@ -40,12 +40,11 @@ namespace Storm.Sample1
                     var irMan = hub.LoadPlugin<Storm.Plugins.IrmanReceiver>(new ParameterOverride("serialPortName", command));
 
                     // Map remote controls
-                    RemoteMapping.RemoteControlSB.MapRemoteControl(irMan);
-                    RemoteMapping.RemoteControlYamahaReceiver.MapRemoteControl(irMan);
-                    RemoteMapping.IrManSony12.MapRemoteControl(irMan);
+                    RemoteMapping.IrManSony.MapRemoteControl(irMan);
+                    RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
 
-//                    RemoteMapping.IrManSony.MapRemoteControl(irMan)
-//                    RemoteMapping.IrManSony
+                    var xlat = hub.LoadPlugin<Storm.RemoteMapping.ProtocolToPayload>();
+                    xlat.MapSonyTVRemoteRMYD024();
                 }
 
                 hub.LoadPlugin<Storm.Sonos.Sonos>();

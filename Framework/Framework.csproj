@@ -77,10 +77,14 @@
     <Compile Include="BaseDevice.cs" />
     <Compile Include="DeviceId.cs" />
     <Compile Include="Interface\IHub.cs" />
-    <Compile Include="RemoteMapping\IrManSony12.cs" />
+    <Compile Include="RemoteMapping\IrManSqueezebox.cs" />
+    <Compile Include="RemoteMapping\IrManSony.cs" />
+    <Compile Include="RemoteMapping\IRProtocol\NEC2.cs" />
+    <Compile Include="RemoteMapping\IRProtocol\BaseSony.cs" />
+    <Compile Include="RemoteMapping\IRProtocol\Sony15.cs" />
     <Compile Include="RemoteMapping\IRProtocol\Sony12.cs" />
-    <Compile Include="RemoteMapping\RemoteControlYamahaReceiver.cs" />
-    <Compile Include="RemoteMapping\RemoteControlSB.cs" />
+    <Compile Include="RemoteMapping\ProtocolToPayload.cs" />
+    <None Include="RemoteMapping\RemoteControlSB.cs" />
     <Compile Include="Plugins\IrManReceiver.cs" />
     <Compile Include="Interface\IDevice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

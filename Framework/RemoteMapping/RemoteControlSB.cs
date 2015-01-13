@@ -2,6 +2,7 @@
 
 namespace Storm.RemoteMapping
 {
+    [Obsolete]
     public static class RemoteControlSB
     {
         /// <summary>

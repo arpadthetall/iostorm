@@ -33,6 +33,10 @@ namespace Storm.Plugins
         private int receiveCount;
         private Dictionary<string, Func<Payload.IPayload>> irCommands;
         private Timer keepAliveTimer;
+        private string lastReceivedData;
+        private DateTime lastReceivedStartOfIR;
+        private DateTime lastReceivedIR;
+        private int repeated;
 
         public IrmanReceiver(ILogFactory logFactory, IHub hub, string serialPortName)
         {
@@ -141,6 +145,14 @@ namespace Storm.Plugins
             this.serialManager.Write("R");
         }
 
+        public void AddIrCommand(string data, Payload.IIRProtocol command)
+        {
+            AddIrCommand(data, () => new Payload.IRCommand
+            {
+                Command = command
+            });
+        }
+
         public void AddIrCommand(string data, Func<Payload.IPayload> payloadFunc)
         {
             this.irCommands[data] = payloadFunc;
@@ -150,19 +162,61 @@ namespace Storm.Plugins
         {
             string rawData = Convert.ToBase64String(data);
 
-            // Reset bit 0 for RC6 bit toggle
+            // Reset bit 0 for IR that does bit toggle
             data[0] &= 0xfe;
-            string rc6Data = Convert.ToBase64String(data);
+            string toggleData = Convert.ToBase64String(data);
 
             Func<Payload.IPayload> func;
-            if (this.irCommands.TryGetValue(rawData, out func) || this.irCommands.TryGetValue(rc6Data, out func))
+            string irData = null;
+            if (this.irCommands.TryGetValue(rawData, out func))
             {
+                irData = rawData;
+            }
+            else if (this.irCommands.TryGetValue(toggleData, out func))
+            {
+                irData = toggleData;
+            }
+
+            if (func != null)
+            {
+                // Check repeat data
+                DateTime now = DateTime.Now;
+                var sinceLast = now - this.lastReceivedIR;
+                this.lastReceivedIR = now;
+
+                if (sinceLast.TotalMilliseconds > 400)
+                    this.lastReceivedData = null;
+
+                if (this.lastReceivedData == irData)
+                {
+                    // Repeat
+                    var sinceFirst = now - this.lastReceivedStartOfIR;
+
+                    if (this.repeated == 0 && sinceFirst.TotalMilliseconds < 300)
+                        // Ignore first repeat
+                        return;
+
+                    this.repeated++;
+                }
+                else
+                {
+                    this.repeated = 0;
+                    this.lastReceivedData = irData;
+                    this.lastReceivedStartOfIR = DateTime.Now;
+                }
+
                 var payload = func();
+
+                var irPayload = payload as Payload.IRCommand;
+                if (irPayload != null)
+                {
+                    irPayload.Repeat = this.repeated;
+                }
 
                 this.hub.BroadcastPayload(this, payload);
             }
             else
-                this.log.Debug("Unknown IR command {0} (rc6: {1})", rawData, rc6Data);
+                this.log.Debug("Unknown IR command {0} (tgl: {1})", rawData, toggleData);
         }
 
         public void Dispose()
