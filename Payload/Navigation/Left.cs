@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.Navigation
 {
-    public class Left : IPayload
+    public class Left : BasePayload
     {
     }
 }

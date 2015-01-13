@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.Transport
 {
-    public class Pause : IPayload
+    public class Pause : BasePayload
     {
     }
 }

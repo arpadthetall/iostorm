@@ -8,5 +8,6 @@ namespace Storm.Payload
 {
     public interface IPayload
     {
+        string GetDebugInfo();
     }
 }

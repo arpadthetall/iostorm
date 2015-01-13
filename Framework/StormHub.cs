@@ -40,11 +40,7 @@ namespace Storm
 
             this.broadcastQueue = Observer.Create<Payload.InternalMessage>(p =>
                 {
-                    string displayTypeName = p.Payload.GetType().FullName;
-                    if (displayTypeName.StartsWith("Storm.Payload."))
-                        displayTypeName = displayTypeName.Substring(14);
-
-                    this.log.Debug("Received local payload {0}", displayTypeName);
+                    this.log.Debug("Received local payload {0}", p.Payload.GetDebugInfo());
 
                     // Send locally
                     this.localQueue.OnNext(p);
@@ -69,11 +65,7 @@ namespace Storm
 
             this.externalIncomingQueue.Subscribe(p =>
                 {
-                    string displayTypeName = p.Payload.GetType().FullName;
-                    if (displayTypeName.StartsWith("Storm.Payload."))
-                        displayTypeName = displayTypeName.Substring(14);
-
-                    this.log.Debug("Received external payload {0} from {1}", displayTypeName, p.OriginDeviceId);
+                    this.log.Debug("Received external payload {0} ({1})", p.OriginDeviceId, p.Payload.GetDebugInfo());
                 });
         }
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.Power
 {
-    public class Sleep : IPayload
+    public class Sleep : BasePayload
     {
     }
 }

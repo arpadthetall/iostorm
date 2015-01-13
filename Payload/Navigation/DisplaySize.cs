@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.Navigation
 {
-    public class DisplaySize : IPayload
+    public class DisplaySize : BasePayload
     {
     }
 }

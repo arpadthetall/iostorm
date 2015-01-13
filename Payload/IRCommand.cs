@@ -6,8 +6,13 @@ using System.Threading.Tasks;
 
 namespace Storm.Payload
 {
-    public class IRCommand : IPayload
+    public class IRCommand : BasePayload
     {
         public IIRProtocol Command { get; set; }
+
+        public override string GetDebugInfo()
+        {
+            return string.Format("IRCommand {0} [{1}]", Command.GetType().Name, Command.ToString());
+        }
     }
 }

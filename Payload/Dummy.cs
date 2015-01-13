@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Storm.Payload
 {
-    public class Dummy : IPayload
+    public class Dummy : BasePayload
     {
     }
 }

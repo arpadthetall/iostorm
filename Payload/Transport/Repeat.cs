@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.Transport
 {
-    public class Repeat : IPayload
+    public class Repeat : BasePayload
     {
     }
 }

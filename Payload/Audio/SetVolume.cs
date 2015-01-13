@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.Audio
 {
-    public class SetVolume : IPayload
+    public class SetVolume : BasePayload
     {
         public double Volume { get; set; }
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.TV
 {
-    public class ChannelDec : IPayload
+    public class ChannelDec : BasePayload
     {
     }
 }

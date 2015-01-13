@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Storm.Payload.Transport
 {
-    public class Stop : IPayload
+    public class Stop : BasePayload
     {
     }
 }

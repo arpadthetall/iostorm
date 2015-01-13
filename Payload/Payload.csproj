@@ -43,6 +43,7 @@
     <Compile Include="Audio\VolumeUp.cs" />
     <Compile Include="Audio\ChangeVolume.cs" />
     <Compile Include="Audio\SetVolume.cs" />
+    <Compile Include="Base\BasePayload.cs" />
     <Compile Include="Dummy.cs" />
     <Compile Include="Interface\IIRProtocol.cs" />
     <Compile Include="InternalMessage.cs" />
