@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace Storm.RemoteMapping.IRProtocol
 {
+    // Reference: http://www.sbprojects.com/knowledge/ir/sirc.php
+
     public class Sony12 : Storm.Payload.IIRProtocol
     {
         private int address;
