@@ -39,11 +39,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Audio\VolumeDown.cs" />
+    <Compile Include="Audio\VolumeUp.cs" />
     <Compile Include="Audio\ChangeVolume.cs" />
     <Compile Include="Audio\SetVolume.cs" />
     <Compile Include="Dummy.cs" />
+    <Compile Include="Interface\IIRProtocol.cs" />
     <Compile Include="InternalMessage.cs" />
-    <Compile Include="IPayload.cs" />
+    <Compile Include="Interface\IPayload.cs" />
+    <Compile Include="IRCommand.cs" />
+    <Compile Include="Navigation\Period.cs" />
+    <Compile Include="TV\ChannelDec.cs" />
+    <Compile Include="TV\ChannelInc.cs" />
     <Compile Include="Navigation\Add.cs" />
     <Compile Include="Navigation\DisplayBrightness.cs" />
     <Compile Include="Navigation\DisplaySize.cs" />
@@ -53,6 +60,7 @@
     <Compile Include="Navigation\Left.cs" />
     <Compile Include="Navigation\Back.cs" />
     <Compile Include="Navigation\NowPlaying.cs" />
+    <Compile Include="Navigation\Enter.cs" />
     <Compile Include="Navigation\Select.cs" />
     <Compile Include="Navigation\Right.cs" />
     <Compile Include="Navigation\Up.cs" />

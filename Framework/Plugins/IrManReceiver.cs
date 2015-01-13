@@ -108,7 +108,7 @@ namespace Storm.Plugins
 
                             if (this.receiveCount == PacketSize)
                             {
-                                IrReceived(Convert.ToBase64String(this.receiveBuffer));
+                                IrReceived(this.receiveBuffer);
                                 this.receiveCount = 0;
                             }
                             break;
@@ -146,17 +146,23 @@ namespace Storm.Plugins
             this.irCommands[data] = payloadFunc;
         }
 
-        private void IrReceived(string data)
+        private void IrReceived(byte[] data)
         {
+            string rawData = Convert.ToBase64String(data);
+
+            // Reset bit 0 for RC6 bit toggle
+            data[0] &= 0xfe;
+            string rc6Data = Convert.ToBase64String(data);
+
             Func<Payload.IPayload> func;
-            if (this.irCommands.TryGetValue(data, out func))
+            if (this.irCommands.TryGetValue(rawData, out func) || this.irCommands.TryGetValue(rc6Data, out func))
             {
                 var payload = func();
 
                 this.hub.BroadcastPayload(this, payload);
             }
             else
-                this.log.Debug("Unknown IR command {0}", data);
+                this.log.Debug("Unknown IR command {0} (rc6: {1})", rawData, rc6Data);
         }
 
         public void Dispose()

@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Reactive;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.IO.Ports;
+﻿
+using System;
 
-namespace Storm.Plugins
+namespace Storm.RemoteMapping
 {
     public static class RemoteControlYamahaReceiver
     {
-        public static void MapRemoteControl(IrmanReceiver receiver)
+        public static void MapRemoteControl(Plugins.IrmanReceiver receiver)
         {
             receiver.AddIrCommand("XqHYJwAA", () => new Payload.Audio.ChangeVolume
                     {

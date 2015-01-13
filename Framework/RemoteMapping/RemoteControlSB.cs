@@ -1,33 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Reactive;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.IO.Ports;
 
-namespace Storm.Plugins
+namespace Storm.RemoteMapping
 {
     public static class RemoteControlSB
     {
         /// <summary>
-        /// Learned using an Irman and SlimDevices/Squeezebox remote
+        /// Learned using an Irman and SlimDevices/Squeezebox remote (NEC2 protocol)
         /// </summary>
         /// <param name="receiver"></param>
-        public static void MapRemoteControl(IrmanReceiver receiver)
+        public static void MapRemoteControl(Plugins.IrmanReceiver receiver)
         {
-            receiver.AddIrCommand("dokA/wAA", () => new Payload.Audio.ChangeVolume
-                    {
-                        Steps = -1
-                    });
+            receiver.AddIrCommand("dokA/wAA", () => new Payload.Audio.VolumeDown());
 
-            receiver.AddIrCommand("domAfwAA", () => new Payload.Audio.ChangeVolume
-                    {
-                        Steps = 1
-                    });
+            receiver.AddIrCommand("domAfwAA", () => new Payload.Audio.VolumeUp());
 
             receiver.AddIrCommand("dolAvwAA", () => new Payload.Power.Toggle());
 
