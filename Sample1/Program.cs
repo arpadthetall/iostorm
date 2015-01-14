@@ -11,7 +11,8 @@ namespace Storm.Sample1
     public class Program
     {
         private static IUnityContainer container;
-        const string hubServer = "192.168.1.113";
+        //const string hubServer = "192.168.1.113";
+        const string hubServer = "localhost";
 
         public static void Main(string[] args)
         {
@@ -33,7 +34,7 @@ namespace Storm.Sample1
 
             using (var hub = new Storm.StormHub(container, deviceId, remoteHubHost: hubServer))
             {
-                var upb = hub.LoadPlugin<Storm.Plugins.UpbPim>(new ParameterOverride("serialPortName", "COM4"));
+                var upb = hub.LoadPlugin<Storm.Plugins.UpbPim>(new ParameterOverride("serialPortName", "COM11"));
 
                 hub.LoadPlugin<Storm.Plugins.YamahaReceiver>();
 
@@ -60,7 +61,7 @@ namespace Storm.Sample1
                 {
                     hub.BroadcastPayload(sample, new Payload.Light.On
                     {
-                        LightId = "053"
+                        LightId = "072"
                     });
                 });
 
@@ -68,7 +69,7 @@ namespace Storm.Sample1
                 {
                     hub.BroadcastPayload(sample, new Payload.Light.Off
                     {
-                        LightId = "053"
+                        LightId = "072"
                     });
                 });
 

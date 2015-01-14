@@ -33,13 +33,13 @@ namespace Storm.Payload
                 HeartbeatReport
             }
 
-            public enum DestinationTypes
+            public enum PacketTypes
             {
                 Device,
                 Link
             }
 
-            public enum PowerlineRepeaters
+            public enum RepeaterRequests
             {
                 None,
                 One,
@@ -55,11 +55,11 @@ namespace Storm.Payload
                 Four
             }
 
-            public byte Id { get; set; }
+            public byte DestinationId { get; set; }
 
             public byte NetworkId { get; set; }
 
-            public DestinationTypes DestinationType { get; set; }
+            public PacketTypes PacketType { get; set; }
 
             public byte SourceId { get; set; }
 
@@ -71,9 +71,9 @@ namespace Storm.Payload
 
             public int? Channel { get; set; }
 
-            public SendRepeats SendX { get; set; }
+            public SendRepeats SendMaxCount { get; set; }
 
-            public SendRepeats SendTime { get; set; }
+            public SendRepeats SendSequence { get; set; }
 
             public bool AckPulse { get; set; }
 
@@ -81,13 +81,13 @@ namespace Storm.Payload
 
             public bool AckMessage { get; set; }
 
-            public PowerlineRepeaters Repeater { get; set; }
+            public RepeaterRequests RepeaterRequest { get; set; }
 
             public int? BlinkRate { get; set; }
 
             public int? ToggleCount { get; set; }
 
-            public int ToggleRate { get; set; }
+            public int? ToggleRate { get; set; }
         }
 
         public UpbMessage Message { get; set; }

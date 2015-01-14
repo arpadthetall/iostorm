@@ -5,25 +5,27 @@ using Qlue.Logging;
 
 namespace Storm.Plugins
 {
+    // Reference: http://www.simply-automated.com/documents/UpbDescriptionV1.2a.pdf
+
     public class UpbPim : BaseDevice, IDisposable
     {
         public class UpbPimMessage : Payload.UpbCommand.UpbMessage
         {
             public UpbPimMessage()
             {
-                DestinationType = DestinationTypes.Device;
+                PacketType = PacketTypes.Device;
                 SourceId = 0xFF;
-                SendX = SendRepeats.One;
-                SendTime = SendRepeats.One;
+                SendMaxCount = SendRepeats.One;
+                SendSequence = SendRepeats.One;
                 AckPulse = true;
                 IdPulse = false;
                 AckMessage = false;
-                Repeater = PowerlineRepeaters.None;
+                RepeaterRequest = RepeaterRequests.None;
             }
 
             public byte[] GetGeneratedBytes()
             {
-                if (SendTime > SendX)
+                if (SendSequence > SendMaxCount)
                     throw new ArgumentException("Can't be greater than SendX");
 
                 int? level = null;
@@ -50,7 +52,7 @@ namespace Storm.Plugins
                         commandValue = 0x22;
                         level = Level.Value;
                         rate = Rate;
-                        if (Rate.HasValue && DestinationType == DestinationTypes.Device && Channel.HasValue)
+                        if (Rate.HasValue && PacketType == PacketTypes.Device && Channel.HasValue)
                             channel = Channel.Value;
                         break;
 
@@ -60,7 +62,7 @@ namespace Storm.Plugins
                         commandValue = 0x23;
                         level = Level.Value;
                         rate = Rate;
-                        if (Rate.HasValue && DestinationType == DestinationTypes.Device && Channel.HasValue)
+                        if (Rate.HasValue && PacketType == PacketTypes.Device && Channel.HasValue)
                             channel = Channel.Value;
                         break;
 
@@ -74,7 +76,7 @@ namespace Storm.Plugins
                             throw new ArgumentNullException("BlinkRate missing");
                         commandValue = 0x25;
                         blinkRate = BlinkRate.Value;
-                        if (Rate.HasValue && DestinationType == DestinationTypes.Device && Channel.HasValue)
+                        if (Rate.HasValue && PacketType == PacketTypes.Device && Channel.HasValue)
                             channel = Channel.Value;
                         break;
 
@@ -82,7 +84,7 @@ namespace Storm.Plugins
                         commandValue = 0x26;
                         level = Level;
                         rate = Rate;
-                        if (Rate.HasValue && DestinationType == DestinationTypes.Device && Channel.HasValue)
+                        if (Rate.HasValue && PacketType == PacketTypes.Device && Channel.HasValue)
                             channel = Channel.Value;
                         break;
 
@@ -93,7 +95,7 @@ namespace Storm.Plugins
                         level = Level;
                         toggleCount = ToggleCount.Value;
                         toggleRate = ToggleRate;
-                        if (Rate.HasValue && DestinationType == DestinationTypes.Device && Channel.HasValue)
+                        if (Rate.HasValue && PacketType == PacketTypes.Device && Channel.HasValue)
                             channel = Channel.Value;
                         break;
 
@@ -149,20 +151,20 @@ namespace Storm.Plugins
                 }
 
                 byte nibble1 = 0;
-                if (DestinationType == DestinationTypes.Link)
+                if (PacketType == PacketTypes.Link)
                     nibble1 += 8;
 
-                switch (Repeater)
+                switch (RepeaterRequest)
                 {
-                    case PowerlineRepeaters.One:
+                    case RepeaterRequests.One:
                         nibble1 += 2;
                         break;
 
-                    case PowerlineRepeaters.Two:
+                    case RepeaterRequests.Two:
                         nibble1 += 4;
                         break;
 
-                    case PowerlineRepeaters.Four:
+                    case RepeaterRequests.Four:
                         nibble1 += 6;
                         break;
                 }
@@ -180,7 +182,7 @@ namespace Storm.Plugins
 
                 byte nibble4 = 0;
 
-                switch (SendX)
+                switch (SendMaxCount)
                 {
                     case SendRepeats.Two:
                         nibble4 += 4;
@@ -195,7 +197,7 @@ namespace Storm.Plugins
                         break;
                 }
 
-                switch (SendTime)
+                switch (SendSequence)
                 {
                     case SendRepeats.Two:
                         nibble4 += 1;
@@ -231,7 +233,7 @@ namespace Storm.Plugins
                 result[0] = (byte)(nibble1 << 4 | packetLength);
                 result[1] = (byte)(nibble3 << 4 | nibble4);
                 result[2] = NetworkId;
-                result[3] = Id;
+                result[3] = DestinationId;
                 result[4] = SourceId;
                 result[5] = commandValue;
                 for (int i = 0; i < additional.Count; i++)
@@ -283,23 +285,23 @@ namespace Storm.Plugins
                 byte nibble3 = (byte)(bytes[1] >> 4);
                 byte nibble4 = (byte)(bytes[1] & 0x0F);
 
-                result.DestinationType = (nibble1 & 0x08) != 0 ? DestinationTypes.Link : DestinationTypes.Device;
+                result.PacketType = (nibble1 & 0x08) != 0 ? PacketTypes.Link : PacketTypes.Device;
                 switch (nibble1)
                 {
                     case 0:
-                        result.Repeater = PowerlineRepeaters.None;
+                        result.RepeaterRequest = RepeaterRequests.None;
                         break;
 
                     case 2:
-                        result.Repeater = PowerlineRepeaters.One;
+                        result.RepeaterRequest = RepeaterRequests.One;
                         break;
 
                     case 4:
-                        result.Repeater = PowerlineRepeaters.Two;
+                        result.RepeaterRequest = RepeaterRequests.Two;
                         break;
 
                     case 6:
-                        result.Repeater = PowerlineRepeaters.Four;
+                        result.RepeaterRequest = RepeaterRequests.Four;
                         break;
                 }
 
@@ -314,47 +316,47 @@ namespace Storm.Plugins
                 switch (nibble4 & 0x03)
                 {
                     case 0:
-                        result.SendTime = SendRepeats.One;
+                        result.SendSequence = SendRepeats.One;
                         break;
 
                     case 1:
-                        result.SendTime = SendRepeats.Two;
+                        result.SendSequence = SendRepeats.Two;
                         break;
 
                     case 2:
-                        result.SendTime = SendRepeats.Three;
+                        result.SendSequence = SendRepeats.Three;
                         break;
 
                     case 3:
-                        result.SendTime = SendRepeats.Four;
+                        result.SendSequence = SendRepeats.Four;
                         break;
                 }
 
                 switch (nibble4 & 0x0C)
                 {
                     case 0:
-                        result.SendX = SendRepeats.One;
+                        result.SendMaxCount = SendRepeats.One;
                         break;
 
                     case 4:
-                        result.SendX = SendRepeats.Two;
+                        result.SendMaxCount = SendRepeats.Two;
                         break;
 
                     case 8:
-                        result.SendX = SendRepeats.Three;
+                        result.SendMaxCount = SendRepeats.Three;
                         break;
 
                     case 12:
-                        result.SendX = SendRepeats.Four;
+                        result.SendMaxCount = SendRepeats.Four;
                         break;
                 }
 
-                if (result.SendTime > result.SendX)
+                if (result.SendSequence > result.SendMaxCount)
                     // SendTime can't be greater than SendX
                     return null;
 
                 result.NetworkId = bytes[2];
-                result.Id = bytes[3];
+                result.DestinationId = bytes[3];
                 result.SourceId = bytes[4];
                 switch (bytes[5])
                 {
@@ -659,9 +661,9 @@ namespace Storm.Plugins
 
             var cmd = new UpbPimMessage
             {
-                Id = byte.Parse(payload.LightId),
+                DestinationId = byte.Parse(payload.LightId),
                 NetworkId = 166,
-                DestinationType = Payload.UpbCommand.UpbMessage.DestinationTypes.Device,
+                PacketType = Payload.UpbCommand.UpbMessage.PacketTypes.Device,
                 Command = Payload.UpbCommand.UpbMessage.UpbCommands.Goto,
                 Level = 100
             };
@@ -676,9 +678,9 @@ namespace Storm.Plugins
 
             var cmd = new UpbPimMessage
             {
-                Id = byte.Parse(payload.LightId),
+                DestinationId = byte.Parse(payload.LightId),
                 NetworkId = 166,
-                DestinationType = Payload.UpbCommand.UpbMessage.DestinationTypes.Device,
+                PacketType = Payload.UpbCommand.UpbMessage.PacketTypes.Device,
                 Command = Payload.UpbCommand.UpbMessage.UpbCommands.Goto,
                 Level = 0
             };
