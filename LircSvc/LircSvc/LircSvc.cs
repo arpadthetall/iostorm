@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.ServiceProcess;
 using Ben.LircSharp;
-using NLog;
-//using RabbitMQ.Client;
 using Qlue.Logging;
 using Storm;
 using Storm.Payload;
-
 
 namespace LircSvc
 {
@@ -17,14 +13,13 @@ namespace LircSvc
         private static readonly ILogFactory LogFactory = new NLogFactoryProvider();
         private readonly ILog _logger = LogFactory.GetLogger("LircSvc");
 
-        public List<string> SelectedRemoteCommands { get; private set; }
         public LircClient Client { get; private set; }
         public bool IsConnected { get; private set; }
-        
         private string LircHost { get; set; }
         private int LircPort { get; set; }
         private string RabbitHost { get; set; }
         private string RabbitChannel { get; set; }
+        private string DeviceId { get; set; }
 
         public LircSvc()
         {
@@ -43,6 +38,7 @@ namespace LircSvc
             LircPort = int.Parse(ConfigurationManager.AppSettings["LircPort"]);
             RabbitHost = ConfigurationManager.AppSettings["RabbitHost"];
             RabbitChannel = ConfigurationManager.AppSettings["RabbitChannel"];
+            DeviceId = ConfigurationManager.AppSettings["DeviceId"];
         }
 
         protected override void OnStop()
@@ -52,31 +48,33 @@ namespace LircSvc
 
         public void Connect()
         {
-            if (this.Client != null)
+            if (Client != null)
             {
                 return;
             }
 
-            this.Client = new LircSocketClient();
-            this.Client.Connected += Client_Connected;
-            this.Client.CommandCompleted += Client_CommandCompleted;
-            this.Client.Error += Client_Error;
-            this.Client.Message += Client_Message;
+            Client = new LircSocketClient();
+            Client.Connected += Client_Connected;
+            Client.CommandCompleted += Client_CommandCompleted;
+            Client.Error += Client_Error;
+            Client.Message += Client_Message;
 
-            var message = string.Format("Connecting to {0}:{1}", LircHost, LircPort);
-            _logger.Info(message);
-            this.Client.Connect(LircHost, LircPort);
+            _logger.Info("Connecting to {0}:{1}...", LircHost, LircPort);
+
+            Client.Connect(LircHost, LircPort);
         }
 
         public void Disconnect()
         {
             if (Client == null || !IsConnected) return;
 
-            var message = string.Format("Disconnecting...");
-            _logger.Info(message);
-            this.Client.Disconnect();
-            this.Client = null;
+            _logger.Info("Disconnecting from {0}:{1}...", LircHost, LircPort);
+
+            Client.Disconnect();
+            Client = null;
             IsConnected = false;
+
+            _logger.Info("Disconnected");
         }
 
         private void Client_Connected(object sender, EventArgs e)
@@ -94,19 +92,24 @@ namespace LircSvc
         {
             _logger.Info("Received command: {0}", command);
 
-            var hub = new RemoteHub(LogFactory, RabbitHost, "LircSvc");
+            var hub = new RemoteHub(LogFactory, RabbitHost, DeviceId);
+
             var payload = GetPayloadFromLircCommand(command);
-            if (payload != null)
+
+            if (payload == null)
             {
-                try
-                {
-                    hub.SendPayload(RabbitChannel, payload);
-                    _logger.Info("Sent {0}", command);
-                }
-                catch(Exception ex)
-                {
-                    _logger.ErrorException("Failed to send payload", ex);
-                }
+                _logger.Warn("No matching payload for command {0}", command);
+                return;
+            }
+
+            try
+            {
+                hub.SendPayload(RabbitChannel, payload);
+                _logger.Info("Sent {0}", command);
+            }
+            catch(Exception ex)
+            {
+                _logger.ErrorException("Failed to send payload", ex);
             }
         }
 
