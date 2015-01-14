@@ -1,4 +1,4 @@
-﻿namespace LircSvc
+﻿namespace IoStorm.LircSvc
 {
     partial class LircSvc
     {

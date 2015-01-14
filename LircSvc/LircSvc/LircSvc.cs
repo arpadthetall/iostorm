@@ -6,7 +6,7 @@ using Qlue.Logging;
 using IoStorm;
 using IoStorm.Payload;
 
-namespace LircSvc
+namespace IoStorm.LircSvc
 {
     public partial class LircSvc : ServiceBase
     {
