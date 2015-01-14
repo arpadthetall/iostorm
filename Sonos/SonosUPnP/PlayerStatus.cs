@@ -1,4 +1,4 @@
-namespace Storm.Sonos
+namespace IoStorm.Sonos
 {
 	public enum PlayerStatus
 	{

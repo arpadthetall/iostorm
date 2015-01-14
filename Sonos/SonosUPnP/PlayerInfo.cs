@@ -1,6 +1,6 @@
 using System;
 
-namespace Storm.Sonos
+namespace IoStorm.Sonos
 {
 	public class PlayerInfo
 	{

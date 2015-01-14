@@ -7,8 +7,8 @@
     <ProjectGuid>{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Storm.Sonos</RootNamespace>
-    <AssemblyName>Storm.Sonos</AssemblyName>
+    <RootNamespace>IoStorm.Sonos</RootNamespace>
+    <AssemblyName>IoStorm.Sonos</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

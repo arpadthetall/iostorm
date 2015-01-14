@@ -9,7 +9,7 @@ using System.Reactive.Subjects;
 using System.IO.Ports;
 using Qlue.Logging;
 
-namespace Storm
+namespace IoStorm
 {
     /// <summary>
     /// Serial manager for CR-ended responses (LF is ignored) with timeout on partial lines

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Storm.RemoteMapping
+namespace IoStorm.RemoteMapping
 {
     [Obsolete]
     public static class RemoteControlSB

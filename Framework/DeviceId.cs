@@ -5,7 +5,7 @@ using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Storm
+namespace IoStorm
 {
     public static class DeviceId
     {

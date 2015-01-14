@@ -6,7 +6,7 @@ using System.Threading;
 using System.Xml.Linq;
 using OpenSource.UPnP;
 
-namespace Storm.Sonos
+namespace IoStorm.Sonos
 {
     public class SonosDiscovery
     {

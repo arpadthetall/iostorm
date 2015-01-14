@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Practices.Unity;
 
-namespace Storm.Sample1
+namespace IoStorm.Sample1
 {
     public class Sample1 : BaseDevice
     {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reactive;
 
-namespace Storm
+namespace IoStorm
 {
     public interface IDevice
     {

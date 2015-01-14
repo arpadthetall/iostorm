@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Storm.RemoteMapping.IRProtocol
+namespace IoStorm.RemoteMapping.IRProtocol
 {
     // Reference: http://www.sbprojects.com/knowledge/ir/nec.php
     // Reference: http://wiki.slimdevices.com/index.php/Remote_IR_codes
 
-    public class NEC2 : Tuple<int, int>, Storm.Payload.IIRProtocol
+    public class NEC2 : Tuple<int, int>, IoStorm.Payload.IIRProtocol
     {
         public NEC2(int address, int command)
             : base(address, command)

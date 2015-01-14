@@ -3,8 +3,8 @@ using System.Configuration;
 using System.ServiceProcess;
 using Ben.LircSharp;
 using Qlue.Logging;
-using Storm;
-using Storm.Payload;
+using IoStorm;
+using IoStorm.Payload;
 
 namespace LircSvc
 {
@@ -119,77 +119,77 @@ namespace LircSvc
             {
                 // Audio
                 case LircCommands.Audio.Mute:
-                    return new Storm.Payload.Audio.MuteToggle();
+                    return new IoStorm.Payload.Audio.MuteToggle();
                 case LircCommands.Audio.VolumeUp:
-                    return new Storm.Payload.Audio.VolumeUp();
+                    return new IoStorm.Payload.Audio.VolumeUp();
                 case LircCommands.Audio.VolumeDown:
-                    return new Storm.Payload.Audio.VolumeDown();
+                    return new IoStorm.Payload.Audio.VolumeDown();
 
                 // Navigation
                 case LircCommands.Navigation.Up:
-                    return new Storm.Payload.Navigation.Up();
+                    return new IoStorm.Payload.Navigation.Up();
                 case LircCommands.Navigation.Down:
-                    return new Storm.Payload.Navigation.Down();
+                    return new IoStorm.Payload.Navigation.Down();
                 case LircCommands.Navigation.Left:
-                    return new Storm.Payload.Navigation.Left();
+                    return new IoStorm.Payload.Navigation.Left();
                 case LircCommands.Navigation.Right:
-                    return new Storm.Payload.Navigation.Right();
+                    return new IoStorm.Payload.Navigation.Right();
                 case LircCommands.Navigation.Num0:
-                    return new Storm.Payload.Navigation.Number0();
+                    return new IoStorm.Payload.Navigation.Number0();
                 case LircCommands.Navigation.Num1:
-                    return new Storm.Payload.Navigation.Number1();
+                    return new IoStorm.Payload.Navigation.Number1();
                 case LircCommands.Navigation.Num2:
-                    return new Storm.Payload.Navigation.Number2();
+                    return new IoStorm.Payload.Navigation.Number2();
                 case LircCommands.Navigation.Num3:
-                    return new Storm.Payload.Navigation.Number3();
+                    return new IoStorm.Payload.Navigation.Number3();
                 case LircCommands.Navigation.Num4:
-                    return new Storm.Payload.Navigation.Number4();
+                    return new IoStorm.Payload.Navigation.Number4();
                 case LircCommands.Navigation.Num5:
-                    return new Storm.Payload.Navigation.Number5();
+                    return new IoStorm.Payload.Navigation.Number5();
                 case LircCommands.Navigation.Num6:
-                    return new Storm.Payload.Navigation.Number6();
+                    return new IoStorm.Payload.Navigation.Number6();
                 case LircCommands.Navigation.Num7:
-                    return new Storm.Payload.Navigation.Number7();
+                    return new IoStorm.Payload.Navigation.Number7();
                 case LircCommands.Navigation.Num8:
-                    return new Storm.Payload.Navigation.Number8();
+                    return new IoStorm.Payload.Navigation.Number8();
                 case LircCommands.Navigation.Num9:
-                    return new Storm.Payload.Navigation.Number9();
+                    return new IoStorm.Payload.Navigation.Number9();
                 case LircCommands.Navigation.Guide:
-                    return new Storm.Payload.Navigation.Guide();
+                    return new IoStorm.Payload.Navigation.Guide();
                 case LircCommands.Navigation.Back:
-                    return new Storm.Payload.Navigation.Back();
+                    return new IoStorm.Payload.Navigation.Back();
                 case LircCommands.Navigation.Enter:
-                    return new Storm.Payload.Navigation.Enter();
+                    return new IoStorm.Payload.Navigation.Enter();
                 case LircCommands.Navigation.Home:
-                    return new Storm.Payload.Navigation.Home();
+                    return new IoStorm.Payload.Navigation.Home();
 
                 // Power
                 case LircCommands.Power.Toggle:
-                    return new Storm.Payload.Power.Toggle();
+                    return new IoStorm.Payload.Power.Toggle();
 
                 // Transport
                 case LircCommands.Transport.Advance:
-                    return new Storm.Payload.Transport.Advance();
+                    return new IoStorm.Payload.Transport.Advance();
                 case LircCommands.Transport.FastForward:
-                    return new Storm.Payload.Transport.FastForward();
+                    return new IoStorm.Payload.Transport.FastForward();
                 case LircCommands.Transport.Next:
-                    return new Storm.Payload.Transport.Next();
+                    return new IoStorm.Payload.Transport.Next();
                 case LircCommands.Transport.Pause:
-                    return new Storm.Payload.Transport.Pause();
+                    return new IoStorm.Payload.Transport.Pause();
                 case LircCommands.Transport.Play:
-                    return new Storm.Payload.Transport.Play();
+                    return new IoStorm.Payload.Transport.Play();
                 case LircCommands.Transport.Previous:
-                    return new Storm.Payload.Transport.Previous();
+                    return new IoStorm.Payload.Transport.Previous();
                 case LircCommands.Transport.Rewind:
-                    return new Storm.Payload.Transport.Rewind();
+                    return new IoStorm.Payload.Transport.Rewind();
                 case LircCommands.Transport.Stop:
-                    return new Storm.Payload.Transport.Stop();
+                    return new IoStorm.Payload.Transport.Stop();
 
                 // TV
                 case LircCommands.TV.ChannelUp:
-                    return new Storm.Payload.TV.ChannelInc();
+                    return new IoStorm.Payload.TV.ChannelInc();
                 case LircCommands.TV.ChannelDown:
-                    return new Storm.Payload.TV.ChannelDec();
+                    return new IoStorm.Payload.TV.ChannelDec();
             }
 
             return null;

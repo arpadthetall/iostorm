@@ -7,7 +7,7 @@
     <ProjectGuid>{7D39C43F-C2D7-441A-8D83-EDA44EE61571}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LircSvc</RootNamespace>
+    <RootNamespace>IoStorm.LircSvc</RootNamespace>
     <AssemblyName>LircSvc</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

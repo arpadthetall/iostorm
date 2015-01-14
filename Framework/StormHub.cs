@@ -11,7 +11,7 @@ using System.Reactive.Subjects;
 using Microsoft.Practices.Unity;
 using Qlue.Logging;
 
-namespace Storm
+namespace IoStorm
 {
     public class StormHub : IDisposable, IHub
     {

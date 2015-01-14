@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Storm.RemoteMapping.IRProtocol
+namespace IoStorm.RemoteMapping.IRProtocol
 {
     public class Sony15 : BaseSony
     {

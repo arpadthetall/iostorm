@@ -7,8 +7,8 @@
     <ProjectGuid>{8CB73454-8447-49F3-A914-396CF80FC296}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Storm.Sample1</RootNamespace>
-    <AssemblyName>Storm.Sample1</AssemblyName>
+    <RootNamespace>IoStorm.Sample1</RootNamespace>
+    <AssemblyName>IoStorm.Sample1</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

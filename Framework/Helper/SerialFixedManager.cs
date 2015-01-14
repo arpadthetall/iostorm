@@ -9,7 +9,7 @@ using System.Reactive.Subjects;
 using System.IO.Ports;
 using Qlue.Logging;
 
-namespace Storm
+namespace IoStorm
 {
     /// <summary>
     /// Serial port manager for fixed packet sizes (manages timeout if partial packet received)

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Storm.Payload.Power
+namespace IoStorm.Payload.Power
 {
     public class Set : BasePayload
     {

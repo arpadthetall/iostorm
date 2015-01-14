@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Reactive;
 using System.Reactive.Subjects;
-using Storm.RemoteMapping.IRProtocol;
+using IoStorm.RemoteMapping.IRProtocol;
 
-namespace Storm.RemoteMapping
+namespace IoStorm.RemoteMapping
 {
     public static class IrManSqueezebox
     {

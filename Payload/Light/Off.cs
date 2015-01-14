@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Storm.Payload.Light
+namespace IoStorm.Payload.Light
 {
     public class Off : BasePayload
     {

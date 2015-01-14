@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Xml.Linq;
 
-namespace Storm.Sonos
+namespace IoStorm.Sonos
 {
 	public class SonosItem
 	{

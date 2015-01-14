@@ -7,8 +7,8 @@
     <ProjectGuid>{13F28E19-A026-457C-BE49-D140CB1F33D3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Storm</RootNamespace>
-    <AssemblyName>Storm.Framework</AssemblyName>
+    <RootNamespace>IoStorm</RootNamespace>
+    <AssemblyName>IoStorm.Framework</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

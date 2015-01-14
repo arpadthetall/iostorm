@@ -7,8 +7,8 @@
     <ProjectGuid>{5411B38E-68A1-4917-81E4-46024B30E9EC}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Storm.Payload</RootNamespace>
-    <AssemblyName>Storm.BasicPayload</AssemblyName>
+    <RootNamespace>IoStorm.Payload</RootNamespace>
+    <AssemblyName>IoStorm.BasicPayload</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

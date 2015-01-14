@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using OpenSource.UPnP;
 
-namespace Storm.Sonos
+namespace IoStorm.Sonos
 {
     public class SonosPlayer
     {

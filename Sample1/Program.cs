@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Practices.Unity;
 using PowerArgs;
 
-namespace Storm.Sample1
+namespace IoStorm.Sample1
 {
     public class Program
     {
@@ -50,24 +50,24 @@ namespace Storm.Sample1
 
             log.Info("Start up");
 
-            string deviceId = Storm.DeviceId.GetDeviceId();
+            string deviceId = IoStorm.DeviceId.GetDeviceId();
 
-            using (var hub = new Storm.StormHub(container, deviceId, remoteHubHost: arguments.HubServer))
+            using (var hub = new IoStorm.StormHub(container, deviceId, remoteHubHost: arguments.HubServer))
             {
                 if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
-                    hub.LoadPlugin<Storm.Plugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
+                    hub.LoadPlugin<IoStorm.Plugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
 
-                hub.LoadPlugin<Storm.Plugins.YamahaReceiver>();
+                hub.LoadPlugin<IoStorm.Plugins.YamahaReceiver>();
 
                 if (!string.IsNullOrEmpty(arguments.IrManSerialPort))
                 {
-                    var irMan = hub.LoadPlugin<Storm.Plugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
+                    var irMan = hub.LoadPlugin<IoStorm.Plugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
 
                     // Map remote controls
                     RemoteMapping.IrManSony.MapRemoteControl(irMan);
                     RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
 
-                    var xlat = hub.LoadPlugin<Storm.RemoteMapping.ProtocolToPayload>();
+                    var xlat = hub.LoadPlugin<IoStorm.RemoteMapping.ProtocolToPayload>();
                     xlat.MapSqueezeBoxRemote();
                 }
 

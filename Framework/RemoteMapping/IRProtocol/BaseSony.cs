@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Storm.RemoteMapping.IRProtocol
+namespace IoStorm.RemoteMapping.IRProtocol
 {
     // Reference: http://www.sbprojects.com/knowledge/ir/sirc.php
 
-    public abstract class BaseSony : Tuple<int, int>, Storm.Payload.IIRProtocol
+    public abstract class BaseSony : Tuple<int, int>, IoStorm.Payload.IIRProtocol
     {
         public BaseSony(int address, int command)
             : base(address, command)

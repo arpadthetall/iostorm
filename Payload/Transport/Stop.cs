@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Storm.Payload.Transport
+namespace IoStorm.Payload.Transport
 {
     public class Stop : BasePayload
     {

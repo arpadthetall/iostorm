@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace Storm
+namespace IoStorm
 {
     public class RemoteHub : IDisposable
     {
@@ -15,7 +15,7 @@ namespace Storm
         private string hostName;
         private ConnectionFactory factory;
         private Dictionary<string, IModel> channels;
-        private Storm.Serializer serializer;
+        private IoStorm.Serializer serializer;
         private IConnection connection;
         private string ourDeviceId;
 

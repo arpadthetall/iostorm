@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Reactive;
 
-namespace Storm.Sonos
+namespace IoStorm.Sonos
 {
     public class Sonos : BaseDevice
     {
@@ -20,7 +20,7 @@ namespace Storm.Sonos
 
             this.log = logFactory.GetLogger("Sonos");
 
-            this.discovery = new Storm.Sonos.SonosDiscovery(logFactory);
+            this.discovery = new IoStorm.Sonos.SonosDiscovery(logFactory);
             discovery.TopologyChanged += discovery_TopologyChanged;
 
             this.discovery.StartScan();
