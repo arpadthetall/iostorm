@@ -11,7 +11,7 @@ namespace Storm.Sample1
     public class Program
     {
         private static IUnityContainer container;
-        const string hubServer = "localhost";
+        const string hubServer = "192.168.1.113";
 
         public static void Main(string[] args)
         {
@@ -33,6 +33,8 @@ namespace Storm.Sample1
 
             using (var hub = new Storm.StormHub(container, deviceId, remoteHubHost: hubServer))
             {
+                var upb = hub.LoadPlugin<Storm.Plugins.UpbPim>(new ParameterOverride("serialPortName", "COM4"));
+
                 hub.LoadPlugin<Storm.Plugins.YamahaReceiver>();
 
                 if (!string.IsNullOrEmpty(command))
@@ -44,14 +46,31 @@ namespace Storm.Sample1
                     RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
 
                     var xlat = hub.LoadPlugin<Storm.RemoteMapping.ProtocolToPayload>();
-                    xlat.MapSonyTVRemoteRMYD024();
+                    xlat.MapSqueezeBoxRemote();
                 }
 
-                hub.LoadPlugin<Storm.Sonos.Sonos>();
+
+                //                hub.LoadPlugin<Storm.Sonos.Sonos>();
 
                 // Test
                 var sample = hub.LoadPlugin<Sample1>();
                 hub.BroadcastPayload(sample, new Payload.Audio.ChangeVolume { Steps = 1 });
+
+                hub.Incoming<Payload.Navigation.Up>(x =>
+                {
+                    hub.BroadcastPayload(sample, new Payload.Light.On
+                    {
+                        LightId = "053"
+                    });
+                });
+
+                hub.Incoming<Payload.Navigation.Down>(x =>
+                {
+                    hub.BroadcastPayload(sample, new Payload.Light.Off
+                    {
+                        LightId = "053"
+                    });
+                });
 
                 Console.ReadLine();
             }

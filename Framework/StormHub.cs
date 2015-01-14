@@ -88,7 +88,7 @@ namespace Storm
 
                 var parameterType = parameters.First().ParameterType;
 
-                externalIncoming.Where(x => parameterType.IsInstanceOfType(x))
+                externalIncoming.Where(x => parameterType.IsInstanceOfType(x.Payload))
                     .Subscribe(x =>
                     {
                         method.Invoke(plugin, new object[] { x.Payload });
@@ -149,6 +149,19 @@ namespace Storm
         public void BroadcastPayload(IDevice sender, Payload.IPayload payload)
         {
             this.broadcastQueue.OnNext(new Payload.InternalMessage(sender.InstanceId, payload));
+        }
+
+        public void Incoming<T>(Action<T> action) where T : Payload.IPayload
+        {
+            this.externalIncomingQueue.Where(x => typeof(T).IsInstanceOfType(x.Payload)).Subscribe(bp =>
+                {
+                    action((T)bp.Payload);
+                });
+
+            this.localQueue.Where(x => typeof(T).IsInstanceOfType(x.Payload)).Subscribe(bp =>
+                {
+                    action((T)bp.Payload);
+                });
         }
     }
 }

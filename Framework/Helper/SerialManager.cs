@@ -19,7 +19,10 @@ namespace Storm
         private SerialPort serialPort;
         private ISubject<byte> dataReceived;
         private ISubject<bool> portAvailable;
+        private ISubject<bool> deviceInitialized;
         private bool portOpened;
+        private bool isDeviceInitialized;
+        private TimeSpan deviceInitializationTimeout;
 
         public SerialManager(
             ILogFactory logFactory,
@@ -34,10 +37,13 @@ namespace Storm
             this.serialPort = new SerialPort(serialPortName, baudRate, parity, dataBits, stopBits);
             this.serialPort.ReadTimeout = 1000;
 
+            this.deviceInitializationTimeout = TimeSpan.FromSeconds(5);
+
             this.cts = new CancellationTokenSource();
 
             this.dataReceived = new Subject<byte>();
             this.portAvailable = new Subject<bool>();
+            this.deviceInitialized = new Subject<bool>();
         }
 
         ~SerialManager()
@@ -48,7 +54,7 @@ namespace Storm
 
         public void Start()
         {
-            StartInit();
+            Task.Factory.StartNew(() => PortMonitor(), TaskCreationOptions.LongRunning);
         }
 
         public IObservable<byte> DataReceived
@@ -59,6 +65,11 @@ namespace Storm
         public IObservable<bool> PortAvailable
         {
             get { return this.portAvailable.AsObservable(); }
+        }
+
+        public IObservable<bool> DeviceInitialized
+        {
+            get { return this.deviceInitialized.AsObservable(); }
         }
 
         private void Close()
@@ -109,14 +120,20 @@ namespace Storm
             get { return this.serialPort.IsOpen; }
         }
 
+        public bool IsDeviceInitialized
+        {
+            get { return this.isDeviceInitialized; }
+            set
+            {
+                this.isDeviceInitialized = value;
+
+                this.deviceInitialized.OnNext(value);
+            }
+        }
+
         public void Write(string data)
         {
             this.serialPort.Write(data);
-        }
-
-        private void StartInit()
-        {
-            Task.Factory.StartNew(() => PortMonitor(), TaskCreationOptions.LongRunning);
         }
 
         private void PortMonitor()
@@ -127,6 +144,8 @@ namespace Storm
             {
                 try
                 {
+                    IsDeviceInitialized = false;
+
                     while (!this.serialPort.IsOpen)
                     {
                         if (this.portOpened)
@@ -157,6 +176,8 @@ namespace Storm
                         }
                     }
 
+                    DateTime portOpened = DateTime.Now;
+
                     while (this.serialPort.IsOpen)
                     {
                         try
@@ -168,8 +189,18 @@ namespace Storm
                         catch (TimeoutException)
                         {
                         }
-                    }
 
+                        if (!IsDeviceInitialized && (DateTime.Now - portOpened) > this.deviceInitializationTimeout)
+                        {
+                            this.log.Warn("Device is not initialized, attempt reset");
+
+                            // Cycle the port available subscription
+                            this.portAvailable.OnNext(false);
+                            this.portAvailable.OnNext(true);
+
+                            portOpened = DateTime.Now;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

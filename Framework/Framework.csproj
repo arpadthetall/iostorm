@@ -73,6 +73,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Plugins\SerialSwitcher.cs" />
+    <Compile Include="Helper\SerialFixedManager.cs" />
+    <Compile Include="Plugins\UpbPim.cs" />
     <Compile Include="RemoteHub.cs" />
     <Compile Include="BaseDevice.cs" />
     <Compile Include="DeviceId.cs" />
@@ -89,7 +92,8 @@
     <Compile Include="Interface\IDevice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
-    <Compile Include="SerialManager.cs" />
+    <Compile Include="Helper\SerialLineManager.cs" />
+    <Compile Include="Helper\SerialManager.cs" />
     <Compile Include="StormHub.cs" />
     <Compile Include="Plugins\YamahaReceiver.cs" />
   </ItemGroup>

@@ -16,23 +16,16 @@ namespace Storm.Plugins
     {
         public enum States
         {
-            NotInitialized,
             WaitingForO,
             WaitingForK,
             Running
         }
 
-        private const int PacketSize = 6;
-
         private Qlue.Logging.ILog log;
         private IHub hub;
-        private SerialManager serialManager;
+        private SerialFixedManager serialManager;
         private States state;
-        private DateTime lastReceivedByte;
-        private byte[] receiveBuffer;
-        private int receiveCount;
         private Dictionary<string, Func<Payload.IPayload>> irCommands;
-        private Timer keepAliveTimer;
         private string lastReceivedData;
         private DateTime lastReceivedStartOfIR;
         private DateTime lastReceivedIR;
@@ -44,24 +37,8 @@ namespace Storm.Plugins
 
             this.log = logFactory.GetLogger("IrmanReceiver");
 
-            this.serialManager = new SerialManager(logFactory, serialPortName, 9600);
-            this.lastReceivedByte = DateTime.MinValue;
-            this.receiveBuffer = new byte[PacketSize];
-            this.receiveCount = 0;
+            this.serialManager = new SerialFixedManager(logFactory, serialPortName, 9600, 6);
             this.irCommands = new Dictionary<string, Func<Payload.IPayload>>();
-
-            this.keepAliveTimer = new Timer(x =>
-            {
-                try
-                {
-                    if (this.serialManager.IsOpen && this.state != States.Running)
-                        Reset();
-                }
-                catch (Exception ex)
-                {
-                    this.log.WarnException("Exception in KeepAliveTimer", ex);
-                }
-            }, null, 5000, 5000);
 
             this.serialManager.PortAvailable.Subscribe(isOpen =>
                 {
@@ -69,64 +46,43 @@ namespace Storm.Plugins
                     {
                         Reset();
                     }
-                    else
-                        this.state = States.NotInitialized;
                 });
 
             this.serialManager.DataReceived
                 .Subscribe(data =>
                 {
-                    if (this.state == States.NotInitialized)
-                        // Ignore
-                        return;
-
-                    if (this.state == States.Running &&
-                        this.receiveCount > 0 &&
-                        (DateTime.Now - this.lastReceivedByte).TotalMilliseconds > 100)
+                    if (!this.serialManager.IsDeviceInitialized)
                     {
-                        // Reset
-                        this.receiveCount = 0;
+                        switch (this.state)
+                        {
+                            case States.WaitingForO:
+                                this.log.Trace("Received {0} (state {1})", data, this.state);
+                                if (data == 'O')
+                                    this.state = States.WaitingForK;
+                                break;
+
+                            case States.WaitingForK:
+                                this.log.Trace("Received {0} (state {1})", data, this.state);
+                                if (data == 'K')
+                                {
+                                    this.state = States.Running;
+                                    this.serialManager.IsDeviceInitialized = true;
+                                }
+                                else
+                                    this.state = States.WaitingForO;
+                                break;
+                        }
                     }
-
-                    switch (this.state)
-                    {
-                        case States.WaitingForO:
-                            this.log.Trace("Received {0} (state {1})", data, this.state);
-                            if (data == 'O')
-                                this.state = States.WaitingForK;
-                            break;
-
-                        case States.WaitingForK:
-                            this.log.Trace("Received {0} (state {1})", data, this.state);
-                            if (data == 'K')
-                                this.state = States.Running;
-                            else
-                                this.state = States.WaitingForO;
-                            break;
-
-                        case States.Running:
-                            if (this.receiveCount < PacketSize)
-                            {
-                                this.receiveBuffer[this.receiveCount++] = data;
-                            }
-
-                            if (this.receiveCount == PacketSize)
-                            {
-                                IrReceived(this.receiveBuffer);
-                                this.receiveCount = 0;
-                            }
-                            break;
-                    }
-
-                    this.lastReceivedByte = DateTime.Now;
                 });
+
+            this.serialManager.PacketReceived.Subscribe(IrReceived);
 
             this.serialManager.Start();
         }
 
         private void Reset()
         {
-            this.state = States.NotInitialized;
+            this.serialManager.IsDeviceInitialized = false;
 
             this.serialManager.RtsEnable = false;
             this.serialManager.DtrEnable = false;

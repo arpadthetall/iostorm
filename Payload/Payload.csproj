@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Audio\SetInputOutput.cs" />
     <Compile Include="Audio\MuteToggle.cs" />
     <Compile Include="Audio\Sound.cs" />
     <Compile Include="Audio\Theater.cs" />
@@ -52,6 +53,8 @@
     <Compile Include="InternalMessage.cs" />
     <Compile Include="Interface\IPayload.cs" />
     <Compile Include="IRCommand.cs" />
+    <Compile Include="Light\Off.cs" />
+    <Compile Include="Light\On.cs" />
     <Compile Include="Navigation\Jump.cs" />
     <Compile Include="Navigation\Options.cs" />
     <Compile Include="Navigation\Return.cs" />
@@ -108,10 +111,9 @@
     <Compile Include="Transport\Stop.cs" />
     <Compile Include="Transport\Play.cs" />
     <Compile Include="Transport\Pause.cs" />
+    <Compile Include="UpbCommand.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Light\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
