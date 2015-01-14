@@ -368,14 +368,20 @@ namespace Storm.Plugins
 
                     case 0x22:
                         result.Command = UpbCommands.Goto;
-                        if (packetLength > 7)
-                            result.Level = bytes[6];
-                        else
-                            // Missing level
-                            return null;
+                        switch(packetLength)
+                        {
+                            case 7:
+                                // Missing level
+                                return null;
 
-                        if (packetLength > 8)
-                            result.Rate = bytes[7];
+                            case 8:
+                                result.Level = bytes[6];
+                                break;
+
+                            case 9:
+                                result.Rate = bytes[7];
+                                break;
+                        }
                         break;
 
                     case 0x23:
@@ -416,6 +422,24 @@ namespace Storm.Plugins
 
                     case 0x27:
                         result.Command = UpbCommands.Toggle;
+                        switch(packetLength)
+                        {
+                            case 7:
+                                // Missing level
+                                return null;
+
+                            case 8:
+                                result.Level = bytes[6];
+                                break;
+
+                            case 9:
+                                result.ToggleCount = bytes[7];
+                                break;
+
+                            case 10:
+                                result.ToggleRate = bytes[7];
+                                break;
+                        }
                         if (packetLength > 7)
                             result.Level = bytes[6];
                         else
@@ -517,8 +541,6 @@ namespace Storm.Plugins
                 Tuple.Create(new RawSendCommand(SendTypes.ReadRegister, 0x0A, 0x02), "PR0A*"),
                 Tuple.Create(new RawSendCommand(SendTypes.WriteRegister, 0x70, 0xFF), "PA")
             };
-
-            var tst = UpbPimMessage.Decode("4804A6407586646F");
 
             this.serialManager.PortAvailable.Subscribe(isOpen =>
             {
