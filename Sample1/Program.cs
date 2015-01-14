@@ -12,8 +12,6 @@ namespace Storm.Sample1
     public class Program
     {
         private static IUnityContainer container;
-        //const string hubServer = "192.168.1.113";
-        const string hubServer = "localhost";
 
         public class Arguments
         {
@@ -22,6 +20,9 @@ namespace Storm.Sample1
             public string AudioSwitcherSerialPort { get; set; }
 
             public string IrManSerialPort { get; set; }
+
+            [ArgDefaultValue("localhost")]
+            public string HubServer { get; set; }
         }
 
         public static void Main(string[] args)
@@ -51,9 +52,8 @@ namespace Storm.Sample1
 
             string deviceId = Storm.DeviceId.GetDeviceId();
 
-            using (var hub = new Storm.StormHub(container, deviceId, remoteHubHost: hubServer))
+            using (var hub = new Storm.StormHub(container, deviceId, remoteHubHost: arguments.HubServer))
             {
-
                 if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
                     hub.LoadPlugin<Storm.Plugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
 
@@ -99,11 +99,11 @@ namespace Storm.Sample1
                     });
                 });
 
-                hub.BroadcastPayload(sample, new Payload.Audio.SetInputOutput
-                    {
-                        Input = 3,
-                        Output = 3
-                    });
+                //hub.BroadcastPayload(sample, new Payload.Audio.SetInputOutput
+                //    {
+                //        Input = 3,
+                //        Output = 3
+                //    });
 
                 Console.ReadLine();
             }

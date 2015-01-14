@@ -14,7 +14,7 @@ namespace Storm
 {
     internal class SerialManager : IDisposable
     {
-        private Qlue.Logging.ILog log;
+        protected Qlue.Logging.ILog log;
         private CancellationTokenSource cts;
         private SerialPort serialPort;
         private ISubject<byte> dataReceived;
@@ -133,6 +133,8 @@ namespace Storm
 
         public void Write(string data)
         {
+            this.log.Trace("Send {0}", data);
+
             this.serialPort.Write(data);
         }
 

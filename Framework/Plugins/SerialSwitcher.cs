@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Qlue.Logging;
 
 namespace Storm.Plugins
@@ -42,7 +43,7 @@ namespace Storm.Plugins
                             case States.WaitingForResponse:
                                 this.log.Trace("Received {0} (state {1})", data, this.state);
 
-                                if (data.StartsWith("A") || data.StartsWith("V"))
+                                if (data.StartsWith("A") || data.StartsWith("V") || data.Contains(" A") || data.Contains(" V"))
                                 {
                                     this.state = States.Running;
                                     this.serialManager.IsDeviceInitialized = true;
