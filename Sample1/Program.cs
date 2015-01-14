@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Practices.Unity;
+using PowerArgs;
 
 namespace Storm.Sample1
 {
@@ -14,8 +15,31 @@ namespace Storm.Sample1
         //const string hubServer = "192.168.1.113";
         const string hubServer = "localhost";
 
+        public class Arguments
+        {
+            public string UpbSerialPort { get; set; }
+
+            public string AudioSwitcherSerialPort { get; set; }
+
+            public string IrManSerialPort { get; set; }
+        }
+
         public static void Main(string[] args)
         {
+            Arguments arguments;
+
+            try
+            {
+                arguments = Args.Parse<Arguments>(args);
+            }
+            catch (ArgException ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ArgUsage.GenerateUsageFromTemplate<Arguments>());
+
+                return;
+            }
+
             container = new UnityContainer();
 
             var logFactory = new Qlue.Logging.NLogFactoryProvider();
@@ -25,22 +49,19 @@ namespace Storm.Sample1
 
             log.Info("Start up");
 
-            string command = string.Empty;
-
-            if (args.Length > 0)
-                command = args[0];
-
             string deviceId = Storm.DeviceId.GetDeviceId();
 
             using (var hub = new Storm.StormHub(container, deviceId, remoteHubHost: hubServer))
             {
-                var upb = hub.LoadPlugin<Storm.Plugins.UpbPim>(new ParameterOverride("serialPortName", "COM11"));
+
+                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
+                    hub.LoadPlugin<Storm.Plugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
 
                 hub.LoadPlugin<Storm.Plugins.YamahaReceiver>();
 
-                if (!string.IsNullOrEmpty(command))
+                if (!string.IsNullOrEmpty(arguments.IrManSerialPort))
                 {
-                    var irMan = hub.LoadPlugin<Storm.Plugins.IrmanReceiver>(new ParameterOverride("serialPortName", command));
+                    var irMan = hub.LoadPlugin<Storm.Plugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
 
                     // Map remote controls
                     RemoteMapping.IrManSony.MapRemoteControl(irMan);
@@ -48,6 +69,11 @@ namespace Storm.Sample1
 
                     var xlat = hub.LoadPlugin<Storm.RemoteMapping.ProtocolToPayload>();
                     xlat.MapSqueezeBoxRemote();
+                }
+
+                if (!string.IsNullOrEmpty(arguments.AudioSwitcherSerialPort))
+                {
+                    hub.LoadPlugin<Plugins.SerialSwitcher>(new ParameterOverride("serialPortName", arguments.AudioSwitcherSerialPort));
                 }
 
 
@@ -72,6 +98,12 @@ namespace Storm.Sample1
                         LightId = "072"
                     });
                 });
+
+                hub.BroadcastPayload(sample, new Payload.Audio.SetInputOutput
+                    {
+                        Input = 3,
+                        Output = 3
+                    });
 
                 Console.ReadLine();
             }

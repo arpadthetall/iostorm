@@ -48,6 +48,9 @@
     <Reference Include="NLog">
       <HintPath>..\_build\NuGet_Packages\NLog.3.2.0.0\lib\net45\NLog.dll</HintPath>
     </Reference>
+    <Reference Include="PowerArgs">
+      <HintPath>..\_build\NuGet_Packages\PowerArgs.2.5.0.0\lib\net40\PowerArgs.dll</HintPath>
+    </Reference>
     <Reference Include="Qlue.Logging">
       <HintPath>..\_build\NuGet_Packages\Qlue.Logging.1.0.0\lib\net45\Qlue.Logging.dll</HintPath>
     </Reference>
