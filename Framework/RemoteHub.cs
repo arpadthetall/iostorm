@@ -30,7 +30,8 @@ namespace IoStorm
             this.factory = new ConnectionFactory
             {
                 HostName = this.hostName,
-                AutomaticRecoveryEnabled = true
+                AutomaticRecoveryEnabled = true,
+                RequestedConnectionTimeout = 4000
             };
 
             this.serializer = new Serializer();
