@@ -133,7 +133,13 @@ namespace IoStorm
                 {
                     cts.Cancel();
 
-                    this.amqpReceivingTask.Wait();
+                    try
+                    {
+                        this.amqpReceivingTask.Wait();
+                    }
+                    catch
+                    {
+                    }
 
                     cts = null;
                 }
