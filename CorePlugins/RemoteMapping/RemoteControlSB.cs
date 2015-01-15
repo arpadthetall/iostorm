@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IoStorm.RemoteMapping
+namespace IoStorm.CorePlugins.RemoteMapping
 {
     [Obsolete]
     public static class RemoteControlSB
@@ -9,7 +9,7 @@ namespace IoStorm.RemoteMapping
         /// Learned using an Irman and SlimDevices/Squeezebox remote (NEC2 protocol)
         /// </summary>
         /// <param name="receiver"></param>
-        public static void MapRemoteControl(Plugins.IrmanReceiver receiver)
+        public static void MapRemoteControl(IoStorm.CorePlugins.IrmanReceiver receiver)
         {
             receiver.AddIrCommand("dokA/wAA", () => new Payload.Audio.VolumeDown());
 

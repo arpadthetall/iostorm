@@ -14,7 +14,7 @@ namespace IoStorm
     /// <summary>
     /// Serial manager for CR-ended responses (LF is ignored) with timeout on partial lines
     /// </summary>
-    internal class SerialLineManager : SerialManager
+    public class SerialLineManager : SerialManager
     {
         private StringBuilder buffer;
         private ISubject<string> lineReceived;

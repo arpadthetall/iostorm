@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins
+namespace IoStorm.CorePlugins
 {
     // Reference: http://www.simply-automated.com/documents/UpbDescriptionV1.2a.pdf
 

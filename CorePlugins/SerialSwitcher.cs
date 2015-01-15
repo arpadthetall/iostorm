@@ -2,7 +2,7 @@
 using System.Threading;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins
+namespace IoStorm.CorePlugins
 {
     public class SerialSwitcher : BaseDevice, IDisposable
     {

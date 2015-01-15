@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LircSharp", "LircSvc\LircSh
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{4134BE18-CF08-4E48-ABDB-1D886927F7B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CorePlugins", "CorePlugins\CorePlugins.csproj", "{4732AC66-FCC9-40BE-89EB-01F5BD9E9058}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{8F6FEE38-E697-49E0-8FB1-9226AEC60C4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,11 +51,17 @@ Global
 		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4732AC66-FCC9-40BE-89EB-01F5BD9E9058}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4732AC66-FCC9-40BE-89EB-01F5BD9E9058}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4732AC66-FCC9-40BE-89EB-01F5BD9E9058}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4732AC66-FCC9-40BE-89EB-01F5BD9E9058}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4} = {8F6FEE38-E697-49E0-8FB1-9226AEC60C4D}
 		{C686F27D-BBDB-4EDE-BA2D-6EA483E592FF} = {4134BE18-CF08-4E48-ABDB-1D886927F7B1}
+		{4732AC66-FCC9-40BE-89EB-01F5BD9E9058} = {8F6FEE38-E697-49E0-8FB1-9226AEC60C4D}
 	EndGlobalSection
 EndGlobal

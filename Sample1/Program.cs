@@ -55,25 +55,25 @@ namespace IoStorm.Sample1
             using (var hub = new IoStorm.StormHub(container, deviceId, remoteHubHost: arguments.HubServer))
             {
                 if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
-                    hub.LoadPlugin<IoStorm.Plugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
+                    hub.LoadPlugin<IoStorm.CorePlugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
 
-                hub.LoadPlugin<IoStorm.Plugins.YamahaReceiver>();
+                hub.LoadPlugin<IoStorm.CorePlugins.YamahaReceiver>();
 
                 if (!string.IsNullOrEmpty(arguments.IrManSerialPort))
                 {
-                    var irMan = hub.LoadPlugin<IoStorm.Plugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
+                    var irMan = hub.LoadPlugin<IoStorm.CorePlugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
 
                     // Map remote controls
-                    RemoteMapping.IrManSony.MapRemoteControl(irMan);
-                    RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
+                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
+                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
 
-                    var xlat = hub.LoadPlugin<IoStorm.RemoteMapping.ProtocolToPayload>();
+                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
                     xlat.MapSqueezeBoxRemote();
                 }
 
                 if (!string.IsNullOrEmpty(arguments.AudioSwitcherSerialPort))
                 {
-                    hub.LoadPlugin<Plugins.SerialSwitcher>(new ParameterOverride("serialPortName", arguments.AudioSwitcherSerialPort));
+                    hub.LoadPlugin<CorePlugins.SerialSwitcher>(new ParameterOverride("serialPortName", arguments.AudioSwitcherSerialPort));
                 }
 
 

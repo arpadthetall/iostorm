@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Reactive;
 using System.Reactive.Subjects;
-using IoStorm.RemoteMapping.IRProtocol;
+using IoStorm.IRProtocol;
 
-namespace IoStorm.RemoteMapping
+namespace IoStorm.CorePlugins.RemoteMapping
 {
     public static class IrManSony
     {
         // At some point these files should probably be external to the framework
 
-        public static void MapRemoteControl(Plugins.IrmanReceiver receiver)
+        public static void MapRemoteControl(IrmanReceiver receiver)
         {
             // Display
             receiver.AddIrCommand("XAAAAAAA", new Sony12(1, 58));

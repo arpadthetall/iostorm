@@ -12,7 +12,7 @@ using Qlue.Logging;
 
 namespace IoStorm
 {
-    internal class SerialManager : IDisposable
+    public class SerialManager : IDisposable
     {
         protected Qlue.Logging.ILog log;
         private CancellationTokenSource cts;

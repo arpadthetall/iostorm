@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IoStorm.RemoteMapping.IRProtocol
+namespace IoStorm.IRProtocol
 {
     // Reference: http://www.sbprojects.com/knowledge/ir/sirc.php
 

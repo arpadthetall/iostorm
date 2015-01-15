@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Reactive;
 using System.Reactive.Subjects;
-using IoStorm.RemoteMapping.IRProtocol;
+using IoStorm.IRProtocol;
 
-namespace IoStorm.RemoteMapping
+namespace IoStorm.CorePlugins.RemoteMapping
 {
     public static class IrManSqueezebox
     {
         // At some point these files should probably be external to the framework
 
-        public static void MapRemoteControl(Plugins.IrmanReceiver receiver)
+        public static void MapRemoteControl(IoStorm.CorePlugins.IrmanReceiver receiver)
         {
             // Vol -
             receiver.AddIrCommand("dokA/wAA", new NEC2(0x7689, 0x00ff));

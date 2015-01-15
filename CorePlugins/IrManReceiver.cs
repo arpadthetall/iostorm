@@ -10,7 +10,7 @@ using System.Reactive.Subjects;
 using System.IO.Ports;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins
+namespace IoStorm.CorePlugins
 {
     public class IrmanReceiver : BaseDevice, IDisposable
     {

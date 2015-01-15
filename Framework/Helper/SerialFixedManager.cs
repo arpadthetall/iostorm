@@ -14,7 +14,7 @@ namespace IoStorm
     /// <summary>
     /// Serial port manager for fixed packet sizes (manages timeout if partial packet received)
     /// </summary>
-    internal class SerialFixedManager : SerialManager
+    public class SerialFixedManager : SerialManager
     {
         private byte[] receiveBuffer;
         private int receiveCount;

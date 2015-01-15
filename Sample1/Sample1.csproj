@@ -89,6 +89,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CorePlugins\CorePlugins.csproj">
+      <Project>{4732ac66-fcc9-40be-89eb-01f5bd9e9058}</Project>
+      <Name>CorePlugins</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Payload\Payload.csproj">
       <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
       <Name>Payload</Name>

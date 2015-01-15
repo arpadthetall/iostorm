@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Qlue.Logging;
-using IoStorm.RemoteMapping.IRProtocol;
+using IoStorm.IRProtocol;
 
-namespace IoStorm.RemoteMapping
+namespace IoStorm.CorePlugins.RemoteMapping
 {
     public class ProtocolToPayload : BaseDevice
     {

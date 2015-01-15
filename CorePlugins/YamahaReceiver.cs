@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Reactive;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins
+namespace IoStorm.CorePlugins
 {
     public class YamahaReceiver : BaseDevice
     {
