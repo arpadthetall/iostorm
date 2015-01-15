@@ -92,7 +92,6 @@ namespace IoStorm.CorePlugins
                         if (!ToggleCount.HasValue)
                             throw new ArgumentNullException("ToggleCount missing");
                         commandValue = 0x27;
-                        level = Level;
                         toggleCount = ToggleCount.Value;
                         toggleRate = ToggleRate;
                         if (Rate.HasValue && PacketType == PacketTypes.Device && Channel.HasValue)
@@ -427,26 +426,17 @@ namespace IoStorm.CorePlugins
                         switch(packetLength)
                         {
                             case 7:
-                                // Missing level
+                                // Missing ToggleCount
                                 return null;
 
                             case 8:
-                                result.Level = bytes[6];
+                                result.ToggleCount = bytes[6];
                                 break;
 
                             case 9:
-                                result.ToggleCount = bytes[7];
-                                break;
-
-                            case 10:
                                 result.ToggleRate = bytes[7];
                                 break;
                         }
-                        if (packetLength > 7)
-                            result.Level = bytes[6];
-                        else
-                            // Missing ToggleCount?
-                            return null;
                         break;
 
                     case 0x30:
