@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework", "Framework\Fram
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample1", "Sample1\Sample1.csproj", "{8CB73454-8447-49F3-A914-396CF80FC296}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payload", "Payload\Payload.csproj", "{5411B38E-68A1-4917-81E4-46024B30E9EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CorePayload", "CorePayload\CorePayload.csproj", "{5411B38E-68A1-4917-81E4-46024B30E9EC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sonos", "Sonos\Sonos.csproj", "{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4}"
 EndProject

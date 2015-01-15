@@ -46,6 +46,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\_build\NuGet_Packages\Newtonsoft.Json.6.0.7\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="PluginManager">
+      <HintPath>..\lib\PluginManager.dll</HintPath>
+    </Reference>
     <Reference Include="Qlue.Logging">
       <HintPath>..\_build\NuGet_Packages\Qlue.Logging.1.0.0\lib\net45\Qlue.Logging.dll</HintPath>
     </Reference>
@@ -93,9 +96,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Payload\Payload.csproj">
+    <ProjectReference Include="..\CorePayload\CorePayload.csproj">
       <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
-      <Name>Payload</Name>
+      <Name>CorePayload</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

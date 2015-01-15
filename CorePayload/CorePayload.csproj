@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>IoStorm.Payload</RootNamespace>
-    <AssemblyName>IoStorm.BasicPayload</AssemblyName>
+    <AssemblyName>IoStorm.CorePayload</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

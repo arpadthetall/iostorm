@@ -93,9 +93,9 @@
       <Project>{4732ac66-fcc9-40be-89eb-01f5bd9e9058}</Project>
       <Name>CorePlugins</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Payload\Payload.csproj">
+    <ProjectReference Include="..\CorePayload\CorePayload.csproj">
       <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
-      <Name>Payload</Name>
+      <Name>CorePayload</Name>
     </ProjectReference>
     <ProjectReference Include="..\Sonos\Sonos.csproj">
       <Project>{c97da73f-cee7-47c3-8b03-ac5dcbcbdee4}</Project>

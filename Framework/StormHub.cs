@@ -24,6 +24,7 @@ namespace IoStorm
         private ISubject<Payload.InternalMessage> localQueue;
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
+        private rapid.Plugins.PluginManager pluginManager;
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = "localhost")
         {
@@ -31,6 +32,11 @@ namespace IoStorm
             this.ourDeviceId = ourDeviceId;
 
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
+
+            this.pluginManager = new rapid.Plugins.PluginManager("Plugins", true);
+            this.pluginManager.PluginsReloaded += pluginManager_PluginsReloaded;
+            System.IO.File.Copy("IoStorm.CorePayload.dll", @"Plugins\IoStorm.CorePayload.dll", true);
+            System.IO.File.Copy("IoStorm.Framework.dll", @"Plugins\IoStorm.Framework.dll", true);
 
             this.cts = new CancellationTokenSource();
             this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), remoteHubHost, ourDeviceId);
@@ -67,6 +73,22 @@ namespace IoStorm
                 {
                     this.log.Debug("Received external payload {0} ({1})", p.OriginDeviceId, p.Payload.GetDebugInfo());
                 });
+
+            this.pluginManager.Start();
+        }
+
+        private void pluginManager_PluginsReloaded(object sender, EventArgs e)
+        {
+            this.log.Info("Plugins reloaded");
+
+            foreach (string pluginObjectName in this.pluginManager.GetSubclasses(typeof(IDevice).FullName))
+            {
+                //MarshalByRefObject pluginObject = pluginManager.CreateInstance(
+                //    pluginObjectName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.CreateInstance,
+                //    new object[] { });
+
+                this.log.Info("Loaded plugin {0}", pluginObjectName);
+            }
         }
 
         private void WireUpPlugin(
@@ -129,9 +151,16 @@ namespace IoStorm
         {
             if (disposing)
             {
-                if (cts != null)
+                if (this.pluginManager != null)
                 {
-                    cts.Cancel();
+                    this.pluginManager.Stop();
+
+                    this.pluginManager = null;
+                }
+
+                if (this.cts != null)
+                {
+                    this.cts.Cancel();
 
                     try
                     {
@@ -141,7 +170,7 @@ namespace IoStorm
                     {
                     }
 
-                    cts = null;
+                    this.cts = null;
                 }
 
                 if (this.remoteHub != null)
