@@ -5,11 +5,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using RabbitMQ.Client;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.Practices.Unity;
 using Qlue.Logging;
+using System.Reflection;
 
 namespace IoStorm
 {
@@ -24,7 +26,7 @@ namespace IoStorm
         private ISubject<Payload.InternalMessage> localQueue;
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
-        private rapid.Plugins.PluginManager pluginManager;
+        private string configPath;
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = "localhost")
         {
@@ -33,10 +35,20 @@ namespace IoStorm
 
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
 
-            this.pluginManager = new rapid.Plugins.PluginManager("Plugins", true);
-            this.pluginManager.PluginsReloaded += pluginManager_PluginsReloaded;
-            System.IO.File.Copy("IoStorm.CorePayload.dll", @"Plugins\IoStorm.CorePayload.dll", true);
-            System.IO.File.Copy("IoStorm.Framework.dll", @"Plugins\IoStorm.Framework.dll", true);
+            string pluginFullPath = GetFullPath("Plugins");
+            if (!Directory.Exists(pluginFullPath))
+                Directory.CreateDirectory(pluginFullPath);
+
+            this.configPath = GetFullPath("Config");
+            if (!Directory.Exists(this.configPath))
+                Directory.CreateDirectory(this.configPath);
+
+            // Copy common dependencies
+            File.Copy("IoStorm.CorePayload.dll", Path.Combine(pluginFullPath, "IoStorm.CorePayload.dll"), true);
+            File.Copy("IoStorm.Framework.dll", Path.Combine(pluginFullPath, "IoStorm.Framework.dll"), true);
+            var pluginManager = new PluginManager<IDevice>(pluginFullPath,
+                "IoStorm.CorePayload.dll",
+                "IoStorm.Framework.dll");
 
             this.cts = new CancellationTokenSource();
             this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), remoteHubHost, ourDeviceId);
@@ -74,21 +86,37 @@ namespace IoStorm
                     this.log.Debug("Received external payload {0} ({1})", p.OriginDeviceId, p.Payload.GetDebugInfo());
                 });
 
-            this.pluginManager.Start();
+            try
+            {
+                foreach (var plugin in pluginManager.GetSubclasses())
+                {
+                    this.log.Debug("Loading plugin {0}", plugin.Item1);
+
+                    try
+                    {
+                        var pluginType = pluginManager.LoadPluginType(plugin.Item2);
+
+                        var instance = LoadPlugin(pluginType);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.log.WarnException(ex, "Failed to load plugin {0}", plugin.Item1);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.log.WarnException(ex, "Failed to load plugins");
+            }
         }
 
-        private void pluginManager_PluginsReloaded(object sender, EventArgs e)
+        public string GetFullPath(string pluginRelativePath)
         {
-            this.log.Info("Plugins reloaded");
+            string assemblyLoc = Assembly.GetExecutingAssembly().Location;
+            string currentDirectory = assemblyLoc.Substring(0, assemblyLoc.LastIndexOf(Path.DirectorySeparatorChar) + 1);
+            string fullPath = Path.Combine(currentDirectory, pluginRelativePath);
 
-            foreach (string pluginObjectName in this.pluginManager.GetSubclasses(typeof(IDevice).FullName))
-            {
-                //MarshalByRefObject pluginObject = pluginManager.CreateInstance(
-                //    pluginObjectName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.CreateInstance,
-                //    new object[] { });
-
-                this.log.Info("Loaded plugin {0}", pluginObjectName);
-            }
+            return fullPath;
         }
 
         private void WireUpPlugin(
@@ -130,11 +158,24 @@ namespace IoStorm
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
+            allOverrides.Add(new ParameterOverride("instanceId", Guid.NewGuid().ToString("n")));
             allOverrides.AddRange(overrides);
 
             var plugin = this.container.Resolve<T>(allOverrides.ToArray());
 
-            plugin.InstanceId = Guid.NewGuid().ToString("n");
+            WireUpPlugin(plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+
+            return plugin;
+        }
+
+        public IDevice LoadPlugin(Type type, params ParameterOverride[] overrides)
+        {
+            var allOverrides = new List<ResolverOverride>();
+            allOverrides.Add(new DependencyOverride<IHub>(this));
+            allOverrides.Add(new ParameterOverride("instanceId", Guid.NewGuid().ToString("n")));
+            allOverrides.AddRange(overrides);
+
+            var plugin = this.container.Resolve(type, allOverrides.ToArray()) as IDevice;
 
             WireUpPlugin(plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
@@ -143,13 +184,6 @@ namespace IoStorm
 
         public void Dispose()
         {
-            if (this.pluginManager != null)
-            {
-                this.pluginManager.Stop();
-
-                this.pluginManager = null;
-            }
-
             if (this.cts != null)
             {
                 this.cts.Cancel();
@@ -170,6 +204,8 @@ namespace IoStorm
                 this.remoteHub.Dispose();
                 this.remoteHub = null;
             }
+
+            BinaryRage.DB.WaitForCompletion();
         }
 
         public void BroadcastPayload(IDevice sender, Payload.IPayload payload)
@@ -188,6 +224,24 @@ namespace IoStorm
                 {
                     action((T)bp.Payload);
                 });
+        }
+
+        public string GetSetting(IDevice device, string key)
+        {
+            string fullKey = string.Format("{0}-{1}", device.GetType().Name, key);
+
+            try
+            {
+                return BinaryRage.DB.Get<string>(fullKey, this.configPath);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                string value = null;
+
+                BinaryRage.DB.Insert(fullKey, value, this.configPath);
+
+                return value;
+            }
         }
     }
 }

@@ -369,7 +369,7 @@ namespace IoStorm.CorePlugins
 
                     case 0x22:
                         result.Command = UpbCommands.Goto;
-                        switch(packetLength)
+                        switch (packetLength)
                         {
                             case 7:
                                 // Missing level
@@ -423,7 +423,7 @@ namespace IoStorm.CorePlugins
 
                     case 0x27:
                         result.Command = UpbCommands.Toggle;
-                        switch(packetLength)
+                        switch (packetLength)
                         {
                             case 7:
                                 // Missing ToggleCount
@@ -520,7 +520,8 @@ namespace IoStorm.CorePlugins
         private Tuple<RawSendCommand, string>[] initData;
         private int initState;
 
-        public UpbPim(ILogFactory logFactory, IHub hub, string serialPortName)
+        public UpbPim(ILogFactory logFactory, IHub hub, string serialPortName, string instanceId)
+            : base(instanceId)
         {
             this.hub = hub;
 

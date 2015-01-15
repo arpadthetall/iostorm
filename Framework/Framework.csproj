@@ -46,9 +46,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\_build\NuGet_Packages\Newtonsoft.Json.6.0.7\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="PluginManager">
-      <HintPath>..\lib\PluginManager.dll</HintPath>
-    </Reference>
     <Reference Include="Qlue.Logging">
       <HintPath>..\_build\NuGet_Packages\Qlue.Logging.1.0.0\lib\net45\Qlue.Logging.dll</HintPath>
     </Reference>
@@ -81,6 +78,8 @@
     <Compile Include="IRProtocol\NEC2.cs" />
     <Compile Include="IRProtocol\Sony12.cs" />
     <Compile Include="IRProtocol\Sony15.cs" />
+    <Compile Include="Plugin\PluginManager.cs" />
+    <Compile Include="Plugin\RemoteLoader.cs" />
     <Compile Include="RemoteHub.cs" />
     <Compile Include="BaseDevice.cs" />
     <Compile Include="DeviceId.cs" />

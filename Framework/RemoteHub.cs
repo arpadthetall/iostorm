@@ -75,6 +75,8 @@ namespace IoStorm
                 {
                     foreach (var channel in this.channels.Values)
                     {
+                        channel.Close();
+
                         channel.Dispose();
                     }
 

@@ -8,6 +8,11 @@ namespace IoStorm
 {
     public abstract class BaseDevice : IDevice
     {
-        public string InstanceId { get; set; }
+        public string InstanceId { get; private set; }
+
+        public BaseDevice(string instanceId)
+        {
+            InstanceId = instanceId;
+        }
     }
 }

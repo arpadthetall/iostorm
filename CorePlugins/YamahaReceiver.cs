@@ -14,7 +14,8 @@ namespace IoStorm.CorePlugins
         private IHub hub;
         private double currentVolume;
 
-        public YamahaReceiver(ILogFactory logFactory, IHub hub)
+        public YamahaReceiver(ILogFactory logFactory, IHub hub, string instanceId)
+            : base(instanceId)
         {
             this.log = logFactory.GetLogger("YamahaReceiver");
             this.hub = hub;

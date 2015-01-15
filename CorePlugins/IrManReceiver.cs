@@ -31,11 +31,17 @@ namespace IoStorm.CorePlugins
         private DateTime lastReceivedIR;
         private int repeated;
 
-        public IrmanReceiver(ILogFactory logFactory, IHub hub, string serialPortName)
+        public IrmanReceiver(ILogFactory logFactory, IHub hub, string instanceId)
+            : base(instanceId)
         {
             this.hub = hub;
 
             this.log = logFactory.GetLogger("IrmanReceiver");
+
+            string serialPortName = this.hub.GetSetting(this, "SerialPortName");
+
+            if (string.IsNullOrEmpty(serialPortName))
+                throw new ArgumentException("Missing SerialPortName setting");
 
             this.serialManager = new SerialFixedManager(logFactory, serialPortName, 9600, 6);
             this.irCommands = new Dictionary<string, Func<Payload.IPayload>>();

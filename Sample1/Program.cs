@@ -54,7 +54,7 @@ namespace IoStorm.Sample1
 
             using (var hub = new IoStorm.StormHub(container, deviceId, remoteHubHost: arguments.HubServer))
             {
-                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
+/*                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
                     hub.LoadPlugin<IoStorm.CorePlugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
 
                 hub.LoadPlugin<IoStorm.CorePlugins.YamahaReceiver>();
@@ -98,7 +98,7 @@ namespace IoStorm.Sample1
                         LightId = "072"
                     });
                 });
-
+                */
                 //hub.BroadcastPayload(sample, new Payload.Audio.SetInputOutput
                 //    {
                 //        Input = 3,

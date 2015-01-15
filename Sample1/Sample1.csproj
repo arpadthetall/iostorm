@@ -89,17 +89,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CorePlugins\CorePlugins.csproj">
-      <Project>{4732ac66-fcc9-40be-89eb-01f5bd9e9058}</Project>
-      <Name>CorePlugins</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CorePayload\CorePayload.csproj">
       <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
       <Name>CorePayload</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Sonos\Sonos.csproj">
-      <Project>{c97da73f-cee7-47c3-8b03-ac5dcbcbdee4}</Project>
-      <Name>Sonos</Name>
     </ProjectReference>
     <ProjectReference Include="..\Framework\Framework.csproj">
       <Project>{13f28e19-a026-457c-be49-d140cb1f33d3}</Project>
@@ -107,6 +99,11 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>MKDIR $(TargetDir)Plugins\
+COPY $(SolutionDir)CorePlugins\bin\$(ConfigurationName)\IoStorm.CorePlugins.* $(TargetDir)Plugins\
+</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

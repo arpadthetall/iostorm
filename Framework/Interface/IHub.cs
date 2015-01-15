@@ -9,5 +9,7 @@ namespace IoStorm
     public interface IHub
     {
         void BroadcastPayload(IDevice sender, Payload.IPayload payload);
+
+        string GetSetting(IDevice device, string key);
     }
 }

@@ -14,7 +14,8 @@ namespace IoStorm.Sonos
         private IHub hub;
         private SonosDiscovery discovery;
 
-        public Sonos(Qlue.Logging.ILogFactory logFactory, IHub hub)
+        public Sonos(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+            : base(instanceId)
         {
             this.hub = hub;
 

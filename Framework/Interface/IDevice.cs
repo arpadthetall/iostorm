@@ -9,6 +9,6 @@ namespace IoStorm
 {
     public interface IDevice
     {
-        string InstanceId { get; set; }
+        string InstanceId { get; }
     }
 }

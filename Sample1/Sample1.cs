@@ -10,7 +10,8 @@ namespace IoStorm.Sample1
 {
     public class Sample1 : BaseDevice
     {
-        public Sample1()
+        public Sample1(string instanceId)
+            : base(instanceId)
         {
         }
     }

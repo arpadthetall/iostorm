@@ -14,7 +14,8 @@ namespace IoStorm.CorePlugins.RemoteMapping
         private IHub hub;
         private Dictionary<Payload.IIRProtocol, Func<Payload.IPayload>> irToPayload;
 
-        public ProtocolToPayload(ILogFactory logFactory, IHub hub)
+        public ProtocolToPayload(ILogFactory logFactory, IHub hub, string instanceId)
+            : base(instanceId)
         {
             this.log = logFactory.GetLogger("ProtocolToPayload");
             this.hub = hub;

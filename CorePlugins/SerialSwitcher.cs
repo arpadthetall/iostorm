@@ -17,7 +17,8 @@ namespace IoStorm.CorePlugins
         private SerialLineManager serialManager;
         private States state;
 
-        public SerialSwitcher(ILogFactory logFactory, IHub hub, string serialPortName)
+        public SerialSwitcher(ILogFactory logFactory, IHub hub, string serialPortName, string instanceId)
+            : base(instanceId)
         {
             this.hub = hub;
 
