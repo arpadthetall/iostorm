@@ -9,7 +9,7 @@ namespace IoStorm.CorePlugins.RemoteMapping
     {
         // At some point these files should probably be external to the framework
 
-        public static void MapRemoteControl(IoStorm.CorePlugins.IrmanReceiver receiver)
+        public static void MapRemoteControl(IoStorm.CorePlugins.IrManReceiver receiver)
         {
             // Vol -
             receiver.AddIrCommand("dokA/wAA", new NEC2(0x7689, 0x00ff));

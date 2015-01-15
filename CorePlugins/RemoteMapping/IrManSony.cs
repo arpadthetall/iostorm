@@ -9,7 +9,7 @@ namespace IoStorm.CorePlugins.RemoteMapping
     {
         // At some point these files should probably be external to the framework
 
-        public static void MapRemoteControl(IrmanReceiver receiver)
+        public static void MapRemoteControl(IrManReceiver receiver)
         {
             // Display
             receiver.AddIrCommand("XAAAAAAA", new Sony12(1, 58));

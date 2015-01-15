@@ -12,7 +12,7 @@ using Qlue.Logging;
 
 namespace IoStorm.CorePlugins
 {
-    public class IrmanReceiver : BaseDevice, IDisposable
+    public class IrManReceiver : BaseDevice, IDisposable
     {
         public enum States
         {
@@ -31,7 +31,7 @@ namespace IoStorm.CorePlugins
         private DateTime lastReceivedIR;
         private int repeated;
 
-        public IrmanReceiver(ILogFactory logFactory, IHub hub, string instanceId)
+        public IrManReceiver(ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
         {
             this.hub = hub;
