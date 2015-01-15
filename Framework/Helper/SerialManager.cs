@@ -46,12 +46,6 @@ namespace IoStorm
             this.deviceInitialized = new Subject<bool>();
         }
 
-        ~SerialManager()
-        {
-            // Finalizer calls Dispose(false)
-            Dispose(false);
-        }
-
         public void Start()
         {
             Task.Factory.StartNew(() => PortMonitor(), TaskCreationOptions.LongRunning);
@@ -219,31 +213,22 @@ namespace IoStorm
         {
             this.log.Trace("Disposing");
 
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+            this.cts.Cancel();
 
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
+            if (this.serialPort != null)
             {
-                cts.Cancel();
-
-                if (this.serialPort != null)
+                try
                 {
-                    try
-                    {
-                        if (this.serialPort.IsOpen)
-                            this.serialPort.Close();
-                    }
-                    catch
-                    {
-                    }
-
-                    this.serialPort.Dispose();
-
-                    this.serialPort = null;
+                    if (this.serialPort.IsOpen)
+                        this.serialPort.Close();
                 }
+                catch
+                {
+                }
+
+                this.serialPort.Dispose();
+
+                this.serialPort = null;
             }
         }
     }

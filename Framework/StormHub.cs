@@ -143,41 +143,32 @@ namespace IoStorm
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
+            if (this.pluginManager != null)
             {
-                if (this.pluginManager != null)
-                {
-                    this.pluginManager.Stop();
+                this.pluginManager.Stop();
 
-                    this.pluginManager = null;
+                this.pluginManager = null;
+            }
+
+            if (this.cts != null)
+            {
+                this.cts.Cancel();
+
+                try
+                {
+                    this.amqpReceivingTask.Wait();
+                }
+                catch
+                {
                 }
 
-                if (this.cts != null)
-                {
-                    this.cts.Cancel();
+                this.cts = null;
+            }
 
-                    try
-                    {
-                        this.amqpReceivingTask.Wait();
-                    }
-                    catch
-                    {
-                    }
-
-                    this.cts = null;
-                }
-
-                if (this.remoteHub != null)
-                {
-                    this.remoteHub.Dispose();
-                    this.remoteHub = null;
-                }
+            if (this.remoteHub != null)
+            {
+                this.remoteHub.Dispose();
+                this.remoteHub = null;
             }
         }
 

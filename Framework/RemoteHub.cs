@@ -69,35 +69,26 @@ namespace IoStorm
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
+            if (this.channels != null)
             {
-                if (this.channels != null)
+                lock (this.channels)
                 {
-                    lock (this.channels)
+                    foreach (var channel in this.channels.Values)
                     {
-                        foreach (var channel in this.channels.Values)
-                        {
-                            channel.Dispose();
-                        }
-
-                        this.channels.Clear();
+                        channel.Dispose();
                     }
 
-                    this.channels = null;
+                    this.channels.Clear();
                 }
 
-                if (this.connection != null)
-                {
-                    this.connection.Dispose();
+                this.channels = null;
+            }
 
-                    this.connection = null;
-                }
+            if (this.connection != null)
+            {
+                this.connection.Dispose();
+
+                this.connection = null;
             }
         }
 
