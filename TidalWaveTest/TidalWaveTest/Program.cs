@@ -45,7 +45,7 @@ namespace TidalWaveTest
             // TODO: Some kind of BitConverter for this?
 
             byte offset = 0;
-            for (var i = 7; i < message.Length; i++)
+            for (var i = 7; i <= 35; i++)
             {
                 var b = message[i];
 
