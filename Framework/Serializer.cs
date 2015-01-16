@@ -14,7 +14,8 @@ namespace IoStorm
             JsonSerializerSettings settings = new JsonSerializerSettings
             {
                 Formatting = Formatting.None,
-                TypeNameHandling = TypeNameHandling.All
+                TypeNameHandling = TypeNameHandling.All,
+                TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple
             };
 
             return JsonConvert.SerializeObject(obj, settings);
@@ -25,7 +26,8 @@ namespace IoStorm
             JsonSerializerSettings settings = new JsonSerializerSettings
             {
                 MissingMemberHandling = MissingMemberHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.All
+                TypeNameHandling = TypeNameHandling.All,
+                TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple
             };
 
             return JsonConvert.DeserializeObject(input, settings);
