@@ -126,6 +126,16 @@ namespace IoStorm.Sample1
                 //        Output = 3
                 //    });
 
+                //Task.Delay(3000).ContinueWith(x =>
+                //    {
+                //        var sample = hub.LoadPlugin<Sample1>();
+                //        hub.BroadcastPayload(sample, new Payload.Light.Off
+                //        {
+                //            LightId = "053"
+                //        });
+                //    });
+
+
                 Console.ReadLine();
             }
         }
