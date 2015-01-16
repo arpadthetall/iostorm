@@ -20,9 +20,9 @@ namespace IoStorm
     /// <summary>
     /// The remote loader loads assumblies into a remote <see cref="AppDomain"/>
     /// </summary>
-    internal class RemoteLoader : MarshalByRefObject
+    internal class RemoteLoader<T> : MarshalByRefObject
     {
-        protected List<Type> typeList = new List<Type>();
+        protected List<AvailablePlugin> typeList = new List<AvailablePlugin>();
 
         /// <summary>
         /// Creates a remote assembly loader
@@ -43,8 +43,25 @@ namespace IoStorm
             var assembly = Assembly.Load(filename);
             foreach (Type loadedType in assembly.GetTypes())
             {
-                if (!loadedType.IsAbstract)
-                    typeList.Add(loadedType);
+                if (!loadedType.IsAbstract && typeof(T).IsAssignableFrom(loadedType))
+                {
+                    var availablePlugin = new AvailablePlugin
+                    {
+                        PluginId = loadedType.FullName,
+                        AssemblyQualifiedName = loadedType.AssemblyQualifiedName
+                    };
+
+                    var attributes = loadedType.GetCustomAttribute<Plugin.PluginAttribute>(true);
+
+                    if (attributes != null)
+                    {
+                        availablePlugin.Author = attributes.Author;
+                        availablePlugin.Description = attributes.Description;
+                        availablePlugin.Name = attributes.Name;
+                    }
+
+                    typeList.Add(availablePlugin);
+                }
             }
         }
 
@@ -52,13 +69,9 @@ namespace IoStorm
         /// Retrieves the type objects for all subclasses of the given type within the loaded plugins.
         /// </summary>
         /// <returns>All subclases</returns>
-        public Tuple<string, string>[] GetSubclasses<T>()
+        public AvailablePlugin[] GetSubclasses()
         {
-            var classList = this.typeList
-                .Where(x => typeof(T).IsAssignableFrom(x))
-                .Select(x => Tuple.Create(x.FullName, x.AssemblyQualifiedName));
-
-            return classList.ToArray();
+            return this.typeList.ToArray();
         }
     }
 }

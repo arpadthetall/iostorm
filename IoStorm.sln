@@ -6,6 +6,10 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework", "Framework\Framework.csproj", "{13F28E19-A026-457C-BE49-D140CB1F33D3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample1", "Sample1\Sample1.csproj", "{8CB73454-8447-49F3-A914-396CF80FC296}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4} = {C97DA73F-CEE7-47C3-8B03-AC5DCBCBDEE4}
+		{4732AC66-FCC9-40BE-89EB-01F5BD9E9058} = {4732AC66-FCC9-40BE-89EB-01F5BD9E9058}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CorePayload", "CorePayload\CorePayload.csproj", "{5411B38E-68A1-4917-81E4-46024B30E9EC}"
 EndProject

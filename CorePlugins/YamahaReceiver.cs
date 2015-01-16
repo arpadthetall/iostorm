@@ -17,8 +17,12 @@ namespace IoStorm.CorePlugins
         public YamahaReceiver(ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
         {
-            this.log = logFactory.GetLogger("YamahaReceiver");
             this.hub = hub;
+            this.log = logFactory.GetLogger("YamahaReceiver");
+
+            string serialPortName = this.hub.GetSetting(this, "SerialPortName");
+            if (string.IsNullOrEmpty(serialPortName))
+                throw new ArgumentException("Missing SerialPortName setting");
         }
 
         public void Incoming(Payload.Audio.ChangeVolume payload)

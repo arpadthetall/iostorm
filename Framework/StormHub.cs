@@ -27,6 +27,9 @@ namespace IoStorm
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
         private string configPath;
+        private PluginManager<IDevice> pluginManager;
+        protected List<DeviceInstance> deviceInstances;
+        private IReadOnlyList<AvailablePlugin> availablePlugins;
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = "localhost")
         {
@@ -46,9 +49,11 @@ namespace IoStorm
             // Copy common dependencies
             File.Copy("IoStorm.CorePayload.dll", Path.Combine(pluginFullPath, "IoStorm.CorePayload.dll"), true);
             File.Copy("IoStorm.Framework.dll", Path.Combine(pluginFullPath, "IoStorm.Framework.dll"), true);
-            var pluginManager = new PluginManager<IDevice>(pluginFullPath,
+            this.pluginManager = new PluginManager<IDevice>(pluginFullPath,
                 "IoStorm.CorePayload.dll",
                 "IoStorm.Framework.dll");
+
+            this.availablePlugins = this.pluginManager.GetAvailablePlugins();
 
             this.cts = new CancellationTokenSource();
             this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), remoteHubHost, ourDeviceId);
@@ -88,26 +93,95 @@ namespace IoStorm
 
             try
             {
-                foreach (var plugin in pluginManager.GetSubclasses())
+                this.deviceInstances = BinaryRage.DB.Get<List<DeviceInstance>>("DeviceInstances", this.configPath);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                this.deviceInstances = new List<DeviceInstance>();
+            }
+
+            StartDeviceInstances();
+        }
+
+        public IReadOnlyList<AvailablePlugin> AvailablePlugins
+        {
+            get { return this.availablePlugins; }
+        }
+
+        public IReadOnlyList<DeviceInstance> DeviceInstances
+        {
+            get { return this.deviceInstances.AsReadOnly(); }
+        }
+
+        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
+        {
+            var deviceInstance = new DeviceInstance
+            {
+                InstanceId = Guid.NewGuid().ToString("n"),
+                PluginId = plugin.PluginId,
+                Name = name
+            };
+
+            lock (this.deviceInstances)
+            {
+                this.deviceInstances.Add(deviceInstance);
+            }
+
+            SaveDeviceInstances();
+
+            // Save settings
+            foreach (var setting in settings)
+            {
+                SaveSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Item1, setting.Item2);
+            }
+
+            var pluginInstance = StartDeviceInstance(deviceInstance);
+
+            return Tuple.Create(deviceInstance, pluginInstance);
+        }
+
+        private void StartDeviceInstances()
+        {
+            foreach (var deviceInstance in this.deviceInstances)
+            {
+                StartDeviceInstance(deviceInstance);
+            }
+        }
+
+        private IDevice StartDeviceInstance(DeviceInstance deviceInstance)
+        {
+            try
+            {
+                var pluginType = this.pluginManager.GetAvailablePlugins().FirstOrDefault(x => x.PluginId == deviceInstance.PluginId);
+
+                if (pluginType == null)
                 {
-                    this.log.Debug("Loading plugin {0}", plugin.Item1);
-
-                    try
-                    {
-                        var pluginType = pluginManager.LoadPluginType(plugin.Item2);
-
-                        var instance = LoadPlugin(pluginType);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.log.WarnException(ex, "Failed to load plugin {0}", plugin.Item1);
-                    }
+                    this.log.Error("Plugin {0} for instance {1} not found", deviceInstance.PluginId, deviceInstance.Name);
+                    return null;
                 }
+
+                var plugin = this.pluginManager.LoadPluginType(pluginType.AssemblyQualifiedName);
+
+                if (plugin == null)
+                {
+                    this.log.Error("Failed to instantiate plugin {0}", pluginType.AssemblyQualifiedName);
+                    return null;
+                }
+
+                var pluginInstance = LoadPlugin(plugin, deviceInstance.InstanceId);
+
+                return pluginInstance;
             }
             catch (Exception ex)
             {
-                this.log.WarnException(ex, "Failed to load plugins");
+                this.log.WarnException(ex, "Failed to load plugin for device instance {0}", deviceInstance.Name);
+                return null;
             }
+        }
+
+        public void SaveDeviceInstances()
+        {
+            BinaryRage.DB.Insert("DeviceInstances", this.deviceInstances, this.configPath);
         }
 
         public string GetFullPath(string pluginRelativePath)
@@ -154,6 +228,7 @@ namespace IoStorm
             }
         }
 
+        [Obsolete]
         public T LoadPlugin<T>(params ParameterOverride[] overrides) where T : IDevice
         {
             var allOverrides = new List<ResolverOverride>();
@@ -168,11 +243,11 @@ namespace IoStorm
             return plugin;
         }
 
-        public IDevice LoadPlugin(Type type, params ParameterOverride[] overrides)
+        public IDevice LoadPlugin(Type type, string instanceId, params ParameterOverride[] overrides)
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
-            allOverrides.Add(new ParameterOverride("instanceId", Guid.NewGuid().ToString("n")));
+            allOverrides.Add(new ParameterOverride("instanceId", instanceId));
             allOverrides.AddRange(overrides);
 
             var plugin = this.container.Resolve(type, allOverrides.ToArray()) as IDevice;
@@ -228,7 +303,7 @@ namespace IoStorm
 
         public string GetSetting(IDevice device, string key)
         {
-            string fullKey = string.Format("{0}-{1}", device.GetType().Name, key);
+            string fullKey = string.Format("{0}-{1}-{2}", device.GetType().FullName, device.InstanceId, key);
 
             try
             {
@@ -242,6 +317,13 @@ namespace IoStorm
 
                 return value;
             }
+        }
+
+        public void SaveSetting(string deviceName, string instanceId, string key, string value)
+        {
+            string fullKey = string.Format("{0}-{1}-{2}", deviceName, instanceId, key);
+
+            BinaryRage.DB.Insert(fullKey, value, this.configPath);
         }
     }
 }

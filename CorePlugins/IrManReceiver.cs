@@ -9,9 +9,11 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.IO.Ports;
 using Qlue.Logging;
+using IoStorm.Plugin;
 
 namespace IoStorm.CorePlugins
 {
+    [Plugin(Name = "IrMan Receiver", Description = "Receive IR signals from IrMan over serial port", Author = "IoStorm")]
     public class IrManReceiver : BaseDevice, IDisposable
     {
         public enum States
@@ -36,10 +38,9 @@ namespace IoStorm.CorePlugins
         {
             this.hub = hub;
 
-            this.log = logFactory.GetLogger("IrmanReceiver");
+            this.log = logFactory.GetLogger("IrManReceiver");
 
             string serialPortName = this.hub.GetSetting(this, "SerialPortName");
-
             if (string.IsNullOrEmpty(serialPortName))
                 throw new ArgumentException("Missing SerialPortName setting");
 

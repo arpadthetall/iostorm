@@ -520,12 +520,16 @@ namespace IoStorm.CorePlugins
         private Tuple<RawSendCommand, string>[] initData;
         private int initState;
 
-        public UpbPim(ILogFactory logFactory, IHub hub, string serialPortName, string instanceId)
+        public UpbPim(ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
         {
             this.hub = hub;
 
             this.log = logFactory.GetLogger("UPB");
+
+            string serialPortName = this.hub.GetSetting(this, "SerialPortName");
+            if (string.IsNullOrEmpty(serialPortName))
+                throw new ArgumentException("Missing SerialPortName setting");
 
             this.serialManager = new SerialLineManager(logFactory, serialPortName, 4800);
 

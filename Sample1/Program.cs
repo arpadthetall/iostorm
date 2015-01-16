@@ -54,51 +54,72 @@ namespace IoStorm.Sample1
 
             using (var hub = new IoStorm.StormHub(container, deviceId, remoteHubHost: arguments.HubServer))
             {
-/*                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
-                    hub.LoadPlugin<IoStorm.CorePlugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
+                var plugins = hub.AvailablePlugins;
 
-                hub.LoadPlugin<IoStorm.CorePlugins.YamahaReceiver>();
-
-                if (!string.IsNullOrEmpty(arguments.IrManSerialPort))
+                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.IrManReceiver"))
                 {
-                    var irMan = hub.LoadPlugin<IoStorm.CorePlugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
-
-                    // Map remote controls
-                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
-                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
-
-                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
-                    xlat.MapSqueezeBoxRemote();
+                    // Add IrMan
+                    hub.AddDeviceInstance(
+                        plugins.Single(x => x.PluginId == "IoStorm.CorePlugins.IrManReceiver"),
+                        "The IR receiver",
+                        Tuple.Create("SerialPortName", "COM10"));
                 }
 
-                if (!string.IsNullOrEmpty(arguments.AudioSwitcherSerialPort))
+                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.UpbPim"))
                 {
-                    hub.LoadPlugin<CorePlugins.SerialSwitcher>(new ParameterOverride("serialPortName", arguments.AudioSwitcherSerialPort));
+                    // Add UpbPim
+                    hub.AddDeviceInstance(
+                        plugins.Single(x => x.PluginId == "IoStorm.CorePlugins.UpbPim"),
+                        "The UPB tranceiver",
+                        Tuple.Create("SerialPortName", "COM11"));
                 }
 
 
-                //                hub.LoadPlugin<Storm.Sonos.Sonos>();
+                /*                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
+                                    hub.LoadPlugin<IoStorm.CorePlugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
 
-                // Test
-                var sample = hub.LoadPlugin<Sample1>();
-                hub.BroadcastPayload(sample, new Payload.Audio.ChangeVolume { Steps = 1 });
+                                hub.LoadPlugin<IoStorm.CorePlugins.YamahaReceiver>();
 
-                hub.Incoming<Payload.Navigation.Up>(x =>
-                {
-                    hub.BroadcastPayload(sample, new Payload.Light.On
-                    {
-                        LightId = "072"
-                    });
-                });
+                                if (!string.IsNullOrEmpty(arguments.IrManSerialPort))
+                                {
+                                    var irMan = hub.LoadPlugin<IoStorm.CorePlugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
 
-                hub.Incoming<Payload.Navigation.Down>(x =>
-                {
-                    hub.BroadcastPayload(sample, new Payload.Light.Off
-                    {
-                        LightId = "072"
-                    });
-                });
-                */
+                                    // Map remote controls
+                                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
+                                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
+
+                                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
+                                    xlat.MapSqueezeBoxRemote();
+                                }
+
+                                if (!string.IsNullOrEmpty(arguments.AudioSwitcherSerialPort))
+                                {
+                                    hub.LoadPlugin<CorePlugins.SerialSwitcher>(new ParameterOverride("serialPortName", arguments.AudioSwitcherSerialPort));
+                                }
+
+
+                                //                hub.LoadPlugin<Storm.Sonos.Sonos>();
+
+                                // Test
+                                var sample = hub.LoadPlugin<Sample1>();
+                                hub.BroadcastPayload(sample, new Payload.Audio.ChangeVolume { Steps = 1 });
+
+                                hub.Incoming<Payload.Navigation.Up>(x =>
+                                {
+                                    hub.BroadcastPayload(sample, new Payload.Light.On
+                                    {
+                                        LightId = "072"
+                                    });
+                                });
+
+                                hub.Incoming<Payload.Navigation.Down>(x =>
+                                {
+                                    hub.BroadcastPayload(sample, new Payload.Light.Off
+                                    {
+                                        LightId = "072"
+                                    });
+                                });
+                                */
                 //hub.BroadcastPayload(sample, new Payload.Audio.SetInputOutput
                 //    {
                 //        Input = 3,

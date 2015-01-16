@@ -21,9 +21,10 @@ namespace IoStorm
     /// <remarks>Derived from this work: http://www.codeproject.com/Articles/8832/Plug-in-Manager</remarks>
     internal class PluginManager<TPluginBase>
     {
+        protected string pluginPath;
         protected AppDomain pluginAppDomain;
-        protected RemoteLoader remoteLoader;
-        protected List<Tuple<string, string>> loadedTypes;
+        protected RemoteLoader<TPluginBase> remoteLoader;
+        protected List<AvailablePlugin> loadedTypes;
 
         /// <summary>
         /// Constructs a plugin manager
@@ -31,13 +32,13 @@ namespace IoStorm
         /// <param name="pluginRelativePath">The relative path to the plugins directory</param>
         public PluginManager(string pluginFullPath, params string[] excludeAssemblies)
         {
-            this.loadedTypes = new List<Tuple<string, string>>();
+            this.pluginPath = pluginFullPath;
 
             CreateAppDomainAndLoader(pluginFullPath);
 
             LoadUserAssemblies(pluginFullPath, excludeAssemblies);
 
-            this.loadedTypes.AddRange(this.remoteLoader.GetSubclasses<TPluginBase>());
+            this.loadedTypes = this.remoteLoader.GetSubclasses().ToList();
 
             AppDomain.Unload(this.pluginAppDomain);
             this.pluginAppDomain = null;
@@ -48,8 +49,8 @@ namespace IoStorm
             var setup = new AppDomainSetup();
             setup.ApplicationName = "Plugins";
             setup.ApplicationBase = AppDomain.CurrentDomain.BaseDirectory;
-            setup.PrivateBinPath = Path.GetDirectoryName(pluginDirectory).Substring(
-                Path.GetDirectoryName(pluginDirectory).LastIndexOf(Path.DirectorySeparatorChar) + 1);
+            setup.PrivateBinPath = Path.GetFileName(pluginDirectory);// Di Path.GetDirectoryName(pluginDirectory).Substring(
+            //Path.GetDirectoryName(pluginDirectory).LastIndexOf(Path.DirectorySeparatorChar) + 1);
             //setup.CachePath = Path.Combine(pluginDirectory, "cache" + Path.DirectorySeparatorChar);
             //setup.ShadowCopyFiles = "true";
             //setup.ShadowCopyDirectories = pluginDirectory;
@@ -57,9 +58,9 @@ namespace IoStorm
             this.pluginAppDomain = AppDomain.CreateDomain(
                 "Plugins", null, setup);
 
-            this.remoteLoader = (RemoteLoader)pluginAppDomain.CreateInstanceAndUnwrap(
+            this.remoteLoader = (RemoteLoader<TPluginBase>)pluginAppDomain.CreateInstanceAndUnwrap(
                  Assembly.GetExecutingAssembly().FullName,
-                "IoStorm.RemoteLoader");
+                typeof(RemoteLoader<TPluginBase>).FullName);
         }
 
         /// <summary>
@@ -91,14 +92,18 @@ namespace IoStorm
         /// </summary>
         /// <param name="baseClass">The base class</param>
         /// <returns>All subclases</returns>
-        public IEnumerable<Tuple<string, string>> GetSubclasses()
+        public IReadOnlyList<AvailablePlugin> GetAvailablePlugins()
         {
-            return this.loadedTypes;
+            return this.loadedTypes.AsReadOnly();
         }
 
         public Type LoadPluginType(string qualifiedAssembly)
         {
-            return Type.GetType(qualifiedAssembly);
+            return Type.GetType(qualifiedAssembly, (assemblyName) =>
+                {
+                    string assemblyFileName = assemblyName.Name + ".dll";
+                    return Assembly.LoadFile(Path.Combine(this.pluginPath, assemblyFileName));
+                }, null);
         }
     }
 }
