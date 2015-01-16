@@ -13,17 +13,18 @@ namespace Stormcloud.Controllers
             return View();
         }
 
-        public ActionResult About()
+        public ActionResult Devices()
         {
-            ViewBag.Message = "Your application description page.";
-
             return View();
         }
 
-        public ActionResult Contact()
+        public ActionResult Zones()
         {
-            ViewBag.Message = "Your contact page.";
+            return View();
+        }
 
+        public ActionResult Activities()
+        {
             return View();
         }
 
