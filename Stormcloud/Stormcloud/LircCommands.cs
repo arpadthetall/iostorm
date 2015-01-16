@@ -1,4 +1,4 @@
-﻿namespace IoStorm.LircSvc
+﻿namespace Stormcloud
 {
     public static class LircCommands
     {

@@ -1,0 +1,182 @@
+﻿@{
+    ViewBag.Title = "Remote";
+}
+<h2>@ViewBag.Title.</h2>
+
+@section scripts{
+    <script type="text/javascript">
+        var ViewModel = function() {
+            var self = this;
+            self.postKeyCode = function(keyCode) {
+                $.ajax({
+                    type: "POST",
+                    url: '/api/StormApi/PostKeyCode',
+                    data: JSON.stringify(keyCode),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function(msg) {
+                        alert('Success: ' + msg.d);
+                    },
+                    error: function(e) {
+                        alert('Error!');
+                    }
+                });
+            }
+        };
+
+        $(function() {
+            ko.applyBindings(new ViewModel());
+        });
+    </script>
+}
+
+<div class="row">
+    <div class="col-xs-2">
+        <div class="row">
+            <div class="col-xs-12">
+                <span class="col-xs-9"></span>
+                <button type="button" class="btn btn-default col-xs-3" data-bind="click: function(){postKeyCode('KEY_POWER');}"><i class="glyphicon glyphicon-off"></i></button>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-3">Radio</button>
+                <button type="button" class="btn btn-default col-xs-3">Music</button>
+                <button type="button" class="btn btn-default col-xs-3">Pictures</button>
+                <button type="button" class="btn btn-default col-xs-3">Videos</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-3">Recorded TV</button>
+                <button type="button" class="btn btn-default col-xs-3">Guide</button>
+                <button type="button" class="btn btn-default col-xs-3">Live TV</button>
+                <button type="button" class="btn btn-default col-xs-3">DVD Menu</button>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default btn-block" data-bind="click: function(){postKeyCode('KEY_MUTE');}"><i class="glyphicon glyphicon-volume-off"></i></button><br />
+            </div>
+            <div class="col-xs-4">
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_VOLUMEUP');}"><i class="glyphicon glyphicon-volume-up"></i></button><br />
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_VOLUMEDOWN');}"><i class="glyphicon glyphicon-volume-down"></i></button>
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_BACK');}"><i class="glyphicon glyphicon-arrow-left"></i></button>
+            </div>
+            <div class="col-xs-4">
+                <button type="button" class="btn btn-default btn-block" data-bind="click: function(){postKeyCode('KEY_GUIDE');}"><i class="glyphicon glyphicon-home"></i></button>
+            </div>
+            <div class="col-xs-4">
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_CHANNELUP');}"><i class="glyphicon glyphicon-plus"></i></button><br />
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_CHANNELDOWN');}"><i class="glyphicon glyphicon-minus"></i></button>
+                <button type="button" class="btn btn-default"><i class="glyphicon glyphicon-info-sign"></i></button>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-12" data-bind="click: function(){postKeyCode('KEY_UP');}"><i class="glyphicon glyphicon-chevron-up"></i></button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_LEFT');}"><i class="glyphicon glyphicon-chevron-left"></i></button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_ENTER');}">OK</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_RIGHT');}"><i class="glyphicon glyphicon-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-12" data-bind="click: function(){postKeyCode('KEY_DOWN');}"><i class="glyphicon glyphicon-chevron-down"></i></button>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-6"><i class="glyphicon glyphicon-record"></i></button>
+                <button type="button" class="btn btn-default col-xs-6" data-bind="click: function(){postKeyCode('KEY_STOP');}"><i class="glyphicon glyphicon-stop"></i></button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_REWIND');}"><i class="glyphicon glyphicon-backward"></i></button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_PLAY');}"><i class="glyphicon glyphicon-play"></i></button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_FASTFORWARD');}"><i class="glyphicon glyphicon-forward"></i></button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_AGAIN');}"><i class="glyphicon glyphicon-step-backward"></i></button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_PAUSE');}"><i class="glyphicon glyphicon-pause"></i></button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_FORWARD');}"><i class="glyphicon glyphicon-step-forward"></i></button>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_1');}">1</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_2');}">2</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_3');}">3</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_4');}">4</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_5');}">5</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_6');}">6</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_7');}">7</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_8');}">8</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_9');}">9</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-4">*</button>
+                <button type="button" class="btn btn-default col-xs-4" data-bind="click: function(){postKeyCode('KEY_0');}">0</button>
+                <button type="button" class="btn btn-default col-xs-4">#</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default col-xs-6">Clear</button>
+                <button type="button" class="btn btn-default col-xs-6" data-bind="click: function(){postKeyCode('KEY_ENTER');}">Enter</button>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="row">
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-danger col-xs-3"></button>
+                <button type="button" class="btn btn-success col-xs-3"></button>
+                <button type="button" class="btn btn-warning col-xs-3"></button>
+                <button type="button" class="btn btn-primary col-xs-3"></button>
+            </div>
+        </div>
+    </div>
+</div>
