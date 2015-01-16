@@ -59,10 +59,17 @@ namespace IoStorm.Sample1
                 if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.IrManReceiver"))
                 {
                     // Add IrMan
-                    hub.AddDeviceInstance(
+                    var devInstance = hub.AddDeviceInstance(
                         plugins.Single(x => x.PluginId == "IoStorm.CorePlugins.IrManReceiver"),
                         "The IR receiver",
                         Tuple.Create("SerialPortName", "COM10"));
+
+                    // Map remote controls
+//                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
+//                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
+
+//                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
+//                    xlat.MapSqueezeBoxRemote();
                 }
 
                 if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.UpbPim"))
@@ -73,6 +80,23 @@ namespace IoStorm.Sample1
                         "The UPB tranceiver",
                         Tuple.Create("SerialPortName", "COM11"));
                 }
+
+                var sample = hub.LoadPlugin<Sample1>();
+                hub.Incoming<Payload.Navigation.Up>(x =>
+                {
+                    hub.BroadcastPayload(sample, new Payload.Light.On
+                    {
+                        LightId = "053"
+                    });
+                });
+
+                hub.Incoming<Payload.Navigation.Down>(x =>
+                {
+                    hub.BroadcastPayload(sample, new Payload.Light.Off
+                    {
+                        LightId = "053"
+                    });
+                });
 
 
                 /*                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))

@@ -229,12 +229,11 @@ namespace IoStorm
         }
 
         [Obsolete]
-        public T LoadPlugin<T>(params ParameterOverride[] overrides) where T : IDevice
+        public T LoadPlugin<T>(/*params ParameterOverride[] overrides*/) where T : IDevice
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
             allOverrides.Add(new ParameterOverride("instanceId", Guid.NewGuid().ToString("n")));
-            allOverrides.AddRange(overrides);
 
             var plugin = this.container.Resolve<T>(allOverrides.ToArray());
 

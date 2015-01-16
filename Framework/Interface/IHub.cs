@@ -11,5 +11,8 @@ namespace IoStorm
         void BroadcastPayload(IDevice sender, Payload.IPayload payload);
 
         string GetSetting(IDevice device, string key);
+
+        [Obsolete]
+        T LoadPlugin<T>() where T : IDevice;
     }
 }
