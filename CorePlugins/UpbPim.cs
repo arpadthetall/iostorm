@@ -654,6 +654,9 @@ namespace IoStorm.CorePlugins
             if (!this.serialManager.IsDeviceInitialized)
                 return;
 
+            if (string.IsNullOrEmpty(payload.LightId))
+                return;
+
             var cmd = new UpbPimMessage
             {
                 DestinationId = byte.Parse(payload.LightId),
@@ -669,6 +672,9 @@ namespace IoStorm.CorePlugins
         public void Incoming(Payload.Light.Off payload)
         {
             if (!this.serialManager.IsDeviceInitialized)
+                return;
+
+            if (string.IsNullOrEmpty(payload.LightId))
                 return;
 
             var cmd = new UpbPimMessage
