@@ -10,6 +10,12 @@
 
         }
 
+        public static class Light
+        {
+            public const string On = "KEY_LIGHTON";
+            public const string Off = "KEY_LIGHTOFF";
+        }
+
         public static class Navigation
         {
             public const string Up = "KEY_UP";

@@ -11,13 +11,20 @@ using Qlue.Logging;
 
 namespace Stormcloud.Controllers
 {
+    public class KeyCommand
+    {
+        public string Command { get; set; }
+        public string DeviceId { get; set; }
+        public string Level { get; set; }
+    }
+
     public class StormApiController : ApiController
     {
         private static readonly ILogFactory LogFactory = new NLogFactoryProvider();
         private readonly ILog _logger = LogFactory.GetLogger("LircSvc");
 
         [HttpPost]
-        public void PostKeyCode([FromBody]string command)
+        public void PostKeyCode([FromBody]KeyCommand command)
         {
             var rabbitHost = WebConfigurationManager.AppSettings["RabbitHost"];
             var rabbitChannel = WebConfigurationManager.AppSettings["RabbitChannel"];
@@ -27,7 +34,7 @@ namespace Stormcloud.Controllers
 
             var hub = new RemoteHub(LogFactory, rabbitHost, deviceId);
 
-            var payload = GetPayloadFromLircCommand(command);
+            var payload = GetPayloadFromLircCommand(command.Command, command.DeviceId);
 
             if (payload == null)
             {
@@ -46,7 +53,7 @@ namespace Stormcloud.Controllers
             }
         }
 
-        private static IPayload GetPayloadFromLircCommand(string command)
+        private static IPayload GetPayloadFromLircCommand(string command, string deviceId)
         {
             switch (command)
             {
@@ -57,6 +64,11 @@ namespace Stormcloud.Controllers
                     return new IoStorm.Payload.Audio.VolumeUp();
                 case LircCommands.Audio.VolumeDown:
                     return new IoStorm.Payload.Audio.VolumeDown();
+
+                case LircCommands.Light.Off:
+                    return new IoStorm.Payload.Light.Off { LightId = deviceId };
+                case LircCommands.Light.On:
+                    return new IoStorm.Payload.Light.On { LightId = deviceId };
 
                 // Navigation
                 case LircCommands.Navigation.Up:

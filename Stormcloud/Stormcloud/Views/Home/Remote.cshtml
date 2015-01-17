@@ -1,17 +1,20 @@
 ﻿@{
     ViewBag.Title = "Remote";
 }
-<h2>@ViewBag.Title.</h2>
 
 @section scripts{
     <script type="text/javascript">
         var ViewModel = function() {
             var self = this;
-            self.postKeyCode = function(keyCode) {
+
+            self.deviceId = ko.observable('');
+            self.level = ko.observable('50');
+
+            self.postKeyCode = function (keyCode, deviceId, level) {
                 $.ajax({
                     type: "POST",
                     url: '/api/StormApi/PostKeyCode',
-                    data: JSON.stringify(keyCode),
+                    data: JSON.stringify({ Command: keyCode, DeviceId: deviceId, Level: level }),
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
                     success: function(msg) {
@@ -32,6 +35,8 @@
 
 <div class="row">
     <div class="col-xs-2">
+        <h2>Remote</h2>
+
         <div class="row">
             <div class="col-xs-12">
                 <span class="col-xs-9"></span>
@@ -176,6 +181,28 @@
                 <button type="button" class="btn btn-success col-xs-3"></button>
                 <button type="button" class="btn btn-warning col-xs-3"></button>
                 <button type="button" class="btn btn-primary col-xs-3"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xs-2">
+        <h2>Lights</h2>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <input type="text" class="form-control" name="deviceId" id="deviceId" data-bind="value: deviceId" placeholder="Device ID" /><br />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-4">
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_LIGHTOFF', deviceId());}"><img src="~/Content/Icons/Lights/light_off.png" /></button>
+            </div>
+            <div class="col-xs-4">
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_LIGHTLEVEL', deviceId(), level());}"><img src="~/Content/Icons/Lights/light_dim.png" /></button><br/>
+                <input type="number" min="0" max="99" class="form-control" name="level" id="level" data-bind="value: level" style="width: 58px;" />
+            </div>
+            <div class="col-xs-4">
+                <button type="button" class="btn btn-default" data-bind="click: function(){postKeyCode('KEY_LIGHTON', deviceId());}"><img src="~/Content/Icons/Lights/light_on.png" /></button>
             </div>
         </div>
     </div>
