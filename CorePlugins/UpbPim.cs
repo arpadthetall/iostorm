@@ -654,6 +654,8 @@ namespace IoStorm.CorePlugins
             if (!this.serialManager.IsDeviceInitialized)
                 return;
 
+            this.log.Info("Setting light {0} to On", payload.LightId);
+
             if (string.IsNullOrEmpty(payload.LightId))
                 return;
 
@@ -673,6 +675,8 @@ namespace IoStorm.CorePlugins
         {
             if (!this.serialManager.IsDeviceInitialized)
                 return;
+
+            this.log.Info("Setting light {0} to Off", payload.LightId);
 
             if (string.IsNullOrEmpty(payload.LightId))
                 return;
