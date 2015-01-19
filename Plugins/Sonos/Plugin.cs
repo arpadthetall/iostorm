@@ -8,13 +8,13 @@ using System.Reactive;
 
 namespace IoStorm.Sonos
 {
-    public class Sonos : BaseDevice
+    public class Plugin : BaseDevice
     {
         private Qlue.Logging.ILog log;
         private IHub hub;
         private SonosDiscovery discovery;
 
-        public Sonos(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
         {
             this.hub = hub;

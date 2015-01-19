@@ -18,5 +18,10 @@ namespace IoStorm
         public string Author { get; set; }
 
         internal string AssemblyQualifiedName { get; set; }
+
+        public override string ToString()
+        {
+            return string.Format("Plugin {0}", PluginId);
+        }
     }
 }

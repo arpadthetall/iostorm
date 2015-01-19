@@ -66,7 +66,7 @@
     <Compile Include="SonosUPnP\MediaInfo.cs" />
     <Compile Include="SonosUPnP\PlayerInfo.cs" />
     <Compile Include="SonosUPnP\PlayerStatus.cs" />
-    <Compile Include="Sonos.cs" />
+    <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SonosUPnP\SonosDIDL.cs" />
     <Compile Include="SonosUPnP\SonosDiscovery.cs" />
@@ -76,11 +76,11 @@
     <Compile Include="SonosUPnP\SonosPlayer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CorePayload\CorePayload.csproj">
+    <ProjectReference Include="..\..\CorePayload\CorePayload.csproj">
       <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
       <Name>CorePayload</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Framework\Framework.csproj">
+    <ProjectReference Include="..\..\Framework\Framework.csproj">
       <Project>{13f28e19-a026-457c-be49-d140cb1f33d3}</Project>
       <Name>Framework</Name>
     </ProjectReference>
