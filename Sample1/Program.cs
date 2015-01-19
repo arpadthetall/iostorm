@@ -65,11 +65,20 @@ namespace IoStorm.Sample1
                         Tuple.Create("SerialPortName", "COM10"));
 
                     // Map remote controls
-//                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
-//                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
+                    //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
+                    //                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
 
-//                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
-//                    xlat.MapSqueezeBoxRemote();
+                    //                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
+                    //                    xlat.MapSqueezeBoxRemote();
+                }
+
+                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.Plugins.Enphase.Plugin"))
+                {
+                    // Add Enphase
+                    hub.AddDeviceInstance(
+                        plugins.Single(x => x.PluginId == "IoStorm.Plugins.Enphase.Plugin"),
+                        "Enphase Gateway",
+                        Tuple.Create("EnphaseHostName", "192.168.240.146"));
                 }
 
                 if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.UpbPim"))
