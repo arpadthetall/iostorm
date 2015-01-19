@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 using Qlue.Logging;
 using Newtonsoft.Json;
 using System.IO;
+using IoStorm.Plugin;
 
 namespace IoStorm.Plugins.Enphase
 {
+    [Plugin(Name = "Enphase Gateway", Description = "Enphase Gateway for Solar Panels", Author = "IoStorm")]
     public class Plugin : BaseDevice
     {
         private ILog log;
@@ -38,7 +40,7 @@ namespace IoStorm.Plugins.Enphase
             {
                 try
                 {
-                    var pollUrl = new Uri(new Uri(Uri.UriSchemeHttp + "://" + this.enphaseHostName), "/api/v1/production").ToString();
+                    string pollUrl = string.Format("http://{0}/api/v1/production", this.enphaseHostName);
 
                     var webRequest = HttpWebRequest.Create(pollUrl);
 
@@ -47,6 +49,8 @@ namespace IoStorm.Plugins.Enphase
                     using (var sr = new StreamReader(webResponse.GetResponseStream()))
                     {
                         var productionData = JsonConvert.DeserializeObject<ProductionData>(sr.ReadToEnd());
+
+                        this.log.Debug("Received production data from Enphase, watts = {0}", productionData.wattsNow);
 
                         var generationPayload = new Payload.Power.GenerationHistory
                         {

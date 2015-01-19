@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 using Qlue.Logging;
+using IoStorm.Plugin;
 
 namespace IoStorm.CorePlugins
 {
     // Reference: http://www.simply-automated.com/documents/UpbDescriptionV1.2a.pdf
 
+    [Plugin(Name = "UPB PIM", Description = "UPB Powerline Interface Module", Author = "IoStorm")]
     public class UpbPim : BaseDevice, IDisposable
     {
         public class UpbPimMessage : Payload.UpbCommand.UpbMessage

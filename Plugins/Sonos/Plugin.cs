@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Reactive;
+using IoStorm.Plugin;
 
 namespace IoStorm.Sonos
 {
+    [Plugin(Name = "Sonos", Description = "Sonos", Author = "IoStorm")]
     public class Plugin : BaseDevice
     {
         private Qlue.Logging.ILog log;
