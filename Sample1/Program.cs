@@ -81,6 +81,15 @@ namespace IoStorm.Sample1
                         Tuple.Create("EnphaseHostName", "192.168.240.146"));
                 }
 
+                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.Plugins.Rainforest.Plugin"))
+                {
+                    // Add Enphase
+                    hub.AddDeviceInstance(
+                        plugins.Single(x => x.PluginId == "IoStorm.Plugins.Rainforest.Plugin"),
+                        "Rainforest Automation",
+                        Tuple.Create("RainforestEagleHostName", "192.168.240.151"));
+                }
+
                 if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.UpbPim"))
                 {
                     // Add UpbPim

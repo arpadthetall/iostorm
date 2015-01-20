@@ -63,6 +63,7 @@
     <Compile Include="Navigation\DMeX.cs" />
     <Compile Include="Navigation\SyncMenu.cs" />
     <Compile Include="Navigation\Period.cs" />
+    <Compile Include="Power\ConsumptionHistory.cs" />
     <Compile Include="Power\GenerationHistory.cs" />
     <Compile Include="Power\GenerationTypes.cs" />
     <Compile Include="Power\Generation.cs" />

@@ -7,12 +7,11 @@ namespace IoStorm.Payload.Power
     {
         public GenerationTypes GenerationType { get; set; }
 
-        public long WattHoursToday { get; set; }
-
-        public long WattHoursSevenDays { get; set; }
-
-        public long WattHoursLifetime { get; set; }
-
         public long WattsNow { get; set; }
+
+        public override string GetDebugInfo()
+        {
+            return string.Format("Current power generation: {0} W", WattsNow);
+        }
     }
 }
