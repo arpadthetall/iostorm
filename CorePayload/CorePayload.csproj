@@ -98,7 +98,7 @@
     <Compile Include="Power\Toggle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BusPayload.cs" />
-    <Compile Include="RoomPayload.cs" />
+    <Compile Include="ZonePayload.cs" />
     <Compile Include="Transport\Repeat.cs" />
     <Compile Include="Transport\Shuffle.cs" />
     <Compile Include="Navigation\Number2.cs" />

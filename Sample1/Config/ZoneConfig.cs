@@ -6,19 +6,17 @@ using System.Threading.Tasks;
 
 namespace IoStorm.Sample1
 {
-    public class HubConfig
+    public class ZoneConfig
     {
-        public string DeviceId { get; set; }
+        public string ZoneId { get; set; }
 
         public string Name { get; set; }
-
-        public string UpstreamHub { get; set; }
 
         public List<DeviceConfig> Devices { get; set; }
 
         public List<ZoneConfig> Zones { get; set; }
 
-        public HubConfig()
+        public ZoneConfig()
         {
             Devices = new List<DeviceConfig>();
             Zones = new List<ZoneConfig>();

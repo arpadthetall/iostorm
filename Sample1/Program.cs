@@ -14,12 +14,64 @@ namespace IoStorm.Sample1
     public class Program
     {
         private static IUnityContainer container;
+        private static Qlue.Logging.ILog log;
 
         public class Arguments
         {
             [ArgExistingFile]
             [ArgShortcut("c")]
             public string ConfigFile { get; set; }
+        }
+
+        private static void ValidateConfig(IEnumerable<DeviceConfig> devices, IEnumerable<ZoneConfig> zones)
+        {
+            foreach (var deviceConfig in devices)
+            {
+                if (string.IsNullOrEmpty(deviceConfig.InstanceId))
+                    deviceConfig.InstanceId = Guid.NewGuid().ToString("n");
+            }
+
+            foreach (var zoneConfig in zones)
+            {
+                if (string.IsNullOrEmpty(zoneConfig.ZoneId))
+                    zoneConfig.ZoneId = Guid.NewGuid().ToString("n");
+
+                ValidateConfig(zoneConfig.Devices, zoneConfig.Zones);
+            }
+        }
+
+        private static void LoadDevices(StormHub hub, string zoneId, IEnumerable<DeviceConfig> devices, IEnumerable<ZoneConfig> zones)
+        {
+            foreach (var deviceConfig in devices)
+            {
+                try
+                {
+                    var plugin = hub.AvailablePlugins.SingleOrDefault(x => x.PluginId == deviceConfig.PluginId);
+                    if (plugin == null)
+                    {
+                        log.Warn("Plugin {0} ({1}) not found", deviceConfig.PluginId, deviceConfig.Name);
+                        continue;
+                    }
+
+                    log.Info("Loading plugin {0} ({1})", plugin.PluginId, plugin.Name);
+
+                    var devInstance = hub.AddDeviceInstance(
+                        plugin,
+                        deviceConfig.Name,
+                        deviceConfig.InstanceId,
+                        zoneId,
+                        deviceConfig.Settings);
+                }
+                catch (Exception ex)
+                {
+                    log.WarnException(ex, "Failed to load device {0} ({1})", deviceConfig.InstanceId, deviceConfig.Name);
+                }
+            }
+
+            foreach (var zoneConfig in zones)
+            {
+                LoadDevices(hub, zoneConfig.ZoneId, zoneConfig.Devices, zoneConfig.Zones);
+            }
         }
 
         public static void Main(string[] args)
@@ -43,47 +95,55 @@ namespace IoStorm.Sample1
             var logFactory = new Qlue.Logging.NLogFactoryProvider();
             container.RegisterInstance<Qlue.Logging.ILogFactory>(logFactory);
 
-            Qlue.Logging.ILog log = logFactory.GetLogger("Main");
+            log = logFactory.GetLogger("Main");
 
             log.Info("Start up");
 
             log.Info("Config file {0}", arguments.ConfigFile);
 
-            string deviceId = IoStorm.DeviceId.GetDeviceId();
-
-            log.Info("Device Id {0}", deviceId);
-
             HubConfig hubConfig;
+            int configHash;
+            string configContent;
             using (var configFile = File.OpenText(arguments.ConfigFile))
             {
-                hubConfig = JsonConvert.DeserializeObject<HubConfig>(configFile.ReadToEnd());
+                configContent = configFile.ReadToEnd();
+                configHash = configContent.GetHashCode();
 
-                if (hubConfig.Devices == null)
-                    hubConfig.Devices = new List<DeviceConfig>();
+                hubConfig = JsonConvert.DeserializeObject<HubConfig>(configContent);
             }
 
-            log.Info("Connecting to remote hub at {0}", hubConfig.HubHostName);
-
-            using (var hub = new IoStorm.StormHub(container, deviceId, remoteHubHost: hubConfig.HubHostName))
+            if (string.IsNullOrEmpty(hubConfig.DeviceId))
             {
-                var plugins = hub.AvailablePlugins;
+                hubConfig.DeviceId = IoStorm.DeviceId.GetDeviceId();
+            }
 
-                foreach (var deviceConfig in hubConfig.Devices)
+            ValidateConfig(hubConfig.Devices, hubConfig.Zones);
+
+            // Saving config
+            var jsonSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            };
+            configContent = JsonConvert.SerializeObject(hubConfig, jsonSettings);
+
+            if (configContent.GetHashCode() != configHash)
+            {
+                using (var configFile = File.CreateText(arguments.ConfigFile))
                 {
-                    var plugin = hub.AvailablePlugins.SingleOrDefault(x => x.PluginId == deviceConfig.PluginId);
-                    if (plugin == null)
-                    {
-                        log.Warn("Plugin {0} ({1}) not found", deviceConfig.PluginId, deviceConfig.Name);
-                        continue;
-                    }
-
-                    log.Info("Loading plugin {0} ({1})", plugin.PluginId, plugin.Name);
-
-                    var devInstance = hub.AddDeviceInstance(
-                        plugin,
-                        deviceConfig.Name,
-                        deviceConfig.Settings);
+                    configFile.Write(configContent);
                 }
+                configHash = configContent.GetHashCode();
+            }
+
+            log.Info("Device Id {0}", hubConfig.DeviceId);
+
+            log.Info("Connecting to remote hub at {0}", hubConfig.UpstreamHub);
+
+            using (var hub = new IoStorm.StormHub(container, hubConfig.DeviceId, remoteHubHost: hubConfig.UpstreamHub))
+            {
+                //                var plugins = hub.AvailablePlugins;
+
+                LoadDevices(hub, hubConfig.DeviceId, hubConfig.Devices, hubConfig.Zones);
 
                 // Map remote controls
                 //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);

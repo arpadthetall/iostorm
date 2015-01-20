@@ -28,7 +28,7 @@ namespace IoStorm
         private IObserver<Payload.InternalMessage> broadcastQueue;
         private string configPath;
         private PluginManager<IDevice> pluginManager;
-        protected List<DeviceInstance> deviceInstances;
+        protected Dictionary<string, DeviceInstance> deviceInstances;
         private IReadOnlyList<AvailablePlugin> availablePlugins;
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = null)
@@ -95,7 +95,7 @@ namespace IoStorm
                     }
                 });
 
-            this.deviceInstances = new List<DeviceInstance>();
+            this.deviceInstances = new Dictionary<string, DeviceInstance>();
 
             //try
             //{
@@ -116,29 +116,23 @@ namespace IoStorm
 
         public IReadOnlyList<DeviceInstance> DeviceInstances
         {
-            get { return this.deviceInstances.AsReadOnly(); }
+            get { return this.deviceInstances.Values.ToList().AsReadOnly(); }
         }
 
-        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, IDictionary<string, string> settings)
+        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
         {
-            if (settings == null)
-                return AddDeviceInstance(plugin, name);
-            else
-                return AddDeviceInstance(plugin, name, settings.Select(x => Tuple.Create(x.Key, x.Value)).ToArray());
-        }
+            if (this.deviceInstances.ContainsKey(instanceId))
+                throw new ArgumentException("Duplicate InstanceId");
 
-        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
-        {
-            var deviceInstance = new DeviceInstance
+            var deviceInstance = new DeviceInstance(plugin.PluginId, instanceId)
             {
-                InstanceId = Guid.NewGuid().ToString("n"),
-                PluginId = plugin.PluginId,
+                ZoneId = zoneId,
                 Name = name
             };
 
             lock (this.deviceInstances)
             {
-                this.deviceInstances.Add(deviceInstance);
+                this.deviceInstances.Add(deviceInstance.InstanceId, deviceInstance);
             }
 
             SaveDeviceInstances();
@@ -146,7 +140,7 @@ namespace IoStorm
             // Save settings
             foreach (var setting in settings)
             {
-                SaveSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Item1, setting.Item2);
+                SaveSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
             }
 
             var pluginInstance = StartDeviceInstance(deviceInstance);
@@ -154,13 +148,20 @@ namespace IoStorm
             return Tuple.Create(deviceInstance, pluginInstance);
         }
 
-        private void StartDeviceInstances()
+        [Obsolete]
+        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
         {
-            foreach (var deviceInstance in this.deviceInstances)
-            {
-                StartDeviceInstance(deviceInstance);
-            }
+            return AddDeviceInstance(plugin, name, Guid.NewGuid().ToString("N"), this.ourDeviceId,
+                settings.ToDictionary(k => k.Item1, v => v.Item2));
         }
+
+        //private void StartDeviceInstances()
+        //{
+        //    foreach (var deviceInstance in this.deviceInstances.Values)
+        //    {
+        //        StartDeviceInstance(deviceInstance);
+        //    }
+        //}
 
         private IDevice StartDeviceInstance(DeviceInstance deviceInstance)
         {
@@ -195,7 +196,7 @@ namespace IoStorm
 
         public void SaveDeviceInstances()
         {
-            // Not sure about this one
+            //TODO Not sure about this one
             BinaryRage.DB.Insert("DeviceInstances", this.deviceInstances, this.configPath);
         }
 
@@ -299,7 +300,17 @@ namespace IoStorm
 
         public void BroadcastPayload(IDevice sender, Payload.IPayload payload)
         {
-            this.broadcastQueue.OnNext(new Payload.InternalMessage(sender.InstanceId, payload));
+            DeviceInstance instance;
+            if (!this.deviceInstances.TryGetValue(sender.InstanceId, out instance))
+                throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
+
+            var zonePayload = new IoStorm.Payload.ZonePayload
+            {
+                ZoneId = instance.ZoneId,
+                Payload = payload
+            };
+
+            this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, zonePayload));
         }
 
         public void Incoming<T>(Action<T> action) where T : Payload.IPayload
