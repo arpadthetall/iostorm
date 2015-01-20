@@ -1,0 +1,20 @@
+{
+	HubHostName: "192.168.1.113",
+	Devices:[
+	{
+		PluginId: "IoStorm.CorePlugins.IrManReceiver",
+		Name: "The IR receiver",
+		Settings:
+		{
+			SerialPortName: "COM10"
+		}
+	},
+	{
+		PluginId: "IoStorm.CorePlugins.UpbPim",
+		Name: "The UPB Transceiver",
+		Settings:
+		{
+			SerialPortName: "COM11"
+		}
+	}]
+}

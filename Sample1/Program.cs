@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Practices.Unity;
 using PowerArgs;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace IoStorm.Sample1
 {
@@ -15,14 +17,9 @@ namespace IoStorm.Sample1
 
         public class Arguments
         {
-            public string UpbSerialPort { get; set; }
-
-            public string AudioSwitcherSerialPort { get; set; }
-
-            public string IrManSerialPort { get; set; }
-
-            [ArgDefaultValue("localhost")]
-            public string HubServer { get; set; }
+            [ArgExistingFile]
+            [ArgShortcut("c")]
+            public string ConfigFile { get; set; }
         }
 
         public static void Main(string[] args)
@@ -50,71 +47,68 @@ namespace IoStorm.Sample1
 
             log.Info("Start up");
 
+            log.Info("Config file {0}", arguments.ConfigFile);
+
             string deviceId = IoStorm.DeviceId.GetDeviceId();
 
-            using (var hub = new IoStorm.StormHub(container, deviceId, remoteHubHost: arguments.HubServer))
+            log.Info("Device Id {0}", deviceId);
+
+            HubConfig hubConfig;
+            using (var configFile = File.OpenText(arguments.ConfigFile))
+            {
+                hubConfig = JsonConvert.DeserializeObject<HubConfig>(configFile.ReadToEnd());
+
+                if (hubConfig.Devices == null)
+                    hubConfig.Devices = new List<DeviceConfig>();
+            }
+
+            log.Info("Connecting to remote hub at {0}", hubConfig.HubHostName);
+
+            using (var hub = new IoStorm.StormHub(container, deviceId, remoteHubHost: hubConfig.HubHostName))
             {
                 var plugins = hub.AvailablePlugins;
 
-                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.IrManReceiver"))
+                foreach (var deviceConfig in hubConfig.Devices)
                 {
-                    // Add IrMan
+                    var plugin = hub.AvailablePlugins.SingleOrDefault(x => x.PluginId == deviceConfig.PluginId);
+                    if (plugin == null)
+                    {
+                        log.Warn("Plugin {0} ({1}) not found", deviceConfig.PluginId, deviceConfig.Name);
+                        continue;
+                    }
+
+                    log.Info("Loading plugin {0} ({1})", plugin.PluginId, plugin.Name);
+
                     var devInstance = hub.AddDeviceInstance(
-                        plugins.Single(x => x.PluginId == "IoStorm.CorePlugins.IrManReceiver"),
-                        "The IR receiver",
-                        Tuple.Create("SerialPortName", "COM10"));
-
-                    // Map remote controls
-                    //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
-                    //                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
-
-                    //                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
-                    //                    xlat.MapSqueezeBoxRemote();
+                        plugin,
+                        deviceConfig.Name,
+                        deviceConfig.Settings);
                 }
 
-                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.Plugins.Enphase.Plugin"))
-                {
-                    // Add Enphase
-                    hub.AddDeviceInstance(
-                        plugins.Single(x => x.PluginId == "IoStorm.Plugins.Enphase.Plugin"),
-                        "Enphase Gateway",
-                        Tuple.Create("EnphaseHostName", "192.168.240.146"));
-                }
+                // Map remote controls
+                //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
+                //                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
 
-                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.Plugins.Rainforest.Plugin"))
-                {
-                    // Add Enphase
-                    hub.AddDeviceInstance(
-                        plugins.Single(x => x.PluginId == "IoStorm.Plugins.Rainforest.Plugin"),
-                        "Rainforest Automation",
-                        Tuple.Create("RainforestEagleHostName", "192.168.240.151"));
-                }
+                //                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
+                //                    xlat.MapSqueezeBoxRemote();
 
-                if (!hub.DeviceInstances.Any(x => x.PluginId == "IoStorm.CorePlugins.UpbPim"))
-                {
-                    // Add UpbPim
-                    hub.AddDeviceInstance(
-                        plugins.Single(x => x.PluginId == "IoStorm.CorePlugins.UpbPim"),
-                        "The UPB tranceiver",
-                        Tuple.Create("SerialPortName", "COM11"));
-                }
 
-                var sample = hub.LoadPlugin<Sample1>();
-                hub.Incoming<Payload.Navigation.Up>(x =>
-                {
-                    hub.BroadcastPayload(sample, new Payload.Light.On
-                    {
-                        LightId = "053"
-                    });
-                });
+                //var sample = hub.LoadPlugin<Sample1>();
+                //hub.Incoming<Payload.Navigation.Up>(x =>
+                //{
+                //    hub.BroadcastPayload(sample, new Payload.Light.On
+                //    {
+                //        LightId = "053"
+                //    });
+                //});
 
-                hub.Incoming<Payload.Navigation.Down>(x =>
-                {
-                    hub.BroadcastPayload(sample, new Payload.Light.Off
-                    {
-                        LightId = "053"
-                    });
-                });
+                //hub.Incoming<Payload.Navigation.Down>(x =>
+                //{
+                //    hub.BroadcastPayload(sample, new Payload.Light.Off
+                //    {
+                //        LightId = "053"
+                //    });
+                //});
 
 
                 /*                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))

@@ -31,7 +31,7 @@ namespace IoStorm
         protected List<DeviceInstance> deviceInstances;
         private IReadOnlyList<AvailablePlugin> availablePlugins;
 
-        public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = "localhost")
+        public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = null)
         {
             this.container = container;
             this.ourDeviceId = ourDeviceId;
@@ -54,12 +54,25 @@ namespace IoStorm
                 "IoStorm.Framework.dll");
 
             this.availablePlugins = this.pluginManager.GetAvailablePlugins();
-
-            this.cts = new CancellationTokenSource();
-            this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), remoteHubHost, ourDeviceId);
-
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
+            this.externalIncomingQueue = externalIncomingSubject.AsObservable();
+
+            if (!string.IsNullOrEmpty(remoteHubHost))
+            {
+                this.cts = new CancellationTokenSource();
+                this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), remoteHubHost, ourDeviceId);
+
+                this.amqpReceivingTask = Task.Run(() =>
+                {
+                    this.remoteHub.Receiver("Global", cts.Token, externalIncomingSubject.AsObserver());
+                }, cts.Token);
+
+                this.externalIncomingQueue.Subscribe(p =>
+                {
+                    this.log.Debug("Received external payload {0} ({1})", p.OriginDeviceId, p.Payload.GetDebugInfo());
+                });
+            }
 
             this.broadcastQueue = Observer.Create<Payload.InternalMessage>(p =>
                 {
@@ -68,39 +81,32 @@ namespace IoStorm
                     // Send locally
                     this.localQueue.OnNext(p);
 
-                    // Broadcast on amqp
-                    try
+                    if (!string.IsNullOrEmpty(remoteHubHost))
                     {
-                        this.remoteHub.SendPayload("Global", p.Payload);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.log.WarnException(ex, "Failed to send message on Amqp queue");
+                        // Broadcast on amqp
+                        try
+                        {
+                            this.remoteHub.SendPayload("Global", p.Payload);
+                        }
+                        catch (Exception ex)
+                        {
+                            this.log.WarnException(ex, "Failed to send message on Amqp queue");
+                        }
                     }
                 });
 
-            this.externalIncomingQueue = externalIncomingSubject.AsObservable();
+            this.deviceInstances = new List<DeviceInstance>();
 
-            this.amqpReceivingTask = Task.Run(() =>
-            {
-                this.remoteHub.Receiver("Global", cts.Token, externalIncomingSubject.AsObserver());
-            }, cts.Token);
+            //try
+            //{
+            //    this.deviceInstances = BinaryRage.DB.Get<List<DeviceInstance>>("DeviceInstances", this.configPath);
+            //}
+            //catch (DirectoryNotFoundException)
+            //{
+            //    this.deviceInstances = new List<DeviceInstance>();
+            //}
 
-            this.externalIncomingQueue.Subscribe(p =>
-                {
-                    this.log.Debug("Received external payload {0} ({1})", p.OriginDeviceId, p.Payload.GetDebugInfo());
-                });
-
-            try
-            {
-                this.deviceInstances = BinaryRage.DB.Get<List<DeviceInstance>>("DeviceInstances", this.configPath);
-            }
-            catch (DirectoryNotFoundException)
-            {
-                this.deviceInstances = new List<DeviceInstance>();
-            }
-
-            StartDeviceInstances();
+            //StartDeviceInstances();
         }
 
         public IReadOnlyList<AvailablePlugin> AvailablePlugins
@@ -111,6 +117,14 @@ namespace IoStorm
         public IReadOnlyList<DeviceInstance> DeviceInstances
         {
             get { return this.deviceInstances.AsReadOnly(); }
+        }
+
+        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, IDictionary<string, string> settings)
+        {
+            if (settings == null)
+                return AddDeviceInstance(plugin, name);
+            else
+                return AddDeviceInstance(plugin, name, settings.Select(x => Tuple.Create(x.Key, x.Value)).ToArray());
         }
 
         public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
@@ -181,6 +195,7 @@ namespace IoStorm
 
         public void SaveDeviceInstances()
         {
+            // Not sure about this one
             BinaryRage.DB.Insert("DeviceInstances", this.deviceInstances, this.configPath);
         }
 

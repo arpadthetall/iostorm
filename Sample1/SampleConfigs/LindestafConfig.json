@@ -1,0 +1,36 @@
+{
+	HubHostName: "192.168.240.125",
+	Devices:[
+	{
+		PluginId: "IoStorm.CorePlugins.IrManReceiver",
+		Name: "The IR receiver",
+		Settings:
+		{
+			SerialPortName: "COM10"
+		}
+	},
+	{
+		PluginId: "IoStorm.Plugins.Enphase.Plugin",
+		Name: "Enphase Gateway",
+		Settings:
+		{
+			EnphaseHostName: "192.168.240.146"
+		}
+	},
+	{
+		PluginId: "IoStorm.Plugins.Rainforest.Plugin",
+		Name: "Rainforest Automation",
+		Settings:
+		{
+			RainforestEagleHostName: "192.168.240.151"
+		}
+	},
+	{
+		PluginId: "IoStorm.CorePlugins.UpbPim",
+		Name: "The UPB Transceiver",
+		Settings:
+		{
+			SerialPortName: "COM11"
+		}
+	}]
+}
