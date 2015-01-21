@@ -30,6 +30,7 @@ namespace IoStorm
         private PluginManager<IDevice> pluginManager;
         protected Dictionary<string, DeviceInstance> deviceInstances;
         private IReadOnlyList<AvailablePlugin> availablePlugins;
+        private List<IDevice> runningInstances;
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = null)
         {
@@ -54,6 +55,7 @@ namespace IoStorm
                 "IoStorm.Framework.dll");
 
             this.availablePlugins = this.pluginManager.GetAvailablePlugins();
+            this.runningInstances = new List<IDevice>();
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
@@ -269,6 +271,8 @@ namespace IoStorm
 
             WireUpPlugin(plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
+            this.runningInstances.Add(plugin);
+
             return plugin;
         }
 
@@ -293,6 +297,21 @@ namespace IoStorm
             {
                 this.remoteHub.Dispose();
                 this.remoteHub = null;
+            }
+
+            if (this.runningInstances != null)
+            {
+                foreach (var pluginInstance in this.runningInstances)
+                {
+                    var disposable = pluginInstance as IDisposable;
+
+                    if (disposable != null)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+
+                this.deviceInstances = null;
             }
 
             BinaryRage.DB.WaitForCompletion();

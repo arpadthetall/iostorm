@@ -1,20 +1,14 @@
 {
-	HubHostName: "192.168.1.113",
-	Devices:[
-	{
-		PluginId: "IoStorm.CorePlugins.IrManReceiver",
-		Name: "The IR receiver",
-		Settings:
-		{
-			SerialPortName: "COM10"
-		}
-	},
-	{
-		PluginId: "IoStorm.CorePlugins.UpbPim",
-		Name: "The UPB Transceiver",
-		Settings:
-		{
-			SerialPortName: "COM11"
-		}
-	}]
+  "DeviceId": "MAC:0050B665200D",
+  "Name": "Office Test Hub",
+  "UpstreamHub": "192.168.240.113",
+  "Devices": [
+    {
+      "InstanceId": "ae8f512dfaa54cbdaf37f882a191bbd0",
+      "PluginId": "IoStorm.Plugins.IguanaWorks.Plugin",
+      "Name": "The IR receiver",
+      "Settings": {}
+    }
+  ],
+  "Zones": []
 }

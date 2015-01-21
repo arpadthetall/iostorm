@@ -8,6 +8,7 @@ using Microsoft.Practices.Unity;
 using PowerArgs;
 using Newtonsoft.Json;
 using System.IO;
+using System.Reflection;
 
 namespace IoStorm.Sample1
 {
@@ -98,6 +99,22 @@ namespace IoStorm.Sample1
             log = logFactory.GetLogger("Main");
 
             log.Info("Start up");
+
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, arg) =>
+                {
+                    string[] parts = arg.Name.Split(',');
+                    if (parts.Length > 0)
+                    {
+                        string pluginFolder = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins");
+
+                        string assemblyFileName = Path.Combine(pluginFolder, parts[0] + ".dll");
+                        if (File.Exists(assemblyFileName))
+                        {
+                            return Assembly.LoadFile(assemblyFileName);
+                        }
+                    }
+                    return null;
+                };
 
             log.Info("Config file {0}", arguments.ConfigFile);
 
