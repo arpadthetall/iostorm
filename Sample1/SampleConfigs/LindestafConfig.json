@@ -30,7 +30,8 @@
           "Name": "The UPB Transceiver",
           "Settings": {
             "SerialPortName": "COM11"
-          }
+          },
+          "Disabled": true
         }
       ],
       "Zones": [
@@ -44,7 +45,14 @@
               "Name": "The IR receiver",
               "Settings": {
                 "SerialPortName": "COM10"
-              }
+              },
+              "Disabled": true
+            },
+            {
+              "InstanceId": "ae8f512dfaa54cbdaf37f882a191bbd0",
+              "PluginId": "IoStorm.Plugins.IguanaWorks.Plugin",
+              "Name": "The IR receiver",
+              "Settings": {}
             }
           ],
           "Zones": []

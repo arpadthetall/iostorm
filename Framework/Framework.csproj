@@ -73,6 +73,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IRProtocol\Hash.cs" />
+    <Compile Include="IRProtocol\NECx.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />
     <Compile Include="DeviceInstance.cs" />
     <Compile Include="Helper\SerialFixedManager.cs" />

@@ -45,6 +45,9 @@ namespace IoStorm.Sample1
         {
             foreach (var deviceConfig in devices)
             {
+                if (deviceConfig.Disabled)
+                    continue;
+
                 try
                 {
                     var plugin = hub.AvailablePlugins.SingleOrDefault(x => x.PluginId == deviceConfig.PluginId);

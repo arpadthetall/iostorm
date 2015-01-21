@@ -174,7 +174,7 @@ namespace IoStorm
 
                     DateTime portOpened = DateTime.Now;
 
-                    while (this.serialPort.IsOpen)
+                    while (this.serialPort != null && this.serialPort.IsOpen)
                     {
                         try
                         {

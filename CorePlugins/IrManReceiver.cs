@@ -185,7 +185,10 @@ namespace IoStorm.CorePlugins
                 this.hub.BroadcastPayload(this, payload);
             }
             else
+            {
+                // Should we send it as Hash payload?
                 this.log.Debug("Unknown IR command {0} (tgl: {1})", rawData, toggleData);
+            }
         }
 
         public void Dispose()

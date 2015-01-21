@@ -50,6 +50,7 @@
     <Compile Include="Base\BasePayload.cs" />
     <Compile Include="Dummy.cs" />
     <Compile Include="Interface\IIRProtocol.cs" />
+    <Compile Include="Interface\IRemotePayload.cs" />
     <Compile Include="InternalMessage.cs" />
     <Compile Include="Interface\IPayload.cs" />
     <Compile Include="IRCommand.cs" />

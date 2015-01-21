@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define VERBOSE_LOGGING
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -126,7 +128,9 @@ namespace IoStorm
 
             channel.BasicPublish(channelName, string.Empty, properties, body);
 
+#if VERBOSE_LOGGING
             this.log.Trace("Sent {0} bytes", body.Length);
+#endif
         }
 
         public void Receiver(string channelName, CancellationToken cancelToken, IObserver<Payload.BusPayload> bus)
@@ -149,7 +153,9 @@ namespace IoStorm
                     {
                         var body = result.Body;
 
+#if VERBOSE_LOGGING
                         this.log.Trace("Received {0} bytes", body.Length);
+#endif
 
                         object obj = this.serializer.DeserializeString(Encoding.UTF8.GetString(body));
 
@@ -166,6 +172,11 @@ namespace IoStorm
                 catch (System.IO.EndOfStreamException)
                 {
                     break;
+                }
+                catch (Exception ex)
+                {
+                    // Ignore
+                    this.log.WarnException("Receive remote hub payload", ex);
                 }
             }
         }

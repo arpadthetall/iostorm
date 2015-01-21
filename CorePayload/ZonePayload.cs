@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IoStorm.Payload
 {
-    public class ZonePayload : IPayload
+    public class ZonePayload : IPayload, IRemotePayload
     {
         public string ZoneId { get; set; }
 
@@ -14,7 +14,7 @@ namespace IoStorm.Payload
 
         public string GetDebugInfo()
         {
-            return string.Format("{0} from {1}", Payload.GetDebugInfo(), ZoneId);
+            return string.Format("{0} from zone {1}", Payload.GetDebugInfo(), ZoneId);
         }
     }
 }

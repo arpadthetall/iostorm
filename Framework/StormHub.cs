@@ -88,7 +88,8 @@ namespace IoStorm
                         // Broadcast on amqp
                         try
                         {
-                            this.remoteHub.SendPayload("Global", p.Payload);
+                            if (p.Payload is Payload.IRemotePayload)
+                                this.remoteHub.SendPayload("Global", p.Payload);
                         }
                         catch (Exception ex)
                         {
