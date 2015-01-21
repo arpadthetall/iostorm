@@ -87,8 +87,8 @@ namespace IoStorm.CorePlugins
             //TEMP
             CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(this);
             CorePlugins.RemoteMapping.IrManSamsung.MapRemoteControl(this);
-            var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
-            xlat.MapSqueezeBoxRemote();
+            //var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
+            //xlat.MapSqueezeBoxRemote();
 
             this.serialManager.Start();
         }

@@ -73,6 +73,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActivityController.cs" />
     <Compile Include="IRProtocol\Hash.cs" />
     <Compile Include="IRProtocol\NECx.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />

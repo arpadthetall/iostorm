@@ -122,12 +122,12 @@ namespace IoStorm
             get { return this.deviceInstances.Values.ToList().AsReadOnly(); }
         }
 
-        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
+        internal Tuple<DeviceInstance, IDevice> AddDeviceInstance(string pluginId, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
         {
             if (this.deviceInstances.ContainsKey(instanceId))
                 throw new ArgumentException("Duplicate InstanceId");
 
-            var deviceInstance = new DeviceInstance(plugin.PluginId, instanceId)
+            var deviceInstance = new DeviceInstance(pluginId, instanceId)
             {
                 ZoneId = zoneId,
                 Name = name
@@ -149,6 +149,45 @@ namespace IoStorm
             var pluginInstance = StartDeviceInstance(deviceInstance);
 
             return Tuple.Create(deviceInstance, pluginInstance);
+        }
+
+        public Tuple<DeviceInstance, IDevice> AddDeviceInstance<T>(string name, string instanceId, string zoneId, IDictionary<string, string> settings) where T : IDevice
+        {
+            string pluginId = typeof(T).FullName;
+
+            if (this.deviceInstances.ContainsKey(instanceId))
+                throw new ArgumentException("Duplicate InstanceId");
+
+            var deviceInstance = new DeviceInstance(pluginId, instanceId)
+            {
+                ZoneId = zoneId,
+                Name = name
+            };
+
+            lock (this.deviceInstances)
+            {
+                this.deviceInstances.Add(deviceInstance.InstanceId, deviceInstance);
+            }
+
+            SaveDeviceInstances();
+
+            // Save settings
+            if (settings != null)
+            {
+                foreach (var setting in settings)
+                {
+                    SaveSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
+                }
+            }
+
+            var pluginInstance = LoadPlugin(deviceInstance, typeof(T));
+
+            return Tuple.Create(deviceInstance, pluginInstance);
+        }
+
+        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
+        {
+            return AddDeviceInstance(plugin.PluginId, name, instanceId, zoneId, settings);
         }
 
         [Obsolete]
@@ -178,15 +217,15 @@ namespace IoStorm
                     return null;
                 }
 
-                var plugin = this.pluginManager.LoadPluginType(pluginType.AssemblyQualifiedName);
+                var pluginInstanceType = this.pluginManager.LoadPluginType(pluginType.AssemblyQualifiedName);
 
-                if (plugin == null)
+                if (pluginInstanceType == null)
                 {
                     this.log.Error("Failed to instantiate plugin {0}", pluginType.AssemblyQualifiedName);
                     return null;
                 }
 
-                var pluginInstance = LoadPlugin(plugin, deviceInstance.InstanceId);
+                var pluginInstance = LoadPlugin(deviceInstance, pluginInstanceType);
 
                 return pluginInstance;
             }
@@ -213,6 +252,7 @@ namespace IoStorm
         }
 
         private void WireUpPlugin(
+            DeviceInstance deviceInstance,
             IDevice plugin,
             IObservable<Payload.BusPayload> externalIncoming,
             IObservable<Payload.InternalMessage> internalIncoming)
@@ -231,24 +271,52 @@ namespace IoStorm
 
                 var parameterType = parameters.First().ParameterType;
 
-                externalIncoming.Where(x => parameterType.IsInstanceOfType(x.Payload))
+                externalIncoming
                     .Subscribe(x =>
                     {
-                        method.Invoke(plugin, new object[] { x.Payload });
+                        // Unwrap
+                        Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
+
+                        if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
+                            method.Invoke(plugin, new object[] { unwrappedPayload });
                     });
 
                 // Filter out our own messages
                 internalIncoming
-                    .Where(x => x.OriginatingInstanceId != plugin.InstanceId && parameterType.IsInstanceOfType(x.Payload))
+                    .Where(x => x.OriginatingInstanceId != plugin.InstanceId)
                     .Subscribe(x =>
                     {
-                        method.Invoke(plugin, new object[] { x.Payload });
+                        // Unwrap
+                        Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
+
+                        if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
+                            method.Invoke(plugin, new object[] { unwrappedPayload });
                     });
             }
         }
 
+        private Payload.IPayload UnwrapPayload(Payload.IPayload incoming, string zoneId)
+        {
+            string sourceZoneId = null;
+            var zoneSourcePayload = incoming as Payload.ZoneSourcePayload;
+            if (zoneSourcePayload != null)
+            {
+                sourceZoneId = zoneSourcePayload.SourceZoneId;
+                incoming = zoneSourcePayload.Payload;
+            }
+
+            var zoneDestinationPayload = incoming as Payload.ZoneDestinationPayload;
+            if (zoneDestinationPayload != null)
+            {
+                if (string.Equals(zoneDestinationPayload.DestinationZoneId, zoneId))
+                    return zoneDestinationPayload.Payload;
+            }
+
+            return incoming;
+        }
+
         [Obsolete]
-        public T LoadPlugin<T>(/*params ParameterOverride[] overrides*/) where T : IDevice
+        public T LoadPlugin<T>(DeviceInstance deviceInstance /*params ParameterOverride[] overrides*/) where T : IDevice
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
@@ -256,21 +324,23 @@ namespace IoStorm
 
             var plugin = this.container.Resolve<T>(allOverrides.ToArray());
 
-            WireUpPlugin(plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+            WireUpPlugin(deviceInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+
+            this.runningInstances.Add(plugin);
 
             return plugin;
         }
 
-        public IDevice LoadPlugin(Type type, string instanceId, params ParameterOverride[] overrides)
+        public IDevice LoadPlugin(DeviceInstance deviceInstance, Type type, params ParameterOverride[] overrides)
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
-            allOverrides.Add(new ParameterOverride("instanceId", instanceId));
+            allOverrides.Add(new ParameterOverride("instanceId", deviceInstance.InstanceId));
             allOverrides.AddRange(overrides);
 
             var plugin = this.container.Resolve(type, allOverrides.ToArray()) as IDevice;
 
-            WireUpPlugin(plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+            WireUpPlugin(deviceInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
             this.runningInstances.Add(plugin);
 
@@ -324,9 +394,9 @@ namespace IoStorm
             if (!this.deviceInstances.TryGetValue(sender.InstanceId, out instance))
                 throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
 
-            var zonePayload = new IoStorm.Payload.ZonePayload
+            var zonePayload = new IoStorm.Payload.ZoneSourcePayload
             {
-                ZoneId = instance.ZoneId,
+                SourceZoneId = instance.ZoneId,
                 Payload = payload
             };
 
@@ -369,6 +439,11 @@ namespace IoStorm
             string fullKey = string.Format("{0}-{1}-{2}", deviceName, instanceId, key);
 
             BinaryRage.DB.Insert(fullKey, value, this.configPath);
+        }
+
+        public string ZoneId
+        {
+            get { return this.ourDeviceId; }
         }
     }
 }

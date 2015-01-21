@@ -1,13 +1,21 @@
 {
   "DeviceId": "MAC:0050B665200D",
   "Name": "Office Test Hub",
-  "UpstreamHub": "192.168.240.113",
+  "UpstreamHub": "192.168.1.113",
   "Devices": [
     {
       "InstanceId": "ae8f512dfaa54cbdaf37f882a191bbd0",
       "PluginId": "IoStorm.Plugins.IguanaWorks.Plugin",
       "Name": "The IR receiver",
       "Settings": {}
+    },
+    {
+      "InstanceId": "a023bb086a904746b36733ec4f250852",
+      "PluginId": "IoStorm.CorePlugins.IrManReceiver",
+      "Name": "The 2nd IR receiver",
+      "Settings": {
+        "SerialPortName": "COM13"
+      }
     }
   ],
   "Zones": []

@@ -20,7 +20,7 @@ namespace IoStorm.Plugins.IguanaWorks
             if (!DecodeGeneric(irData, out value, 68, 564 * 8, 564 * 8, 0, 564, 564 * 3, 564))
                 return false;
 
-            this.receivedCommand(new IoStorm.IRProtocol.NEC2((Int16)(value >> 16), (Int16)value));
+            this.receivedCommand(new IoStorm.IRProtocol.NECx((int)(value >> 16), (int)value));
 
             return true;
         }

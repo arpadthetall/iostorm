@@ -12,7 +12,9 @@ namespace IoStorm
 
         string GetSetting(IDevice device, string key);
 
+        string ZoneId { get; }
+
         [Obsolete]
-        T LoadPlugin<T>() where T : IDevice;
+        T LoadPlugin<T>(DeviceInstance deviceInstance) where T : IDevice;
     }
 }

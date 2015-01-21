@@ -182,6 +182,10 @@ namespace IoStorm
 
                             this.dataReceived.OnNext(b);
                         }
+                        catch (IOException)
+                        {
+                            break;
+                        }
                         catch (TimeoutException)
                         {
                         }

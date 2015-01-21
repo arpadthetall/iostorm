@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace IoStorm.Payload
 {
-    public class ZonePayload : IPayload, IRemotePayload
+    public class ZoneDestinationPayload : IPayload, IRemotePayload
     {
-        public string ZoneId { get; set; }
+        public string DestinationZoneId { get; set; }
 
         public IPayload Payload { get; set; }
 
         public string GetDebugInfo()
         {
-            return string.Format("{0} from zone {1}", Payload.GetDebugInfo(), ZoneId);
+            return string.Format("{0} to zone {1}", Payload.GetDebugInfo(), DestinationZoneId);
         }
     }
 }

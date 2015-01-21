@@ -487,5 +487,10 @@ namespace IoStorm.Plugins.IguanaWorks
 
             this.log.Trace("Disposing done");
         }
+
+        public void Incoming(Payload.IRCommand payload)
+        {
+            this.log.Trace("Sending IR");
+        }
     }
 }

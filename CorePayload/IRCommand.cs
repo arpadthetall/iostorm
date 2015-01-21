@@ -12,6 +12,8 @@ namespace IoStorm.Payload
 
         public int Repeat { get; set; }
 
+        public string PortId { get; set; }
+
         public override string GetDebugInfo()
         {
             return string.Format("IRCommand {0} [{1}]/{2}", Command.GetType().Name, Command.ToString(), Repeat);
