@@ -18,21 +18,23 @@ namespace IoStorm
         {
             this.log = logFactory.GetLogger("ActivityController");
             this.hub = hub;
+        }
 
-            Task.Delay(3000).ContinueWith(x =>
+        public void Incoming(Payload.OscMessage payload)
+        {
+            if (payload.Address == "/1/toggle1")
             {
                 this.hub.BroadcastPayload(this, new Payload.ZoneDestinationPayload
                 {
                     DestinationZoneId = hub.ZoneId,
                     Payload = new Payload.IRCommand
-                {
-                    PortId = "1",
-                    Repeat = 2,
-                    Command = new IoStorm.IRProtocol.NECx(0xE0E0, 0x40BF)
-                }
+                    {
+                        PortId = "1",
+                        Repeat = 2,
+                        Command = new IoStorm.IRProtocol.NECx(7, 7, payload.Value == "1" ? 153 : 152)
+                    }
                 });
-            });
+            }
         }
-
     }
 }

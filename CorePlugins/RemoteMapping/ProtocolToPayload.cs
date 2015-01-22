@@ -48,65 +48,65 @@ namespace IoStorm.CorePlugins.RemoteMapping
         {
             // We should store this somewhere external
 
-            Add(new NEC2(0x7689, 0x00ff), () => new Payload.Audio.VolumeDown());
+            Add(new NECx(0x89, 0x76, 0x00), () => new Payload.Audio.VolumeDown());
 
-            Add(new NEC2(0x7689, 0x807f), () => new Payload.Audio.VolumeUp());
+            Add(new NECx(0x89, 0x76, 0x80), () => new Payload.Audio.VolumeUp());
 
-            Add(new NEC2(0x7689, 0x40bf), () => new Payload.Power.Toggle());
+            Add(new NECx(0x89, 0x76, 0x40), () => new Payload.Power.Toggle());
 
-            Add(new NEC2(0x7689, 0xc03f), () => new Payload.Transport.Rewind());
+            Add(new NECx(0x89, 0x76, 0xc0), () => new Payload.Transport.Rewind());
 
-            Add(new NEC2(0x7689, 0x20df), () => new Payload.Transport.Pause());
+            Add(new NECx(0x89, 0x76, 0x20), () => new Payload.Transport.Pause());
 
-            Add(new NEC2(0x7689, 0xa05f), () => new Payload.Transport.FastForward());
+            Add(new NECx(0x89, 0x76, 0xA0), () => new Payload.Transport.FastForward());
 
-            Add(new NEC2(0x7689, 0x609f), () => new Payload.Navigation.Add());
+            Add(new NECx(0x89, 0x76, 0x60), () => new Payload.Navigation.Add());
 
-            Add(new NEC2(0x7689, 0xe01f), () => new Payload.Navigation.Up());
+            Add(new NECx(0x89, 0x76, 0xE0), () => new Payload.Navigation.Up());
 
-            Add(new NEC2(0x7689, 0x10ef), () => new Payload.Transport.Play());
+            Add(new NECx(0x89, 0x76, 0x10), () => new Payload.Transport.Play());
 
-            Add(new NEC2(0x7689, 0x906f), () => new Payload.Navigation.Left());
+            Add(new NECx(0x89, 0x76, 0x90), () => new Payload.Navigation.Left());
 
-            Add(new NEC2(0x7689, 0xd02f), () => new Payload.Navigation.Right());
+            Add(new NECx(0x89, 0x76, 0xD0), () => new Payload.Navigation.Right());
 
-            Add(new NEC2(0x7689, 0xb04f), () => new Payload.Navigation.Down());
+            Add(new NECx(0x89, 0x76, 0xB0), () => new Payload.Navigation.Down());
 
-            Add(new NEC2(0x7689, 0xf00f), () => new Payload.Navigation.Number1());
+            Add(new NECx(0x89, 0x76, 0xF0), () => new Payload.Navigation.Number1());
 
-            Add(new NEC2(0x7689, 0x08f7), () => new Payload.Navigation.Number2());
+            Add(new NECx(0x89, 0x76, 0x08), () => new Payload.Navigation.Number2());
 
-            Add(new NEC2(0x7689, 0x8877), () => new Payload.Navigation.Number3());
+            Add(new NECx(0x89, 0x76, 0x88), () => new Payload.Navigation.Number3());
 
-            Add(new NEC2(0x7689, 0x48b7), () => new Payload.Navigation.Number4());
+            Add(new NECx(0x89, 0x76, 0x48), () => new Payload.Navigation.Number4());
 
-            Add(new NEC2(0x7689, 0xc837), () => new Payload.Navigation.Number5());
+            Add(new NECx(0x89, 0x76, 0xC8), () => new Payload.Navigation.Number5());
 
-            Add(new NEC2(0x7689, 0x28d7), () => new Payload.Navigation.Number6());
+            Add(new NECx(0x89, 0x76, 0x28), () => new Payload.Navigation.Number6());
 
-            Add(new NEC2(0x7689, 0xa857), () => new Payload.Navigation.Number7());
+            Add(new NECx(0x89, 0x76, 0xA8), () => new Payload.Navigation.Number7());
 
-            Add(new NEC2(0x7689, 0x6897), () => new Payload.Navigation.Number8());
+            Add(new NECx(0x89, 0x76, 0x68), () => new Payload.Navigation.Number8());
 
-            Add(new NEC2(0x7689, 0xe817), () => new Payload.Navigation.Number9());
+            Add(new NECx(0x89, 0x76, 0xE8), () => new Payload.Navigation.Number9());
 
-            Add(new NEC2(0x7689, 0x18e7), () => new Payload.Navigation.Favorites());
+            Add(new NECx(0x89, 0x76, 0x18), () => new Payload.Navigation.Favorites());
 
-            Add(new NEC2(0x7689, 0x9867), () => new Payload.Navigation.Number0());
+            Add(new NECx(0x89, 0x76, 0x98), () => new Payload.Navigation.Number0());
 
-            Add(new NEC2(0x7689, 0x58a7), () => new Payload.Navigation.Search());
+            Add(new NECx(0x89, 0x76, 0x58), () => new Payload.Navigation.Search());
 
-            Add(new NEC2(0x7689, 0xd827), () => new Payload.Transport.Shuffle());
+            Add(new NECx(0x89, 0x76, 0xD8), () => new Payload.Transport.Shuffle());
 
-            Add(new NEC2(0x7689, 0x38c7), () => new Payload.Transport.Repeat());
+            Add(new NECx(0x89, 0x76, 0x38), () => new Payload.Transport.Repeat());
 
-            Add(new NEC2(0x7689, 0xb847), () => new Payload.Power.Sleep());
+            Add(new NECx(0x89, 0x76, 0xB8), () => new Payload.Power.Sleep());
 
-            Add(new NEC2(0x7689, 0x7887), () => new Payload.Navigation.NowPlaying());
+            Add(new NECx(0x89, 0x76, 0x78), () => new Payload.Navigation.NowPlaying());
 
-            Add(new NEC2(0x7689, 0xf807), () => new Payload.Navigation.DisplaySize());
+            Add(new NECx(0x89, 0x76, 0xF8), () => new Payload.Navigation.DisplaySize());
 
-            Add(new NEC2(0x7689, 0x04fb), () => new Payload.Navigation.DisplayBrightness());
+            Add(new NECx(0x89, 0x76, 0x04), () => new Payload.Navigation.DisplayBrightness());
         }
 
         public void MapSonyTVRemoteRMYD024()

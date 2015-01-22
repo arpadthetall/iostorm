@@ -311,7 +311,9 @@ namespace IoStorm.Plugins.IguanaWorks
 
         private void Decode(IrData irData)
         {
+#if VERBOSE_IR_DATA
             this.log.Trace("Samples: {0}", irData.Data.Count);
+#endif
 
             foreach (var decoder in this.decoders)
             {

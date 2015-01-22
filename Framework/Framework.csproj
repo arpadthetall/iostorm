@@ -75,12 +75,12 @@
   <ItemGroup>
     <Compile Include="ActivityController.cs" />
     <Compile Include="IRProtocol\Hash.cs" />
-    <Compile Include="IRProtocol\NECx.cs" />
+    <Compile Include="IRProtocol\NEC.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />
     <Compile Include="DeviceInstance.cs" />
     <Compile Include="Helper\SerialFixedManager.cs" />
     <Compile Include="IRProtocol\BaseSony.cs" />
-    <Compile Include="IRProtocol\NEC2.cs" />
+    <Compile Include="IRProtocol\NECx.cs" />
     <Compile Include="IRProtocol\Sony12.cs" />
     <Compile Include="IRProtocol\Sony15.cs" />
     <Compile Include="Plugin\PluginAttribute.cs" />

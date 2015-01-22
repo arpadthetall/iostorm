@@ -12,10 +12,10 @@ namespace IoStorm.CorePlugins.RemoteMapping
         public static void MapRemoteControl(IrManReceiver receiver)
         {
             // RedA
-            receiver.AddIrCommand("4OA2yQAA", new NEC2(0x7689, 0xb04f));
+            receiver.AddIrCommand("4OA2yQAA", new NECx(0x89, 0x76, 0xB0));
 
             // GreenB
-            receiver.AddIrCommand("4OAo1wAA", new NEC2(0x7689, 0xe01f));
+            receiver.AddIrCommand("4OAo1wAA", new NECx(0x89, 0x76, 0xE0));
         }
     }
 }

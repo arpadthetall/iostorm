@@ -10,7 +10,7 @@ namespace IoStorm.Plugins.IguanaWorks
     public class DecoderNEC : DecoderBase
     {
         private const int NEC_RPT_SPACE = 2250;
-        private long lastValue;
+        private IoStorm.IRProtocol.NEC lastValue;
 
         public DecoderNEC(ILog log, Action<Payload.IIRProtocol> receivedCommand)
             : base(log, receivedCommand)
@@ -25,25 +25,40 @@ namespace IoStorm.Plugins.IguanaWorks
                 DecoderHelper.MATCH(irData.Data[3], 564))
             {
                 // Repeat
-                this.receivedCommand(new IoStorm.IRProtocol.NEC2((int)this.lastValue >> 16, (int)this.lastValue, true));
+
+                if (this.lastValue == null)
+                    // We don't know what to repeat
+                    return false;
+
+                this.receivedCommand(new IoStorm.IRProtocol.NEC(this.lastValue.AddressH, this.lastValue.AddressL, this.lastValue.Command, true));
 
                 return true;
             }
 
-            long value;
-            if (!DecodeGeneric(irData, out value, 68, 564 * 16, 564 * 8, 0, 564, 564 * 3, 564))
+            BitBuilder bits;
+            if (!DecodeGeneric(irData, out bits, 68, 564 * 16, 564 * 8, 0, 564, 564 * 3, 564))
                 return false;
 
-            this.lastValue = value;
+            byte addressL = bits.GetByteMSB(0);
+            byte addressH = bits.GetByteMSB(8);
+            byte command = bits.GetByteMSB(16);
+            byte commandI = bits.GetByteMSB(24);
 
-            this.receivedCommand(new IoStorm.IRProtocol.NEC2((int)value >> 16, (int)value));
+            if (command != (byte)~commandI)
+                // Should be inverted, invalid
+                return false;
+
+            var protocol = new IoStorm.IRProtocol.NECx(addressH, addressL, command);
+            this.lastValue = protocol;
+
+            this.receivedCommand(protocol);
 
             return true;
         }
 
         public override IrData Encode(Payload.IIRProtocol input)
         {
-            var value = input as IoStorm.IRProtocol.NECx;
+            var value = input as IoStorm.IRProtocol.NEC;
             if (value == null)
                 return null;
 

@@ -40,7 +40,7 @@ namespace IoStorm.Plugins.IguanaWorks
          */
         protected bool DecodeGeneric(
             IrData irData,
-            out long output,
+            out BitBuilder output,
             int expectedCount,
             int headMarkLen,
             int headSpaceLen,
@@ -52,9 +52,8 @@ namespace IoStorm.Plugins.IguanaWorks
         {
             // If raw samples count or head mark are zero then don't perform these tests.
             // Some protocols need to do custom header work.
-            output = 0;
-            long data = 0;
-            int Max;
+            output = null;
+            int max;
             int offset = 1;
             int rawlen = irData.Data.Count;
             int bits = 0;
@@ -90,12 +89,13 @@ namespace IoStorm.Plugins.IguanaWorks
                 }
             }
 
+            output = new BitBuilder();
             if (markOneLen != 0)
             {
-                //Length of a mark indicates data "0" or "1". Space_Zero is ignored.
-                offset = 2;//skip initial gap plus header Mark.
-                Max = rawlen;
-                while (offset < Max)
+                // Length of a mark indicates data "0" or "1". Space_Zero is ignored.
+                offset = 2; // skip initial gap plus header Mark.
+                max = rawlen;
+                while (offset < max)
                 {
                     if (!DecoderHelper.MATCH(irData.Data[offset], spaceOneLen))
                     {
@@ -105,11 +105,11 @@ namespace IoStorm.Plugins.IguanaWorks
                     offset++;
                     if (DecoderHelper.MATCH(irData.Data[offset], markOneLen))
                     {
-                        data = (data << 1) | 1;
+                        output.AddBit(true);
                     }
                     else if (DecoderHelper.MATCH(irData.Data[offset], markZeroLen))
                     {
-                        data <<= 1;
+                        output.AddBit(false);
                     }
                     else
                     {
@@ -122,10 +122,10 @@ namespace IoStorm.Plugins.IguanaWorks
             }
             else
             {
-                //Mark_One was 0 therefore length of a space indicates data "0" or "1".
-                Max = rawlen - 1; //ignore stop bit
-                offset = 3;//skip initial gap plus two header items
-                while (offset < Max)
+                // Mark_One was 0 therefore length of a space indicates data "0" or "1".
+                max = rawlen - 1; // ignore stop bit
+                offset = 3; // skip initial gap plus two header items
+                while (offset < max)
                 {
                     if (!DecoderHelper.MATCH(irData.Data[offset], markZeroLen))
                     {
@@ -135,11 +135,11 @@ namespace IoStorm.Plugins.IguanaWorks
                     offset++;
                     if (DecoderHelper.MATCH(irData.Data[offset], spaceOneLen))
                     {
-                        data = (data << 1) | 1;
+                        output.AddBit(true);
                     }
                     else if (DecoderHelper.MATCH(irData.Data[offset], spaceZeroLen))
                     {
-                        data <<= 1;
+                        output.AddBit(false);
                     }
                     else
                     {
@@ -151,8 +151,11 @@ namespace IoStorm.Plugins.IguanaWorks
                 bits = (offset - 1) / 2 - 1;    //didn't encode stop bit
             }
 
+            if (bits != output.Count)
+                // Incorrect number of bits
+                return false;
+
             // Success
-            output = data;
             return true;
         }
 
@@ -167,7 +170,7 @@ namespace IoStorm.Plugins.IguanaWorks
          * The decoding routines do not encode stop bits. So you have to tell this routine whether or not to send one.
          */
         protected IrData BuildGeneric(
-            long data,
+            BitBuilder data,
             int numBits,
             int headMarkLen,
             int headSpaceLen,
@@ -181,9 +184,7 @@ namespace IoStorm.Plugins.IguanaWorks
         {
             var output = new List<Tuple<bool, int>>();
 
-            data = data << (32 - numBits);
-
-            //Some protocols do not send a header when sending repeat codes. So we pass a zero value to indicate skipping this.
+            // Some protocols do not send a header when sending repeat codes. So we pass a zero value to indicate skipping this.
             if (headMarkLen != 0)
                 output.Add(Tuple.Create(true, headMarkLen));
 
@@ -192,7 +193,7 @@ namespace IoStorm.Plugins.IguanaWorks
 
             for (int i = 0; i < numBits; i++)
             {
-                if ((data & 0x80000000) != 0)
+                if (data.Get(i))
                 {
                     output.Add(Tuple.Create(true, markOneLen));
                     output.Add(Tuple.Create(false, spaceOneLen));
@@ -202,8 +203,6 @@ namespace IoStorm.Plugins.IguanaWorks
                     output.Add(Tuple.Create(true, markZeroLen));
                     output.Add(Tuple.Create(false, spaceZeroLen));
                 }
-
-                data <<= 1;
             }
 
             if (useStopBit)

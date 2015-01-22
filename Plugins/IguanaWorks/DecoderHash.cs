@@ -61,7 +61,7 @@ namespace IoStorm.Plugins.IguanaWorks
 
         public override IrData Encode(Payload.IIRProtocol input)
         {
-            var value = input as IoStorm.IRProtocol.NECx;
+            var value = input as IoStorm.IRProtocol.NEC;
             if (value == null)
                 return null;
 
