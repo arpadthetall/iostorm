@@ -74,7 +74,8 @@ namespace IoStorm.Plugins.IguanaWorks
                 new CoderNEC(this.log, receivedCommand),
                 new CoderNECx(this.log, receivedCommand),
                 new CoderSony(this.log, receivedCommand),
-                new CoderHash(this.log, receivedCommand)
+                new CoderNokia(this.log, receivedCommand),
+//                new CoderHash(this.log, receivedCommand)
             };
 
             this.portMonitorTask = Task.Factory.StartNew(() => PortMonitor(), TaskCreationOptions.LongRunning);

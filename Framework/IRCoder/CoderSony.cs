@@ -28,7 +28,12 @@ namespace IoStorm.IRCoder
                 irLen != 2 * 12 + 2 &&
                 irLen != 2 * 15 + 2 &&
                 irLen != 2 * 20 + 2)
+            {
+#if VERBOSE_IR_DATA
+                this.log.Trace("[{0}] Invalid Number of raw samples", this.GetType().Name);
+#endif
                 return false;
+            }
 
             BitBuilder bits;
             if (!DecodeGeneric(irData, out bits, 0, 600 * 4, 600, 600 * 2, 600, 600, 0))

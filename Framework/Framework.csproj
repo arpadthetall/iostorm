@@ -79,10 +79,12 @@
     <Compile Include="IRCoder\CoderHash.cs" />
     <Compile Include="IRCoder\CoderHelper.cs" />
     <Compile Include="IRCoder\CoderNEC.cs" />
+    <Compile Include="IRCoder\CoderNokia.cs" />
     <Compile Include="IRCoder\CoderSony.cs" />
     <Compile Include="IRCoder\CoderNECx.cs" />
     <Compile Include="IRCoder\IrData.cs" />
     <Compile Include="IRProtocol\Hash.cs" />
+    <Compile Include="IRProtocol\Nokia32.cs" />
     <Compile Include="IRProtocol\NEC.cs" />
     <Compile Include="IRProtocol\Sony20.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />

@@ -31,8 +31,9 @@ namespace IoStorm
                     {
                         PortId = "1",
                         Repeat = 2,
-                        Command = new IoStorm.IRProtocol.Sony12(1, payload.Value == "1" ? 46 : 47)
-                        //Command = new IoStorm.IRProtocol.NECx(7, 7, payload.Value == "1" ? 153 : 152)
+                        //Command = new IoStorm.IRProtocol.Nokia32(35, 64, payload.Value == "1" ? 88 : 89, 38, true)
+                        //Command = new IoStorm.IRProtocol.Sony12(1, payload.Value == "1" ? 46 : 47)
+                        Command = new IoStorm.IRProtocol.NECx(7, 7, payload.Value == "1" ? 153 : 152)
                     }
                 });
             }

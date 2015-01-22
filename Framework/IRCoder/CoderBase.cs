@@ -1,4 +1,5 @@
 ﻿//#define VERBOSE_IR_DATA
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +25,7 @@ namespace IoStorm.IRCoder
 
         public abstract IrData Encode(IoStorm.Payload.IIRProtocol input);
 
-        private void TraceError(string errorType, int offset, int value, int expected)
+        protected void TraceError(string errorType, int offset, int value, int expected)
         {
 #if VERBOSE_IR_DATA
             this.log.Trace("[{0}] Invalid {1} (Idx: {2}   Val: {3}   Exp: {4})", this.GetType().Name, errorType, offset, value, expected);
@@ -159,6 +160,31 @@ namespace IoStorm.IRCoder
             return true;
         }
 
+        protected IrData BuildIrDataFromTupleList(int carrierFrequencyHz, List<Tuple<bool, int>> list)
+        {
+            var result = new IrData
+            {
+                FrequencyHertz = carrierFrequencyHz
+            };
+            bool lastIsPulse = false;
+            foreach (var ir in list)
+            {
+                if (ir.Item1 == lastIsPulse && result.Data.Count > 0)
+                {
+                    // Add
+                    result.Data[result.Data.Count - 1] += ir.Item2;
+                }
+                else
+                {
+                    result.Data.Add(ir.Item2);
+                }
+
+                lastIsPulse = ir.Item1;
+            }
+
+            return result;
+        }
+
         /*
          * Most of the protocols have a header consisting of a mark/space of a particular length followed by 
          * a series of variable length mark/space signals.  Depending on the protocol they very the lengths of the 
@@ -218,27 +244,7 @@ namespace IoStorm.IRCoder
                 output.Add(Tuple.Create(false, spaceOneLen));
 
             // Build IrData
-            var result = new IrData
-            {
-                FrequencyHertz = carrierFrequency
-            };
-            bool lastIsPulse = false;
-            foreach (var ir in output)
-            {
-                if (ir.Item1 == lastIsPulse && result.Data.Count > 0)
-                {
-                    // Add
-                    result.Data[result.Data.Count - 1] += ir.Item2;
-                }
-                else
-                {
-                    result.Data.Add(ir.Item2);
-                }
-
-                lastIsPulse = ir.Item1;
-            }
-
-            return result;
+            return BuildIrDataFromTupleList(carrierFrequency, output);
         }
     }
 }
