@@ -377,38 +377,41 @@ namespace IoStorm.Plugins.IguanaWorks
 
         private byte[] SendCommand(byte command, byte[] data = null)
         {
-            if (this.usbDevice == null)
-                return null;
+            lock (this)
+            {
+                if (this.usbDevice == null)
+                    return null;
 
-            int dataLen = data != null ? data.Length : 0;
-            if (dataLen > 4)
-                // We can't send more than 4 bytes
-                dataLen = 4;
-            dataLen = 0;
+                int dataLen = data != null ? data.Length : 0;
+                if (dataLen > 4)
+                    // We can't send more than 4 bytes
+                    dataLen = 4;
+                dataLen = 0;
 
-            byte[] msg = new byte[4 + dataLen];
-            msg[0] = 0;
-            msg[1] = 0;
-            msg[2] = 0xCD;          // To device
-            msg[3] = command;       // Code
+                byte[] msg = new byte[4 + dataLen];
+                msg[0] = 0;
+                msg[1] = 0;
+                msg[2] = 0xCD;          // To device
+                msg[3] = command;       // Code
 
-            if (dataLen > 0)
-                Buffer.BlockCopy(data, 0, msg, 4, dataLen);
+                if (dataLen > 0)
+                    Buffer.BlockCopy(data, 0, msg, 4, dataLen);
 
-            this.waitForCommand = command;
-            this.waitForCommandEvent.Reset();
-            this.receivedPayload = null;
+                this.waitForCommand = command;
+                this.waitForCommandEvent.Reset();
+                this.receivedPayload = null;
 
-            int sentBytes;
-            var result = this.writer.Write(msg, 1000, out sentBytes);
+                int sentBytes;
+                var result = this.writer.Write(msg, 1000, out sentBytes);
 
-            if (sentBytes != msg.Length)
-                throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
+                if (sentBytes != msg.Length)
+                    throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
 
-            if (!this.waitForCommandEvent.WaitOne(1000))
-                throw new TimeoutException("Failed to receive response");
+                if (!this.waitForCommandEvent.WaitOne(1000))
+                    throw new TimeoutException("Failed to receive response");
 
-            return this.receivedPayload;
+                return this.receivedPayload;
+            }
         }
 
         /*
@@ -472,49 +475,52 @@ namespace IoStorm.Plugins.IguanaWorks
 
         private byte[] SendIrCommand(byte[] data, int carrier, byte channels)
         {
-            if (this.usbDevice == null)
-                return null;
-
-            int dataLen = data.Length;
-
-            byte[] msg = new byte[8];
-            msg[0] = 0;
-            msg[1] = 0;
-            msg[2] = 0xCD;              // To device
-            msg[3] = 0x15;              // Code
-            msg[4] = (byte)dataLen;     // Data Len
-            msg[5] = (byte)channels;
-
-            // Compute the delay length off the carrier
-            ComputeCarrierDelays(carrier, this.cycles, msg, 6);
-
-            this.waitForCommand = 0x15;
-            this.waitForCommandEvent.Reset();
-            this.receivedPayload = null;
-
-            int sentBytes;
-            var result = this.writer.Write(msg, 1000, out sentBytes);
-
-            if (result != ErrorCode.None || sentBytes != msg.Length)
-                throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
-
-            // Send payload data
-            short writePacketSize = this.writer.EndpointInfo.Descriptor.MaxPacketSize;
-            for (int i = 0; i < data.Length; )
+            lock (this)
             {
-                int bytes = Math.Min(writePacketSize, data.Length - i);
-                result = this.writer.Write(data, i, bytes, 1000, out sentBytes);
+                if (this.usbDevice == null)
+                    return null;
 
-                if (result != ErrorCode.None || sentBytes != bytes)
+                int dataLen = data.Length;
+
+                byte[] msg = new byte[8];
+                msg[0] = 0;
+                msg[1] = 0;
+                msg[2] = 0xCD;              // To device
+                msg[3] = 0x15;              // Code
+                msg[4] = (byte)dataLen;     // Data Len
+                msg[5] = (byte)channels;
+
+                // Compute the delay length off the carrier
+                ComputeCarrierDelays(carrier, this.cycles, msg, 6);
+
+                this.waitForCommand = 0x15;
+                this.waitForCommandEvent.Reset();
+                this.receivedPayload = null;
+
+                int sentBytes;
+                var result = this.writer.Write(msg, 1000, out sentBytes);
+
+                if (result != ErrorCode.None || sentBytes != msg.Length)
                     throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
 
-                i += sentBytes;
+                // Send payload data
+                short writePacketSize = this.writer.EndpointInfo.Descriptor.MaxPacketSize;
+                for (int i = 0; i < data.Length; )
+                {
+                    int bytes = Math.Min(writePacketSize, data.Length - i);
+                    result = this.writer.Write(data, i, bytes, 1000, out sentBytes);
+
+                    if (result != ErrorCode.None || sentBytes != bytes)
+                        throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
+
+                    i += sentBytes;
+                }
+
+                if (!this.waitForCommandEvent.WaitOne(1000))
+                    throw new TimeoutException("Failed to receive response");
+
+                return this.receivedPayload;
             }
-
-            if (!this.waitForCommandEvent.WaitOne(1000))
-                throw new TimeoutException("Failed to receive response");
-
-            return this.receivedPayload;
         }
 
         private bool CheckReceivedData(byte[] data, byte expectedCommand)
