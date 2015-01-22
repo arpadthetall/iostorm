@@ -1,6 +1,7 @@
 ﻿#define VERBOSE_IR_DATA
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,12 +22,7 @@ namespace IoStorm.Plugins.IguanaWorks
 
         public abstract bool Decode(IrData irData);
 
-        //protected long value;           // Decoded value
-        //protected int bits;            // Number of bits in decoded value
-        //protected int[] irData.Data; // Raw intervals in microseconds
-        //protected char rawlen;          // Number of records in irData.Data.
-        //protected bool IgnoreHeader;             // Relaxed header detection allows AGC to settle
-        //protected int offset;
+        public abstract IrData Encode(IoStorm.Payload.IIRProtocol input);
 
         private void TraceError(string errorType, int offset, int value, int expected)
         {
@@ -158,6 +154,92 @@ namespace IoStorm.Plugins.IguanaWorks
             // Success
             output = data;
             return true;
+        }
+
+        /*
+         * Most of the protocols have a header consisting of a mark/space of a particular length followed by 
+         * a series of variable length mark/space signals.  Depending on the protocol they very the lengths of the 
+         * mark or the space to indicate a data bit of "0" or "1". Most also end with a stop bit of "1".
+         * The basic structure of the sending and decoding these protocols led to lots of redundant code. 
+         * Therefore I have implemented generic sending and decoding routines. You just need to pass a bunch of customized 
+         * parameters and it does the work. This reduces compiled code size with only minor speed degradation. 
+         * You may be able to implement additional protocols by simply passing the proper values to these generic routines.
+         * The decoding routines do not encode stop bits. So you have to tell this routine whether or not to send one.
+         */
+        protected IrData BuildGeneric(
+            long data,
+            int numBits,
+            int headMarkLen,
+            int headSpaceLen,
+            int markOneLen,
+            int markZeroLen,
+            int spaceOneLen,
+            int spaceZeroLen,
+            int carrierFrequency,
+            bool useStopBit,
+            int maxExtents)
+        {
+            var output = new List<Tuple<bool, int>>();
+
+            data = data << (32 - numBits);
+
+            //Some protocols do not send a header when sending repeat codes. So we pass a zero value to indicate skipping this.
+            if (headMarkLen != 0)
+                output.Add(Tuple.Create(true, headMarkLen));
+
+            if (headSpaceLen != 0)
+                output.Add(Tuple.Create(false, headSpaceLen));
+
+            for (int i = 0; i < numBits; i++)
+            {
+                if ((data & 0x80000000) != 0)
+                {
+                    output.Add(Tuple.Create(true, markOneLen));
+                    output.Add(Tuple.Create(false, spaceOneLen));
+                }
+                else
+                {
+                    output.Add(Tuple.Create(true, markZeroLen));
+                    output.Add(Tuple.Create(false, spaceZeroLen));
+                }
+
+                data <<= 1;
+            }
+
+            if (useStopBit)
+                output.Add(Tuple.Create(true, markOneLen)); //stop bit of "1"
+
+            if (maxExtents != 0)
+            {
+                int extents = output.Sum(x => x.Item2);
+
+                output.Add(Tuple.Create(false, maxExtents - extents));
+            }
+            else
+                output.Add(Tuple.Create(false, spaceOneLen));
+
+            // Build IrData
+            var result = new IrData
+            {
+                FrequencyHertz = carrierFrequency
+            };
+            bool lastIsPulse = false;
+            foreach (var ir in output)
+            {
+                if (ir.Item1 == lastIsPulse && result.Data.Count > 0)
+                {
+                    // Add
+                    result.Data[result.Data.Count - 1] += ir.Item2;
+                }
+                else
+                {
+                    result.Data.Add(ir.Item2);
+                }
+
+                lastIsPulse = ir.Item1;
+            }
+
+            return result;
         }
     }
 }

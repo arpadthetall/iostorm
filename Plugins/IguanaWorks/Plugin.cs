@@ -42,6 +42,8 @@ namespace IoStorm.Plugins.IguanaWorks
         private Task portMonitorTask;
         private IrData currentIrData;
         private List<DecoderBase> decoders;
+        private int firmwareVersion;
+        private byte cycles;
 
         public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
@@ -159,9 +161,7 @@ namespace IoStorm.Plugins.IguanaWorks
                     if (this.usbDevice == null || reader == null || writer == null)
                         continue;
 
-                    short readPacketSize = reader.EndpointInfo.Descriptor.MaxPacketSize;
-                    short writePacketSize = writer.EndpointInfo.Descriptor.MaxPacketSize;
-                    byte[] readBuf = new byte[readPacketSize];
+                    byte[] readBuf = new byte[reader.EndpointInfo.Descriptor.MaxPacketSize];
 
                     Init();
 
@@ -339,6 +339,7 @@ namespace IoStorm.Plugins.IguanaWorks
                         if (response == null || response.Length != 2)
                             throw new Exception("Invalid version response");
 
+                        this.firmwareVersion = response[0] << 8 + response[1];
                         this.log.Info("IguanaWorks firmware version 0x{0:x2}{1:x2}", response[0], response[1]);
 
                         // Get features
@@ -357,6 +358,8 @@ namespace IoStorm.Plugins.IguanaWorks
                         if ((response[0] & 0x10) != 0)
                             this.log.Debug("Has SLOT_DEV");
 
+                        this.cycles = response[1];
+
                         // Turn receiver on
                         SendCommand(0x12);
 
@@ -372,27 +375,141 @@ namespace IoStorm.Plugins.IguanaWorks
             });
         }
 
-        private byte[] SendCommand(byte command)
+        private byte[] SendCommand(byte command, byte[] data = null)
         {
             if (this.usbDevice == null)
                 return null;
 
-            byte[] msg = new byte[5];
+            int dataLen = data != null ? data.Length : 0;
+            if (dataLen > 4)
+                // We can't send more than 4 bytes
+                dataLen = 4;
+            dataLen = 0;
+
+            byte[] msg = new byte[4 + dataLen];
             msg[0] = 0;
             msg[1] = 0;
             msg[2] = 0xCD;          // To device
             msg[3] = command;       // Code
-            msg[4] = 0;             // Data Len
+
+            if (dataLen > 0)
+                Buffer.BlockCopy(data, 0, msg, 4, dataLen);
 
             this.waitForCommand = command;
             this.waitForCommandEvent.Reset();
             this.receivedPayload = null;
 
             int sentBytes;
-            var result = this.writer.Write(msg, 0, 5, 1000, out sentBytes);
+            var result = this.writer.Write(msg, 1000, out sentBytes);
 
-            if (sentBytes != 5)
+            if (sentBytes != msg.Length)
                 throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
+
+            if (!this.waitForCommandEvent.WaitOne(1000))
+                throw new TimeoutException("Failed to receive response");
+
+            return this.receivedPayload;
+        }
+
+        /*
+        There are some magic numbers in this function, and here are the explanations:
+
+        Clock is running at 24 Mhz
+        24000000 cycles/second
+
+        Want a 38 kHz carrier:
+        38000 peaks/second = 76000 transitions/second
+
+        24000000 / 76000 = 315.8 cycles / transition
+
+        Each loop has overhead (counted from code lines):
+        5 + 5 + 7 + 6 + 6 + 7 + (5 + 7) + (5 + 7) + 5 = 65
+
+        Break down the remaining delay into components or 7 and 4:
+        316 - 65 = 251 = 7 * 1 + 4 * 61
+
+        Compute the number of bytes to jump for each delay:
+        delay 7 ==> 2 bytes
+        delay 4 ==> 1 byte
+        total of 4 delays of 7 in code
+        total of 120 delays of 4 in code
+
+        Final values needed for the transmission:
+        delay 7 * (4 - 1) = 6 bytes
+        delay 4 * (120 - 61) = 59 bytes
+        FINAL: delay (6, 59)
+        */
+        private void ComputeCarrierDelays(int carrier, int loopCycles, byte[] buf, int bufOffset)
+        {
+            byte sevens = 0, fours;
+
+            /* Compute the cycles for any specified frequency.  This requires
+               dividing the length of time of a pulse in the requested
+               frequency by the length of time in a cycle at the current clock
+               speed.
+            */
+            int cycles = (int)(((1.0 / carrier) / (1.0 / 24000000) / 2) + 0.5);
+
+            /* Divide the computed values into 4 and 7 clock components.  Try
+               the highest number of 4s, and then count down until we hit
+               something that is divisible by 7.  We use 4s as the main
+               counter specifically because the delay 4 actually requires less
+               space on the flash for a given delay.
+            */
+            cycles -= loopCycles;
+
+            /* TODO: this next line is too magical */
+            sevens = (byte)((4 - (cycles % 4)) % 4);
+            fours = (byte)((cycles - sevens * 7) / 4);
+
+            /* NOTE: We will never need more than 4 7s due to the properties
+               of mathmatical groups. */
+
+            /* store byte offsets for transmission */
+            buf[bufOffset + 0] = (byte)((4 - sevens) * 2);
+            buf[bufOffset + 1] = (byte)((110 - fours) * 1);
+        }
+
+        private byte[] SendIrCommand(byte[] data, int carrier, byte channels)
+        {
+            if (this.usbDevice == null)
+                return null;
+
+            int dataLen = data.Length;
+
+            byte[] msg = new byte[8];
+            msg[0] = 0;
+            msg[1] = 0;
+            msg[2] = 0xCD;              // To device
+            msg[3] = 0x15;              // Code
+            msg[4] = (byte)dataLen;     // Data Len
+            msg[5] = (byte)channels;
+
+            // Compute the delay length off the carrier
+            ComputeCarrierDelays(carrier, this.cycles, msg, 6);
+
+            this.waitForCommand = 0x15;
+            this.waitForCommandEvent.Reset();
+            this.receivedPayload = null;
+
+            int sentBytes;
+            var result = this.writer.Write(msg, 1000, out sentBytes);
+
+            if (result != ErrorCode.None || sentBytes != msg.Length)
+                throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
+
+            // Send payload data
+            short writePacketSize = this.writer.EndpointInfo.Descriptor.MaxPacketSize;
+            for (int i = 0; i < data.Length; )
+            {
+                int bytes = Math.Min(writePacketSize, data.Length - i);
+                result = this.writer.Write(data, i, bytes, 1000, out sentBytes);
+
+                if (result != ErrorCode.None || sentBytes != bytes)
+                    throw new Exception(string.Format("Failed to send all bytes (result {0})", result));
+
+                i += sentBytes;
+            }
 
             if (!this.waitForCommandEvent.WaitOne(1000))
                 throw new TimeoutException("Failed to receive response");
@@ -425,6 +542,66 @@ namespace IoStorm.Plugins.IguanaWorks
                 return false;
 
             return true;
+        }
+
+        private byte[] PulsesToIguanaSend(int carrier, IList<int> sendCode)
+        {
+            int x, codeLength = 0, inSpace = 0;
+            int lastCycles = 0;
+
+            int length = sendCode.Count;
+
+            var output = new MemoryStream();
+
+            /* convert each pulse */
+            for (x = 0; x < length; x++)
+            {
+                int cycles, numBytes;
+
+                /* occasionally useful for debugging transmission issues */
+#if VERBOSE_IR_DATA
+                this.log.Trace("{0:D3} {1} {2}", x, (x % 2) != 0 ? "space" : "pulse", sendCode[x] & IG_PULSE_MASK);
+#endif
+
+                cycles = (int)((sendCode[x] & IG_PULSE_MASK) /
+                                    1000000.0 * carrier + 0.5);
+                numBytes = (cycles / 127) + 1;
+                cycles %= 127;
+                if (cycles == 0)
+                {
+                    cycles = 127;
+                    numBytes -= 1;
+                }
+
+                if (inSpace == 0)
+                {
+                    // Compress
+                    if (cycles != 127 &&
+                        cycles == lastCycles &&
+                        x + 1 < length)
+                        numBytes = 0;
+                    lastCycles = cycles;
+                }
+
+                if (numBytes != 0)
+                {
+                    if (inSpace != 0)
+                        cycles |= STATE_MASK;
+
+                    for (int i = 0; i < numBytes - 1; i++)
+                        output.WriteByte((byte)(LENGTH_MASK | (inSpace * STATE_MASK)));
+
+                    // Store the last byte
+                    output.WriteByte((byte)cycles);
+
+                    /* sum up the total bytes */
+                    codeLength += numBytes;
+                }
+
+                inSpace ^= 1;
+            }
+
+            return output.ToArray();
         }
 
         private void Close(bool sendReceiverOff)
@@ -490,7 +667,45 @@ namespace IoStorm.Plugins.IguanaWorks
 
         public void Incoming(Payload.IRCommand payload)
         {
-            this.log.Trace("Sending IR");
+            if (!this.isDeviceInitialized)
+                return;
+
+            int channel = 1;
+
+            if (!string.IsNullOrEmpty(payload.PortId))
+                channel = int.Parse(payload.PortId);
+
+            if (channel != 1 && channel != 2)
+                throw new ArgumentOutOfRangeException("Unsupported PortId");
+
+            if (payload.Repeat == 0)
+                payload.Repeat = 1;
+
+            IrData irData = null;
+
+            this.log.Trace("Sending IR, port {0}, rpt {1}, cmd {2}", channel, payload.Repeat, payload.GetDebugInfo());
+
+            foreach (var decoder in this.decoders)
+            {
+                irData = decoder.Encode(payload.Command);
+
+                if (irData != null)
+                    break;
+            }
+
+            if (irData != null)
+            {
+                // Send
+                var output = PulsesToIguanaSend(irData.FrequencyHertz, irData.Data);
+
+                if (output.Length > 0)
+                {
+                    for (int i = 0; i < payload.Repeat; i++)
+                    {
+                        SendIrCommand(output, irData.FrequencyHertz, 2);
+                    }
+                }
+            }
         }
     }
 }

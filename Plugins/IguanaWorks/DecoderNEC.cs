@@ -40,5 +40,15 @@ namespace IoStorm.Plugins.IguanaWorks
 
             return true;
         }
+
+        public override IrData Encode(Payload.IIRProtocol input)
+        {
+            var value = input as IoStorm.IRProtocol.NECx;
+            if (value == null)
+                return null;
+
+            // TODO
+            return null;
+        }
     }
 }

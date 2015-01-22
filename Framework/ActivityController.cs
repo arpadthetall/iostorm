@@ -27,7 +27,8 @@ namespace IoStorm
                     Payload = new Payload.IRCommand
                 {
                     PortId = "1",
-                    Command = new IoStorm.IRProtocol.NECx(0xE0E0, 0xE01F)
+                    Repeat = 2,
+                    Command = new IoStorm.IRProtocol.NECx(0xE0E0, 0x40BF)
                 }
                 });
             });

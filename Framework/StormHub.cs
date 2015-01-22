@@ -274,11 +274,18 @@ namespace IoStorm
                 externalIncoming
                     .Subscribe(x =>
                     {
-                        // Unwrap
-                        Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
+                        try
+                        {
+                            // Unwrap
+                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
 
-                        if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
-                            method.Invoke(plugin, new object[] { unwrappedPayload });
+                            if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
+                                method.Invoke(plugin, new object[] { unwrappedPayload });
+                        }
+                        catch (Exception ex)
+                        {
+                            this.log.WarnException("Exception when invoking Incoming method", ex);
+                        }
                     });
 
                 // Filter out our own messages
@@ -286,11 +293,18 @@ namespace IoStorm
                     .Where(x => x.OriginatingInstanceId != plugin.InstanceId)
                     .Subscribe(x =>
                     {
-                        // Unwrap
-                        Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
+                        try
+                        {
+                            // Unwrap
+                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
 
-                        if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
-                            method.Invoke(plugin, new object[] { unwrappedPayload });
+                            if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
+                                method.Invoke(plugin, new object[] { unwrappedPayload });
+                        }
+                        catch (Exception ex)
+                        {
+                            this.log.WarnException("Exception when invoking Incoming method", ex);
+                        }
                     });
             }
         }
