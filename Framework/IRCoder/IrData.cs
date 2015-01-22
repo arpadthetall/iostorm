@@ -4,13 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IoStorm.Plugins.IguanaWorks
+namespace IoStorm.IRCoder
 {
     public class IrData
     {
         private bool lastDataIsPulse;
 
         public int FrequencyHertz { get; set; }
+
+        /// <summary>
+        /// According to the specification how many times the code should be repeated
+        /// </summary>
+        public int Repeater { get; set; }
 
         public List<int> Data { get; private set; }
 
@@ -32,6 +37,7 @@ namespace IoStorm.Plugins.IguanaWorks
         public IrData()
         {
             Data = new List<int>();
+            Repeater = 1;
         }
 
         public bool IsEmpty

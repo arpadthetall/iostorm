@@ -6,11 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins.IguanaWorks
+namespace IoStorm.IRCoder
 {
-    public class DecoderNECx : DecoderBase
+    public class CoderNECx : CoderBase
     {
-        public DecoderNECx(ILog log, Action<Payload.IIRProtocol> receivedCommand)
+        public CoderNECx(ILog log, Action<Payload.IIRProtocol> receivedCommand)
             : base(log, receivedCommand)
         {
         }

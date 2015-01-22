@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IoStorm.Plugins.IguanaWorks
+namespace IoStorm.IRCoder
 {
-    public static class DecoderHelper
+    public static class CoderHelper
     {
         private const int USECPERTICK = 50;  // microseconds per clock interrupt tick
         private const int RAWBUF = 100; // Length of raw duration buffer

@@ -5,14 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins.IguanaWorks
+namespace IoStorm.IRCoder
 {
-    public class DecoderNEC : DecoderBase
+    public class CoderNEC : CoderBase
     {
         private const int NEC_RPT_SPACE = 2250;
         private IoStorm.IRProtocol.NEC lastValue;
 
-        public DecoderNEC(ILog log, Action<Payload.IIRProtocol> receivedCommand)
+        public CoderNEC(ILog log, Action<Payload.IIRProtocol> receivedCommand)
             : base(log, receivedCommand)
         {
         }
@@ -21,8 +21,8 @@ namespace IoStorm.Plugins.IguanaWorks
         {
             // Check for repeat
             if (irData.Data.Count == 4 &&
-                DecoderHelper.MATCH(irData.Data[2], NEC_RPT_SPACE) &&
-                DecoderHelper.MATCH(irData.Data[3], 564))
+                CoderHelper.MATCH(irData.Data[2], NEC_RPT_SPACE) &&
+                CoderHelper.MATCH(irData.Data[3], 564))
             {
                 // Repeat
 

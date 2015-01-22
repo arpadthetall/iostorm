@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IoStorm.Plugins.IguanaWorks
+namespace IoStorm.IRCoder
 {
     public class BitBuilder
     {
@@ -17,7 +17,7 @@ namespace IoStorm.Plugins.IguanaWorks
             this.bits = new List<bool>(capacity);
         }
 
-        public void AddByteLSB(byte value)
+        public void AddByteLSB(byte value, int count = 8)
         {
             bool[] newBits = new bool[8];
 
@@ -30,7 +30,7 @@ namespace IoStorm.Plugins.IguanaWorks
             newBits[6] = (value & 0x40) != 0;
             newBits[7] = (value & 0x80) != 0;
 
-            this.bits.AddRange(newBits);
+            this.bits.AddRange(newBits.Take(count));
         }
 
         public void AddByteMSB(byte value)
@@ -66,7 +66,7 @@ namespace IoStorm.Plugins.IguanaWorks
         {
             get { return this.bits.Count; }
         }
-
+/*
         public byte GetByteLSB(int index)
         {
             if (index < 0 || index + 8 > this.bits.Count)
@@ -81,6 +81,23 @@ namespace IoStorm.Plugins.IguanaWorks
                 (this.bits[index + 5] ? 0x20 : 0) |
                 (this.bits[index + 6] ? 0x40 : 0) |
                 (this.bits[index + 7] ? 0x80 : 0));
+
+            return b;
+        }
+*/
+        public byte GetByteLSB(int index, int count = 8)
+        {
+            if (index < 0 || index + count > this.bits.Count || count <= 0 || count > 8)
+                throw new ArgumentOutOfRangeException("Index/Count");
+
+            byte b = (byte)(this.bits[index] ? 0x01 : 0);
+            b |= (byte)(count >= 2 && this.bits[index + 1] ? 0x02 : 0);
+            b |= (byte)(count >= 3 && this.bits[index + 2] ? 0x04 : 0);
+            b |= (byte)(count >= 4 && this.bits[index + 3] ? 0x08 : 0);
+            b |= (byte)(count >= 5 && this.bits[index + 4] ? 0x10 : 0);
+            b |= (byte)(count >= 6 && this.bits[index + 5] ? 0x20 : 0);
+            b |= (byte)(count >= 7 && this.bits[index + 6] ? 0x40 : 0);
+            b |= (byte)(count >= 8 && this.bits[index + 7] ? 0x80 : 0);
 
             return b;
         }

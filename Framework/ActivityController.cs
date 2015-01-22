@@ -26,12 +26,13 @@ namespace IoStorm
             {
                 this.hub.BroadcastPayload(this, new Payload.ZoneDestinationPayload
                 {
-                    DestinationZoneId = hub.ZoneId,
+                    DestinationZoneId = "a5d4023d3826454daac1c215eda5f0f0",
                     Payload = new Payload.IRCommand
                     {
                         PortId = "1",
                         Repeat = 2,
-                        Command = new IoStorm.IRProtocol.NECx(7, 7, payload.Value == "1" ? 153 : 152)
+                        Command = new IoStorm.IRProtocol.Sony12(1, payload.Value == "1" ? 46 : 47)
+                        //Command = new IoStorm.IRProtocol.NECx(7, 7, payload.Value == "1" ? 153 : 152)
                     }
                 });
             }

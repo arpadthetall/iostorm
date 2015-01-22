@@ -7,14 +7,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins.IguanaWorks
+namespace IoStorm.IRCoder
 {
-    public abstract class DecoderBase
+    public abstract class CoderBase
     {
         protected ILog log;
         protected Action<Payload.IIRProtocol> receivedCommand;
 
-        public DecoderBase(ILog log, Action<Payload.IIRProtocol> receivedCommand)
+        public CoderBase(ILog log, Action<Payload.IIRProtocol> receivedCommand)
         {
             this.log = log;
             this.receivedCommand = receivedCommand;
@@ -72,7 +72,7 @@ namespace IoStorm.Plugins.IguanaWorks
             {
                 if (headMarkLen != 0)
                 {
-                    if (!DecoderHelper.MATCH(irData.Data[offset], headMarkLen))
+                    if (!CoderHelper.MATCH(irData.Data[offset], headMarkLen))
                     {
                         TraceError("Header Mark", offset, irData.Data[offset], headMarkLen);
                         return false;
@@ -82,7 +82,7 @@ namespace IoStorm.Plugins.IguanaWorks
             offset++;
             if (headSpaceLen != 0)
             {
-                if (!DecoderHelper.MATCH(irData.Data[offset], headSpaceLen))
+                if (!CoderHelper.MATCH(irData.Data[offset], headSpaceLen))
                 {
                     TraceError("Header Space", offset, irData.Data[offset], headSpaceLen);
                     return false;
@@ -97,17 +97,17 @@ namespace IoStorm.Plugins.IguanaWorks
                 max = rawlen;
                 while (offset < max)
                 {
-                    if (!DecoderHelper.MATCH(irData.Data[offset], spaceOneLen))
+                    if (!CoderHelper.MATCH(irData.Data[offset], spaceOneLen))
                     {
                         TraceError("Data Space", offset, irData.Data[offset], spaceOneLen);
                         return false;
                     }
                     offset++;
-                    if (DecoderHelper.MATCH(irData.Data[offset], markOneLen))
+                    if (CoderHelper.MATCH(irData.Data[offset], markOneLen))
                     {
                         output.AddBit(true);
                     }
-                    else if (DecoderHelper.MATCH(irData.Data[offset], markZeroLen))
+                    else if (CoderHelper.MATCH(irData.Data[offset], markZeroLen))
                     {
                         output.AddBit(false);
                     }
@@ -127,17 +127,17 @@ namespace IoStorm.Plugins.IguanaWorks
                 offset = 3; // skip initial gap plus two header items
                 while (offset < max)
                 {
-                    if (!DecoderHelper.MATCH(irData.Data[offset], markZeroLen))
+                    if (!CoderHelper.MATCH(irData.Data[offset], markZeroLen))
                     {
                         TraceError("Data Mark", offset, irData.Data[offset], markZeroLen);
                         return false;
                     }
                     offset++;
-                    if (DecoderHelper.MATCH(irData.Data[offset], spaceOneLen))
+                    if (CoderHelper.MATCH(irData.Data[offset], spaceOneLen))
                     {
                         output.AddBit(true);
                     }
-                    else if (DecoderHelper.MATCH(irData.Data[offset], spaceZeroLen))
+                    else if (CoderHelper.MATCH(irData.Data[offset], spaceZeroLen))
                     {
                         output.AddBit(false);
                     }

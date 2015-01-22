@@ -74,12 +74,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivityController.cs" />
+    <Compile Include="IRCoder\BitBuilder.cs" />
+    <Compile Include="IRCoder\CoderBase.cs" />
+    <Compile Include="IRCoder\CoderHash.cs" />
+    <Compile Include="IRCoder\CoderHelper.cs" />
+    <Compile Include="IRCoder\CoderNEC.cs" />
+    <Compile Include="IRCoder\CoderSony.cs" />
+    <Compile Include="IRCoder\CoderNECx.cs" />
+    <Compile Include="IRCoder\IrData.cs" />
     <Compile Include="IRProtocol\Hash.cs" />
     <Compile Include="IRProtocol\NEC.cs" />
+    <Compile Include="IRProtocol\Sony20.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />
     <Compile Include="DeviceInstance.cs" />
     <Compile Include="Helper\SerialFixedManager.cs" />
-    <Compile Include="IRProtocol\BaseSony.cs" />
+    <Compile Include="IRProtocol\SonyBase.cs" />
     <Compile Include="IRProtocol\NECx.cs" />
     <Compile Include="IRProtocol\Sony12.cs" />
     <Compile Include="IRProtocol\Sony15.cs" />

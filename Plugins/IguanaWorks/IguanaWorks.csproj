@@ -60,13 +60,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BitBuilder.cs" />
-    <Compile Include="DecoderHash.cs" />
-    <Compile Include="DecoderHelper.cs" />
-    <Compile Include="DecoderNEC.cs" />
-    <Compile Include="DecoderNECx.cs" />
-    <Compile Include="DecoderBase.cs" />
-    <Compile Include="IrData.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

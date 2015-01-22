@@ -5,15 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using Qlue.Logging;
 
-namespace IoStorm.Plugins.IguanaWorks
+namespace IoStorm.IRCoder
 {
-    public class DecoderHash : DecoderBase
+    public class CoderHash : CoderBase
     {
         // Use FNV hash algorithm: http://isthe.com/chongo/tech/comp/fnv/#FNV-param
         private const uint FNV_PRIME_32 = 16777619;
         private const uint FNV_BASIS_32 = 2166136261;
 
-        public DecoderHash(ILog log, Action<Payload.IIRProtocol> receivedCommand)
+        public CoderHash(ILog log, Action<Payload.IIRProtocol> receivedCommand)
             : base(log, receivedCommand)
         {
         }
@@ -61,11 +61,7 @@ namespace IoStorm.Plugins.IguanaWorks
 
         public override IrData Encode(Payload.IIRProtocol input)
         {
-            var value = input as IoStorm.IRProtocol.NEC;
-            if (value == null)
-                return null;
-
-            // TODO
+            // Impossible to encode from hash
             return null;
         }
     }

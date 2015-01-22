@@ -16,6 +16,7 @@ using IoStorm.Plugin;
 using LibUsbDotNet;
 using LibUsbDotNet.Info;
 using LibUsbDotNet.Main;
+using IoStorm.IRCoder;
 
 namespace IoStorm.Plugins.IguanaWorks
 {
@@ -41,7 +42,7 @@ namespace IoStorm.Plugins.IguanaWorks
         private byte[] receivedPayload;
         private Task portMonitorTask;
         private IrData currentIrData;
-        private List<DecoderBase> decoders;
+        private List<CoderBase> decoders;
         private int firmwareVersion;
         private byte cycles;
 
@@ -68,11 +69,12 @@ namespace IoStorm.Plugins.IguanaWorks
                 hub.BroadcastPayload(this, payload);
             });
 
-            this.decoders = new List<DecoderBase>()
+            this.decoders = new List<CoderBase>()
             {
-                new DecoderNEC(this.log, receivedCommand),
-                new DecoderNECx(this.log, receivedCommand),
-                new DecoderHash(this.log, receivedCommand)
+                new CoderNEC(this.log, receivedCommand),
+                new CoderNECx(this.log, receivedCommand),
+                new CoderSony(this.log, receivedCommand),
+                new CoderHash(this.log, receivedCommand)
             };
 
             this.portMonitorTask = Task.Factory.StartNew(() => PortMonitor(), TaskCreationOptions.LongRunning);
@@ -708,7 +710,11 @@ namespace IoStorm.Plugins.IguanaWorks
 
                 if (output.Length > 0)
                 {
-                    for (int i = 0; i < payload.Repeat; i++)
+                    int repeat = irData.Repeater;
+                    if (repeat == 0)
+                        repeat = 1;
+
+                    for (int i = 0; i < repeat * payload.Repeat; i++)
                     {
                         SendIrCommand(output, irData.FrequencyHertz, 2);
                     }
