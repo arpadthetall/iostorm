@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define VERBOSE_IR_DATA
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +12,10 @@ namespace IoStorm.IRCoder
 {
     public class CoderSony : CoderBase
     {
+        private IRProtocol.SonyBase lastCommand;
+        private DateTime lastTimestamp;
+        private int repeatCounter;
+
         public CoderSony(ILog log, Action<Payload.IIRProtocol> receivedCommand)
             : base(log, receivedCommand)
         {
@@ -52,6 +58,29 @@ namespace IoStorm.IRCoder
                 default:
                     return false;
             }
+
+            DateTime now = DateTime.Now;
+            if (this.lastCommand != null && this.lastCommand.Equals(irCommand))
+            {
+                // Check for repeats
+                if ((now - this.lastTimestamp).TotalMilliseconds < 90 && this.repeatCounter < 2)
+                {
+                    // Repeat
+                    this.repeatCounter++;
+
+#if VERBOSE_IR_DATA
+
+                    this.log.Trace("Repeats {0} within {1:N0} ms, ignore", this.repeatCounter, (now - this.lastTimestamp).TotalMilliseconds);
+#endif
+                    lastTimestamp = now;
+
+                    return true;
+                }
+            }
+            this.lastCommand = irCommand;
+            this.lastTimestamp = now;
+            this.repeatCounter = 0;
+
             this.receivedCommand(irCommand);
 
             return true;

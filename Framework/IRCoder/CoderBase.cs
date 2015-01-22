@@ -1,4 +1,4 @@
-﻿#define VERBOSE_IR_DATA
+﻿//#define VERBOSE_IR_DATA
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +27,7 @@ namespace IoStorm.IRCoder
         private void TraceError(string errorType, int offset, int value, int expected)
         {
 #if VERBOSE_IR_DATA
-            this.log.Trace("Invalid {0} (Idx: {1}   Val: {2}   Exp: {3})", errorType, offset, value, expected);
+            this.log.Trace("[{0}] Invalid {1} (Idx: {2}   Val: {3}   Exp: {4})", this.GetType().Name, errorType, offset, value, expected);
 #endif
         }
 
@@ -63,7 +63,7 @@ namespace IoStorm.IRCoder
                 if (rawlen != expectedCount)
                 {
 #if VERBOSE_IR_DATA
-                    this.log.Trace("Invalid Number of raw samples");
+                    this.log.Trace("[{0}] Invalid Number of raw samples", this.GetType().Name);
 #endif
                     return false;
                 }
