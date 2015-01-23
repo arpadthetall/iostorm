@@ -65,8 +65,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>MKDIR $(SolutionDir)Sample1\bin\$(ConfigurationName)\Plugins
-COPY $(TargetDir)$(TargetName).* $(SolutionDir)Sample1\bin\$(ConfigurationName)\Plugins\
+    <PostBuildEvent>MKDIR $(SolutionDir)StormService\bin\$(ConfigurationName)\Plugins
+COPY $(TargetDir)$(TargetName).* $(SolutionDir)StormService\bin\$(ConfigurationName)\Plugins\
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
