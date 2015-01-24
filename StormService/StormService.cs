@@ -4,25 +4,21 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.ServiceProcess;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 
 namespace IoStorm.StormService
 {
-    public partial class StormService : ServiceBase
+    public class StormService
     {
         private static IUnityContainer container;
         private static Qlue.Logging.ILog log;
 
-        public StormService()
+        public void Start()
         {
-            InitializeComponent();
-        }
-
-        protected override void OnStart(string[] args)
-        {
-            var configFile = ConfigurationManager.AppSettings["ConfigFile"];
+            var configFilePath = ConfigurationManager.AppSettings["ConfigFilePath"];
 
             container = new UnityContainer();
 
@@ -50,12 +46,20 @@ namespace IoStorm.StormService
                 return null;
             };
 
-            log.Info("Config file {0}", configFile);
+            log.Info("Config file {0}", configFilePath);
 
             HubConfig hubConfig;
             int configHash;
             string configContent;
-            using (var file = File.OpenText(configFile))
+
+            if (!File.Exists(configFilePath))
+            {
+                hubConfig = new HubConfig();
+                var config = JsonConvert.SerializeObject(hubConfig);
+                File.WriteAllText(configFilePath, config);
+            }
+
+            using (var file = File.OpenText(configFilePath))
             {
                 configContent = file.ReadToEnd();
                 configHash = configContent.GetHashCode();
@@ -79,7 +83,7 @@ namespace IoStorm.StormService
 
             if (configContent.GetHashCode() != configHash)
             {
-                using (var file = File.CreateText(configFile))
+                using (var file = File.CreateText(configFilePath))
                 {
                     file.Write(configContent);
                 }
@@ -234,10 +238,6 @@ namespace IoStorm.StormService
             {
                 LoadDevices(hub, zoneConfig.ZoneId, zoneConfig.Devices, zoneConfig.Zones);
             }
-        }
-
-        protected override void OnStop()
-        {
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace IoStorm.StormService
 {
-    public partial class StormService
+    public partial class Service
     {
         static private NoServiceForm _noServiceForm;
 
@@ -15,7 +15,7 @@ namespace IoStorm.StormService
             {
                 _noServiceForm = new NoServiceForm {Text = "StormService"};
 
-                var service = new StormService();
+                var service = new Service();
                 service.OnStart(new string[1]);
 
                 _noServiceForm.ShowDialog();
@@ -23,7 +23,7 @@ namespace IoStorm.StormService
             }
             else
             {
-                var servicesToRun = new ServiceBase[] { new StormService() };
+                var servicesToRun = new ServiceBase[] { new Service() };
                 Run(servicesToRun);
             }
         }

@@ -1,6 +1,6 @@
 ﻿namespace IoStorm.StormService
 {
-    partial class StormService
+    partial class Service
     {
         /// <summary> 
         /// Required designer variable.
