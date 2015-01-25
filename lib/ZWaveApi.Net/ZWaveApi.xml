@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ZWaveApi>
+  <Languages>
+    <language key="DA" text="Dansk"/>
+    <Language key="EN" text="English"/>    
+  </Languages>
+  <BasicTypes>
+    <BasicType key="0x00" code="Unknown">
+      <Language key="DA" text="Ukendt Basic Type"/>
+      <Language key="EN" text="Unknown Basic Type"/>
+    </BasicType>
+    <BasicType key="0x01" code="Controller">
+      <Language key="DA" text="Controller"/>
+      <Language key="EN" text="Controller"/>
+    </BasicType>
+    <BasicType key="0x02" code="StaticController">
+      <Language key="DA" text="Static Controller" />
+      <Language key="EN" text="Static Controller" />
+    </BasicType>
+    <BasicType key="0x03" code="Slave">
+      <Language key="DA" text="Slave" />
+      <Language key="EN" text="Slave" />
+    </BasicType>
+    <BasicType key="0x04" code="RoutingSlave">
+      <Language key="DA" text="Routing Slave" />
+      <Language key="EN" text="Routing Slave" />
+    </BasicType>
+  </BasicTypes>
+  <LibraryTypeNames>
+    <LibraryTypeName key="0" code="Unknown">
+      <Language key="DA" text="Unknown library type name" />
+      <Language key="EN" text="Unknown library type name" />
+    </LibraryTypeName>
+    <LibraryTypeName key="1" code="StaticController">
+      <Language key="DA" text="Static Controller" />
+      <Language key="EN" text="Static Controller" />
+    </LibraryTypeName>
+    <LibraryTypeName key="2" code="Controller">
+      <Language key="DA" text="Controller" />
+      <Language key="EN" text="Controller" />
+    </LibraryTypeName>
+    <LibraryTypeName key="3" code="EnhancedSlave">
+      <Language key="DA" text="Enhanced Slave" />
+      <Language key="EN" text="Enhanced Slave" />
+    </LibraryTypeName>
+    <LibraryTypeName key="4" code="Slave">
+      <Language key="DA" text="Slave" />
+      <Language key="EN" text="Slave" />
+    </LibraryTypeName>
+    <LibraryTypeName key="5" code="Installer">
+      <Language key="DA" text="Installer" />
+      <Language key="EN" text="Installer" />
+    </LibraryTypeName>
+    <LibraryTypeName key="6" code="Routing Slave">
+      <Language key="DA" text="Routing Slave" />
+      <Language key="EN" text="Routing Slave" />
+    </LibraryTypeName>
+    <LibraryTypeName key="7" code="BridgeController">
+      <Language key="DA" text="Bridge Controller" />
+      <Language key="EN" text="Bridge Controller" />
+    </LibraryTypeName>
+    <LibraryTypeName key="8" code="Device Under Test">
+      <Language key="DA" text="Device Under Test" />
+      <Language key="EN" text="Device Under Test" />
+    </LibraryTypeName>
+  </LibraryTypeNames>
+</ZWaveApi>
+
