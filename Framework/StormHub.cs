@@ -27,10 +27,10 @@ namespace IoStorm
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
         private string configPath;
-        private PluginManager<IDevice> pluginManager;
+        private PluginManager<IPlugin> pluginManager;
         protected Dictionary<string, DeviceInstance> deviceInstances;
         private IReadOnlyList<AvailablePlugin> availablePlugins;
-        private List<IDevice> runningInstances;
+        private List<IPlugin> runningInstances;
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = null)
         {
@@ -50,12 +50,12 @@ namespace IoStorm
             // Copy common dependencies
             File.Copy("IoStorm.CorePayload.dll", Path.Combine(pluginFullPath, "IoStorm.CorePayload.dll"), true);
             File.Copy("IoStorm.Framework.dll", Path.Combine(pluginFullPath, "IoStorm.Framework.dll"), true);
-            this.pluginManager = new PluginManager<IDevice>(pluginFullPath,
+            this.pluginManager = new PluginManager<IPlugin>(pluginFullPath,
                 "IoStorm.CorePayload.dll",
                 "IoStorm.Framework.dll");
 
             this.availablePlugins = this.pluginManager.GetAvailablePlugins();
-            this.runningInstances = new List<IDevice>();
+            this.runningInstances = new List<IPlugin>();
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
@@ -122,7 +122,7 @@ namespace IoStorm
             get { return this.deviceInstances.Values.ToList().AsReadOnly(); }
         }
 
-        internal Tuple<DeviceInstance, IDevice> AddDeviceInstance(string pluginId, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
+        internal Tuple<DeviceInstance, IPlugin> AddDeviceInstance(string pluginId, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
         {
             if (this.deviceInstances.ContainsKey(instanceId))
                 throw new ArgumentException("Duplicate InstanceId");
@@ -151,7 +151,7 @@ namespace IoStorm
             return Tuple.Create(deviceInstance, pluginInstance);
         }
 
-        public Tuple<DeviceInstance, IDevice> AddDeviceInstance<T>(string name, string instanceId, string zoneId, IDictionary<string, string> settings) where T : IDevice
+        public Tuple<DeviceInstance, IPlugin> AddDeviceInstance<T>(string name, string instanceId, string zoneId, IDictionary<string, string> settings) where T : IPlugin
         {
             string pluginId = typeof(T).FullName;
 
@@ -185,13 +185,13 @@ namespace IoStorm
             return Tuple.Create(deviceInstance, pluginInstance);
         }
 
-        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
+        public Tuple<DeviceInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
         {
             return AddDeviceInstance(plugin.PluginId, name, instanceId, zoneId, settings);
         }
 
         [Obsolete]
-        public Tuple<DeviceInstance, IDevice> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
+        public Tuple<DeviceInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
         {
             return AddDeviceInstance(plugin, name, Guid.NewGuid().ToString("N"), this.ourDeviceId,
                 settings.ToDictionary(k => k.Item1, v => v.Item2));
@@ -205,7 +205,7 @@ namespace IoStorm
         //    }
         //}
 
-        private IDevice StartDeviceInstance(DeviceInstance deviceInstance)
+        private IPlugin StartDeviceInstance(DeviceInstance deviceInstance)
         {
             try
             {
@@ -253,7 +253,7 @@ namespace IoStorm
 
         private void WireUpPlugin(
             DeviceInstance deviceInstance,
-            IDevice plugin,
+            IPlugin plugin,
             IObservable<Payload.BusPayload> externalIncoming,
             IObservable<Payload.InternalMessage> internalIncoming)
         {
@@ -330,7 +330,7 @@ namespace IoStorm
         }
 
         [Obsolete]
-        public T LoadPlugin<T>(DeviceInstance deviceInstance /*params ParameterOverride[] overrides*/) where T : IDevice
+        public T LoadPlugin<T>(DeviceInstance deviceInstance /*params ParameterOverride[] overrides*/) where T : IPlugin
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
@@ -345,14 +345,14 @@ namespace IoStorm
             return plugin;
         }
 
-        public IDevice LoadPlugin(DeviceInstance deviceInstance, Type type, params ParameterOverride[] overrides)
+        public IPlugin LoadPlugin(DeviceInstance deviceInstance, Type type, params ParameterOverride[] overrides)
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
             allOverrides.Add(new ParameterOverride("instanceId", deviceInstance.InstanceId));
             allOverrides.AddRange(overrides);
 
-            var plugin = this.container.Resolve(type, allOverrides.ToArray()) as IDevice;
+            var plugin = this.container.Resolve(type, allOverrides.ToArray()) as IPlugin;
 
             WireUpPlugin(deviceInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
@@ -402,7 +402,7 @@ namespace IoStorm
             BinaryRage.DB.WaitForCompletion();
         }
 
-        public void BroadcastPayload(IDevice sender, Payload.IPayload payload)
+        public void BroadcastPayload(IPlugin sender, Payload.IPayload payload)
         {
             DeviceInstance instance;
             if (!this.deviceInstances.TryGetValue(sender.InstanceId, out instance))
@@ -430,7 +430,7 @@ namespace IoStorm
                 });
         }
 
-        public string GetSetting(IDevice device, string key)
+        public string GetSetting(IPlugin device, string key)
         {
             string fullKey = string.Format("{0}-{1}-{2}", device.GetType().FullName, device.InstanceId, key);
 

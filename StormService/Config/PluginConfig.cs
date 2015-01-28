@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace IoStorm.StormService
+namespace IoStorm.StormService.Config
 {
-    public class DeviceConfig
+    public class PluginConfig
     {
         public string InstanceId { get; set; }
 
@@ -16,7 +16,7 @@ namespace IoStorm.StormService
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool Disabled { get; set; }
 
-        public DeviceConfig()
+        public PluginConfig()
         {
             Settings = new Dictionary<string, string>();
         }

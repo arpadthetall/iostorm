@@ -31,6 +31,7 @@ namespace IoStorm.StormService
 
             AppDomain.CurrentDomain.AssemblyResolve += (sender, arg) =>
             {
+                // Search plugins subfolder for plugins
                 string[] parts = arg.Name.Split(',');
                 if (parts.Length > 0)
                 {
@@ -48,13 +49,13 @@ namespace IoStorm.StormService
 
             log.Info("Config file {0}", configFilePath);
 
-            HubConfig hubConfig;
+            Config.HubConfig hubConfig;
             int configHash;
             string configContent;
 
             if (!File.Exists(configFilePath))
             {
-                hubConfig = new HubConfig();
+                hubConfig = new Config.HubConfig();
                 var config = JsonConvert.SerializeObject(hubConfig);
                 File.WriteAllText(configFilePath, config);
             }
@@ -64,7 +65,7 @@ namespace IoStorm.StormService
                 configContent = file.ReadToEnd();
                 configHash = configContent.GetHashCode();
 
-                hubConfig = JsonConvert.DeserializeObject<HubConfig>(configContent);
+                hubConfig = JsonConvert.DeserializeObject<Config.HubConfig>(configContent);
             }
 
             if (string.IsNullOrEmpty(hubConfig.DeviceId))
@@ -186,7 +187,7 @@ namespace IoStorm.StormService
             }
         }
 
-        private static void ValidateConfig(IEnumerable<DeviceConfig> devices, IEnumerable<ZoneConfig> zones)
+        private static void ValidateConfig(IEnumerable<Config.PluginConfig> devices, IEnumerable<Config.ZoneConfig> zones)
         {
             foreach (var deviceConfig in devices)
             {
@@ -203,7 +204,7 @@ namespace IoStorm.StormService
             }
         }
 
-        private static void LoadDevices(StormHub hub, string zoneId, IEnumerable<DeviceConfig> devices, IEnumerable<ZoneConfig> zones)
+        private static void LoadDevices(StormHub hub, string zoneId, IEnumerable<Config.PluginConfig> devices, IEnumerable<Config.ZoneConfig> zones)
         {
             foreach (var deviceConfig in devices)
             {

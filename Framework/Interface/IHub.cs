@@ -8,13 +8,13 @@ namespace IoStorm
 {
     public interface IHub
     {
-        void BroadcastPayload(IDevice sender, Payload.IPayload payload);
+        void BroadcastPayload(IPlugin sender, Payload.IPayload payload);
 
-        string GetSetting(IDevice device, string key);
+        string GetSetting(IPlugin device, string key);
 
         string ZoneId { get; }
 
         [Obsolete]
-        T LoadPlugin<T>(DeviceInstance deviceInstance) where T : IDevice;
+        T LoadPlugin<T>(DeviceInstance deviceInstance) where T : IPlugin;
     }
 }

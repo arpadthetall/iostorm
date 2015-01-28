@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IoStorm
 {
-    public abstract class BaseDevice : IDevice
+    public abstract class BaseDevice : IPlugin
     {
         public string InstanceId { get; private set; }
 

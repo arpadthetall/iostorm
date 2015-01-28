@@ -83,7 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config\ZoneConfig.cs" />
-    <Compile Include="Config\DeviceConfig.cs" />
+    <Compile Include="Config\PluginConfig.cs" />
     <Compile Include="Config\HubConfig.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

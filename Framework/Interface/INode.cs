@@ -7,8 +7,7 @@ using System.Reactive;
 
 namespace IoStorm
 {
-    public interface IDevice
+    public interface INode
     {
-        string InstanceId { get; }
     }
 }
