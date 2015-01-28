@@ -66,6 +66,11 @@ namespace IoStorm.PluginConfig
             this.dirty = false;
         }
 
+        internal bool IsDirty
+        {
+            get { return this.dirty; }
+        }
+
         internal string GetJson()
         {
             var jsonSettings = new JsonSerializerSettings

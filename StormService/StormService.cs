@@ -19,7 +19,14 @@ namespace IoStorm.StormService
 
         public void Start()
         {
-            var configFilePath = ConfigurationManager.AppSettings["ConfigFilePath"];
+            string currentFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string configPath = GetFullPath(ConfigurationManager.AppSettings["ConfigFilePath"]);
+            string pluginPath = GetFullPath(ConfigurationManager.AppSettings["PluginFilePath"]);
+
+            if (!Directory.Exists(configPath))
+                Directory.CreateDirectory(configPath);
+            if (!Directory.Exists(pluginPath))
+                Directory.CreateDirectory(pluginPath);
 
             container = new UnityContainer();
 
@@ -36,8 +43,7 @@ namespace IoStorm.StormService
                 string[] parts = arg.Name.Split(',');
                 if (parts.Length > 0)
                 {
-                    string pluginFolder = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                        "Plugins");
+                    string pluginFolder = pluginPath;
 
                     string assemblyFileName = Path.Combine(pluginFolder, parts[0] + ".dll");
                     if (File.Exists(assemblyFileName))
@@ -48,20 +54,22 @@ namespace IoStorm.StormService
                 return null;
             };
 
-            log.Info("Config file {0}", configFilePath);
+            log.Info("Config file path {0}", configPath);
+            log.Info("Plugin file path {0}", pluginPath);
 
             Config.HubConfig hubConfig;
             int configHash;
             string configContent;
 
-            if (!File.Exists(configFilePath))
+            string hubConfigFile = Path.Combine(configPath, "HubConfig.json");
+            if (!File.Exists(hubConfigFile))
             {
                 hubConfig = new Config.HubConfig();
                 var config = JsonConvert.SerializeObject(hubConfig);
-                File.WriteAllText(configFilePath, config);
+                File.WriteAllText(hubConfigFile, config);
             }
 
-            using (var file = File.OpenText(configFilePath))
+            using (var file = File.OpenText(hubConfigFile))
             {
                 configContent = file.ReadToEnd();
                 configHash = configContent.GetHashCode();
@@ -85,19 +93,24 @@ namespace IoStorm.StormService
 
             if (configContent.GetHashCode() != configHash)
             {
-                using (var file = File.CreateText(configFilePath))
+                using (var file = File.CreateText(hubConfigFile))
                 {
                     file.Write(configContent);
                 }
                 configHash = configContent.GetHashCode();
             }
 
-            log.Info("Device Id {0}", hubConfig.DeviceId);
+            log.Info("Hub Device Id {0}", hubConfig.DeviceId);
 
             if (!string.IsNullOrEmpty(hubConfig.UpstreamHub))
                 log.Info("Connecting to remote hub at {0}", hubConfig.UpstreamHub);
 
-            using (var hub = new IoStorm.StormHub(container, hubConfig.DeviceId, remoteHubHost: hubConfig.UpstreamHub))
+            using (var hub = new IoStorm.StormHub(
+                container: container,
+                ourDeviceId: hubConfig.DeviceId,
+                configPath: configPath,
+                pluginPath: pluginPath,
+                remoteHubHost: hubConfig.UpstreamHub))
             {
                 //                var plugins = hub.AvailablePlugins;
 
@@ -191,6 +204,20 @@ namespace IoStorm.StormService
 
         public void Stop()
         {
+        }
+
+        private static string GetFullPath(string subFolder)
+        {
+            string assemblyLoc = Assembly.GetExecutingAssembly().Location;
+            string currentDirectory = assemblyLoc.Substring(0, assemblyLoc.LastIndexOf(Path.DirectorySeparatorChar) + 1);
+
+            if (string.IsNullOrEmpty(subFolder))
+                return currentDirectory;
+
+            if (Path.IsPathRooted(subFolder))
+                return subFolder;
+
+            return Path.Combine(currentDirectory, subFolder);
         }
 
         private static void ValidateConfig(IEnumerable<Config.PluginConfig> devices, IEnumerable<Config.ZoneConfig> zones)

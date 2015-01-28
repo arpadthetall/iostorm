@@ -34,26 +34,19 @@ namespace IoStorm
         private List<IPlugin> runningInstances;
         private Dictionary<string, PluginConfig.InstanceSettings> pluginSettings;
 
-        public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = null)
+        public StormHub(IUnityContainer container, string ourDeviceId, string configPath, string pluginPath, string remoteHubHost = null)
         {
             var assemblyPath = AppDomain.CurrentDomain.BaseDirectory;
             this.container = container;
             this.ourDeviceId = ourDeviceId;
+            this.configPath = configPath;
 
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
 
-            string pluginFullPath = GetFullPath("Plugins");
-            if (!Directory.Exists(pluginFullPath))
-                Directory.CreateDirectory(pluginFullPath);
-
-            this.configPath = GetFullPath("Config");
-            if (!Directory.Exists(this.configPath))
-                Directory.CreateDirectory(this.configPath);
-
             // Copy common dependencies
-            File.Copy(Path.Combine(assemblyPath, "IoStorm.CorePayload.dll"), Path.Combine(pluginFullPath, "IoStorm.CorePayload.dll"), true);
-            File.Copy(Path.Combine(assemblyPath, "IoStorm.Framework.dll"), Path.Combine(pluginFullPath, "IoStorm.Framework.dll"), true);
-            this.pluginManager = new PluginManager<IPlugin>(pluginFullPath,
+            File.Copy(Path.Combine(assemblyPath, "IoStorm.CorePayload.dll"), Path.Combine(pluginPath, "IoStorm.CorePayload.dll"), true);
+            File.Copy(Path.Combine(assemblyPath, "IoStorm.Framework.dll"), Path.Combine(pluginPath, "IoStorm.Framework.dll"), true);
+            this.pluginManager = new PluginManager<IPlugin>(pluginPath,
                 "IoStorm.CorePayload.dll",
                 "IoStorm.Framework.dll");
 
@@ -223,15 +216,6 @@ namespace IoStorm
                 this.log.WarnException(ex, "Failed to load plugin for device instance {0}", deviceInstance.Name);
                 return null;
             }
-        }
-
-        public string GetFullPath(string pluginRelativePath)
-        {
-            string assemblyLoc = Assembly.GetExecutingAssembly().Location;
-            string currentDirectory = assemblyLoc.Substring(0, assemblyLoc.LastIndexOf(Path.DirectorySeparatorChar) + 1);
-            string fullPath = Path.Combine(currentDirectory, pluginRelativePath);
-
-            return fullPath;
         }
 
         private void WireUpPlugin(
