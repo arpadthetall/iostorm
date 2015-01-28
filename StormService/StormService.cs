@@ -94,7 +94,8 @@ namespace IoStorm.StormService
 
             log.Info("Device Id {0}", hubConfig.DeviceId);
 
-            log.Info("Connecting to remote hub at {0}", hubConfig.UpstreamHub);
+            if (!string.IsNullOrEmpty(hubConfig.UpstreamHub))
+                log.Info("Connecting to remote hub at {0}", hubConfig.UpstreamHub);
 
             using (var hub = new IoStorm.StormHub(container, hubConfig.DeviceId, remoteHubHost: hubConfig.UpstreamHub))
             {

@@ -88,6 +88,7 @@
     <Compile Include="IRProtocol\Nokia32.cs" />
     <Compile Include="IRProtocol\NEC.cs" />
     <Compile Include="IRProtocol\Sony20.cs" />
+    <Compile Include="PluginConfig\InstanceSettings.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />
     <Compile Include="DeviceInstance.cs" />
     <Compile Include="Helper\SerialFixedManager.cs" />

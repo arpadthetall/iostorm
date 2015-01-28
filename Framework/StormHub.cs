@@ -12,6 +12,7 @@ using System.Reactive.Subjects;
 using Microsoft.Practices.Unity;
 using Qlue.Logging;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace IoStorm
 {
@@ -31,6 +32,7 @@ namespace IoStorm
         protected Dictionary<string, DeviceInstance> deviceInstances;
         private IReadOnlyList<AvailablePlugin> availablePlugins;
         private List<IPlugin> runningInstances;
+        private Dictionary<string, PluginConfig.InstanceSettings> pluginSettings;
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = null)
         {
@@ -60,6 +62,7 @@ namespace IoStorm
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
+            this.pluginSettings = new Dictionary<string, PluginConfig.InstanceSettings>();
 
             if (!string.IsNullOrEmpty(remoteHubHost))
             {
@@ -100,17 +103,6 @@ namespace IoStorm
                 });
 
             this.deviceInstances = new Dictionary<string, DeviceInstance>();
-
-            //try
-            //{
-            //    this.deviceInstances = BinaryRage.DB.Get<List<DeviceInstance>>("DeviceInstances", this.configPath);
-            //}
-            //catch (DirectoryNotFoundException)
-            //{
-            //    this.deviceInstances = new List<DeviceInstance>();
-            //}
-
-            //StartDeviceInstances();
         }
 
         public IReadOnlyList<AvailablePlugin> AvailablePlugins
@@ -138,8 +130,6 @@ namespace IoStorm
             {
                 this.deviceInstances.Add(deviceInstance.InstanceId, deviceInstance);
             }
-
-            SaveDeviceInstances();
 
             // Save settings
             foreach (var setting in settings)
@@ -169,8 +159,6 @@ namespace IoStorm
             {
                 this.deviceInstances.Add(deviceInstance.InstanceId, deviceInstance);
             }
-
-            SaveDeviceInstances();
 
             // Save settings
             if (settings != null)
@@ -235,12 +223,6 @@ namespace IoStorm
                 this.log.WarnException(ex, "Failed to load plugin for device instance {0}", deviceInstance.Name);
                 return null;
             }
-        }
-
-        public void SaveDeviceInstances()
-        {
-            //TODO Not sure about this one
-            BinaryRage.DB.Insert("DeviceInstances", this.deviceInstances, this.configPath);
         }
 
         public string GetFullPath(string pluginRelativePath)
@@ -399,8 +381,6 @@ namespace IoStorm
 
                 this.deviceInstances = null;
             }
-
-            BinaryRage.DB.WaitForCompletion();
         }
 
         public void BroadcastPayload(IPlugin sender, Payload.IPayload payload)
@@ -431,29 +411,58 @@ namespace IoStorm
                 });
         }
 
-        public string GetSetting(IPlugin device, string key)
+        public void SaveSettingsToFile(string pluginId, string instanceId)
         {
-            string fullKey = string.Format("{0}-{1}-{2}", device.GetType().FullName, device.InstanceId, key);
+            if (Path.GetInvalidFileNameChars().Any(x => instanceId.Contains(x)))
+                throw new InvalidDataException("InstanceId has to be a valid file name");
 
-            try
+            PluginConfig.InstanceSettings instanceSettings = GetInstanceSettings(pluginId, instanceId);
+
+            string configFileName = Path.Combine(this.configPath, "Plugin", instanceId + ".json");
+
+            using (var file = File.CreateText(configFileName))
             {
-                return BinaryRage.DB.Get<string>(fullKey, this.configPath);
+                file.Write(instanceSettings.GetJson());
             }
-            catch (DirectoryNotFoundException)
-            {
-                string value = null;
 
-                BinaryRage.DB.Insert(fullKey, value, this.configPath);
-
-                return value;
-            }
+            instanceSettings.ResetDirtyFlag();
         }
 
-        public void SaveSetting(string deviceName, string instanceId, string key, string value)
+        private PluginConfig.InstanceSettings GetInstanceSettings(string pluginId, string instanceId)
         {
-            string fullKey = string.Format("{0}-{1}-{2}", deviceName, instanceId, key);
+            PluginConfig.InstanceSettings instanceSettings;
+            lock (this)
+            {
+                string key = pluginId + ":" + instanceId;
+                if (this.pluginSettings.TryGetValue(key, out instanceSettings))
+                {
+                    instanceSettings = new PluginConfig.InstanceSettings(instanceId);
 
-            BinaryRage.DB.Insert(fullKey, value, this.configPath);
+                    this.pluginSettings.Add(key, instanceSettings);
+                }
+            }
+
+            return instanceSettings;
+        }
+
+        public string GetSetting(IPlugin device, string key)
+        {
+            var instanceSettings = GetInstanceSettings(device.GetType().Name, device.InstanceId);
+
+            return instanceSettings.GetSetting(key, null);
+        }
+
+        private void SaveSetting(string pluginId, string instanceId, string key, string value)
+        {
+            var instanceSettings = GetInstanceSettings(pluginId, instanceId);
+
+            if (instanceSettings.SetSetting(key, value))
+                SaveSettingsToFile(pluginId, instanceId);
+        }
+
+        public void SaveSetting(IPlugin device, string key, string value)
+        {
+            SaveSetting(device.GetType().Name, device.InstanceId, key, value);
         }
 
         public string ZoneId
