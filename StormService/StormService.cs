@@ -57,49 +57,7 @@ namespace IoStorm.StormService
             log.Info("Config file path {0}", configPath);
             log.Info("Plugin file path {0}", pluginPath);
 
-            Config.HubConfig hubConfig;
-            int configHash;
-            string configContent;
-
-            string hubConfigFile = Path.Combine(configPath, "HubConfig.json");
-            if (!File.Exists(hubConfigFile))
-            {
-                hubConfig = new Config.HubConfig();
-                var config = JsonConvert.SerializeObject(hubConfig);
-                File.WriteAllText(hubConfigFile, config);
-            }
-
-            using (var file = File.OpenText(hubConfigFile))
-            {
-                configContent = file.ReadToEnd();
-                configHash = configContent.GetHashCode();
-
-                hubConfig = JsonConvert.DeserializeObject<Config.HubConfig>(configContent);
-            }
-
-            if (string.IsNullOrEmpty(hubConfig.DeviceId))
-            {
-                hubConfig.DeviceId = IoStorm.DeviceId.GetDeviceId();
-            }
-
-            ValidateConfig(hubConfig.Devices, hubConfig.Zones);
-
-            // Saving config
-            var jsonSettings = new JsonSerializerSettings
-            {
-                Formatting = Formatting.Indented
-            };
-            configContent = JsonConvert.SerializeObject(hubConfig, jsonSettings);
-
-            if (configContent.GetHashCode() != configHash)
-            {
-                using (var file = File.CreateText(hubConfigFile))
-                {
-                    file.Write(configContent);
-                }
-                configHash = configContent.GetHashCode();
-            }
-
+            Config.HubConfig hubConfig = LoadHubConfig(configPath);
             log.Info("Hub Device Id {0}", hubConfig.DeviceId);
 
             if (!string.IsNullOrEmpty(hubConfig.UpstreamHub))
@@ -114,10 +72,10 @@ namespace IoStorm.StormService
             {
                 //                var plugins = hub.AvailablePlugins;
 
-                LoadDevices(hub, hubConfig.DeviceId, hubConfig.Devices, hubConfig.Zones);
+                LoadPlugins(hub, hubConfig.DeviceId, hubConfig.Plugins);
 
                 var activityController = hub.AddDeviceInstance<ActivityController>("Activity Controller",
-                    Guid.NewGuid().ToString("x"), hubConfig.DeviceId, null);
+                    InstanceId.GetInstanceId(), hubConfig.DeviceId, null);
 
                 // Map remote controls
                 //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
@@ -206,6 +164,154 @@ namespace IoStorm.StormService
         {
         }
 
+        private static HubConfig LoadHubConfig(string configPath)
+        {
+            HubConfig hubConfig;
+            int configHash;
+            string configContent;
+
+            string hubConfigFile = Path.Combine(configPath, "Hub.json");
+            if (!File.Exists(hubConfigFile))
+            {
+                hubConfig = new Config.HubConfig();
+                configContent = JsonConvert.SerializeObject(hubConfig);
+                configHash = configContent.GetHashCode();
+                File.WriteAllText(hubConfigFile, configContent);
+            }
+            else
+            {
+                using (var file = File.OpenText(hubConfigFile))
+                {
+                    configContent = file.ReadToEnd();
+                    configHash = configContent.GetHashCode();
+
+                    hubConfig = JsonConvert.DeserializeObject<Config.HubConfig>(configContent);
+                }
+            }
+
+            if (string.IsNullOrEmpty(hubConfig.DeviceId))
+            {
+                hubConfig.DeviceId = IoStorm.DeviceId.GetDeviceId();
+            }
+
+            var usedInstanceIds = new HashSet<string>();
+            if (hubConfig.Plugins != null)
+                foreach (var pluginConfig in hubConfig.Plugins)
+                    ValidatePluginConfig(pluginConfig, usedInstanceIds);
+
+            // Saving config
+            var jsonSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            };
+            configContent = JsonConvert.SerializeObject(hubConfig, jsonSettings);
+
+            if (configContent.GetHashCode() != configHash)
+            {
+                using (var file = File.CreateText(hubConfigFile))
+                {
+                    file.Write(configContent);
+                }
+                configHash = configContent.GetHashCode();
+            }
+
+            return hubConfig;
+        }
+
+        private static List<ZoneConfig> LoadZoneConfig(string configPath)
+        {
+            List<ZoneConfig> zoneConfigs;
+            int configHash;
+            string configContent;
+
+            string zoneConfigFile = Path.Combine(configPath, "Zones.json");
+            if (!File.Exists(zoneConfigFile))
+            {
+                zoneConfigs = new List<ZoneConfig>();
+                zoneConfigs.Add(new ZoneConfig
+                    {
+                        Name = "House",
+                        ZoneId = InstanceId.GetInstanceId()
+                    });
+                configContent = JsonConvert.SerializeObject(zoneConfigs);
+                configHash = configContent.GetHashCode();
+                File.WriteAllText(zoneConfigFile, configContent);
+            }
+            else
+            {
+                using (var file = File.OpenText(zoneConfigFile))
+                {
+                    configContent = file.ReadToEnd();
+                    configHash = configContent.GetHashCode();
+
+                    zoneConfigs = JsonConvert.DeserializeObject<List<ZoneConfig>>(configContent);
+                }
+
+                // Just in case
+                if (zoneConfigs == null)
+                    zoneConfigs = new List<ZoneConfig>();
+            }
+
+            // Check for invalid zone ids
+            var usedZoneIds = new HashSet<string>();
+            foreach (var zoneConfig in zoneConfigs)
+                ValidateZoneConfig(zoneConfig, usedZoneIds);
+
+            // Saving config
+            var jsonSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            };
+            configContent = JsonConvert.SerializeObject(zoneConfigs, jsonSettings);
+
+            if (configContent.GetHashCode() != configHash)
+            {
+                using (var file = File.CreateText(zoneConfigFile))
+                {
+                    file.Write(configContent);
+                }
+
+                // Hmm
+                configHash = configContent.GetHashCode();
+            }
+
+            return zoneConfigs;
+        }
+
+        private static void ValidateZoneConfig(ZoneConfig zoneConfig, HashSet<string> usedZoneIds)
+        {
+            if (string.IsNullOrEmpty(zoneConfig.ZoneId))
+                zoneConfig.ZoneId = InstanceId.GetInstanceId();
+
+            if (usedZoneIds.Contains(zoneConfig.ZoneId))
+            {
+                string newZoneId = InstanceId.GetInstanceId();
+                log.Warn("Duplicate ZoneId {0}, re-generating to {1}", zoneConfig.ZoneId, newZoneId);
+                zoneConfig.ZoneId = newZoneId;
+            }
+
+            usedZoneIds.Add(zoneConfig.ZoneId);
+
+            if (zoneConfig.Zones != null)
+                foreach (var child in zoneConfig.Zones)
+                    ValidateZoneConfig(child, usedZoneIds);
+        }
+
+        private static void ValidatePluginConfig(Config.PluginConfig pluginConfig, HashSet<string> usedInstanceIds)
+        {
+            if (string.IsNullOrEmpty(pluginConfig.InstanceId))
+                pluginConfig.InstanceId = InstanceId.GetInstanceId();
+
+            if (usedInstanceIds.Contains(pluginConfig.InstanceId))
+            {
+                string newZoneId = InstanceId.GetInstanceId();
+                log.Warn("Duplicate InstanceId {0}, re-generating to {1} for plugin {2}", pluginConfig.InstanceId, newZoneId, pluginConfig.PluginId);
+                pluginConfig.InstanceId = newZoneId;
+            }
+
+            usedInstanceIds.Add(pluginConfig.InstanceId);
+        }
+
         private static string GetFullPath(string subFolder)
         {
             string assemblyLoc = Assembly.GetExecutingAssembly().Location;
@@ -220,36 +326,19 @@ namespace IoStorm.StormService
             return Path.Combine(currentDirectory, subFolder);
         }
 
-        private static void ValidateConfig(IEnumerable<Config.PluginConfig> devices, IEnumerable<Config.ZoneConfig> zones)
+        private static void LoadPlugins(StormHub hub, string zoneId, IEnumerable<Config.PluginConfig> pluginConfigs)
         {
-            foreach (var deviceConfig in devices)
+            foreach (var pluginConfig in pluginConfigs)
             {
-                if (string.IsNullOrEmpty(deviceConfig.InstanceId))
-                    deviceConfig.InstanceId = Guid.NewGuid().ToString("n");
-            }
-
-            foreach (var zoneConfig in zones)
-            {
-                if (string.IsNullOrEmpty(zoneConfig.ZoneId))
-                    zoneConfig.ZoneId = Guid.NewGuid().ToString("n");
-
-                ValidateConfig(zoneConfig.Devices, zoneConfig.Zones);
-            }
-        }
-
-        private static void LoadDevices(StormHub hub, string zoneId, IEnumerable<Config.PluginConfig> devices, IEnumerable<Config.ZoneConfig> zones)
-        {
-            foreach (var deviceConfig in devices)
-            {
-                if (deviceConfig.Disabled)
+                if (pluginConfig.Disabled)
                     continue;
 
                 try
                 {
-                    var plugin = hub.AvailablePlugins.SingleOrDefault(x => x.PluginId == deviceConfig.PluginId);
+                    var plugin = hub.AvailablePlugins.SingleOrDefault(x => x.PluginId == pluginConfig.PluginId);
                     if (plugin == null)
                     {
-                        log.Warn("Plugin {0} ({1}) not found", deviceConfig.PluginId, deviceConfig.Name);
+                        log.Warn("Plugin {0} ({1}) not found", pluginConfig.PluginId, pluginConfig.Name);
                         continue;
                     }
 
@@ -257,20 +346,15 @@ namespace IoStorm.StormService
 
                     var devInstance = hub.AddDeviceInstance(
                         plugin,
-                        deviceConfig.Name,
-                        deviceConfig.InstanceId,
+                        pluginConfig.Name,
+                        pluginConfig.InstanceId,
                         zoneId,
-                        deviceConfig.Settings);
+                        pluginConfig.Settings);
                 }
                 catch (Exception ex)
                 {
-                    log.WarnException(ex, "Failed to load device {0} ({1})", deviceConfig.InstanceId, deviceConfig.Name);
+                    log.WarnException(ex, "Failed to load device {0} ({1})", pluginConfig.InstanceId, pluginConfig.Name);
                 }
-            }
-
-            foreach (var zoneConfig in zones)
-            {
-                LoadDevices(hub, zoneConfig.ZoneId, zoneConfig.Devices, zoneConfig.Zones);
             }
         }
     }

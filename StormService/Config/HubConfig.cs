@@ -11,14 +11,11 @@ namespace IoStorm.StormService.Config
 
         public string UpstreamHub { get; set; }
 
-        public List<PluginConfig> Devices { get; set; }
-
-        public List<ZoneConfig> Zones { get; set; }
+        public List<PluginConfig> Plugins { get; set; }
 
         public HubConfig()
         {
-            Devices = new List<PluginConfig>();
-            Zones = new List<ZoneConfig>();
+            Plugins = new List<PluginConfig>();
         }
     }
 }

@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivityController.cs" />
+    <Compile Include="InstanceId.cs" />
     <Compile Include="Interface\INode.cs" />
     <Compile Include="IRCoder\BitBuilder.cs" />
     <Compile Include="IRCoder\CoderBase.cs" />

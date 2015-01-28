@@ -418,7 +418,7 @@ namespace IoStorm
             lock (this)
             {
                 string key = pluginId + ":" + instanceId;
-                if (this.pluginSettings.TryGetValue(key, out instanceSettings))
+                if (!this.pluginSettings.TryGetValue(key, out instanceSettings))
                 {
                     instanceSettings = new PluginConfig.InstanceSettings(instanceId);
 

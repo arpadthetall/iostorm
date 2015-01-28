@@ -9,13 +9,10 @@ namespace IoStorm.StormService.Config
 
         public string Name { get; set; }
 
-        public List<PluginConfig> Devices { get; set; }
-
         public List<ZoneConfig> Zones { get; set; }
 
         public ZoneConfig()
         {
-            Devices = new List<PluginConfig>();
             Zones = new List<ZoneConfig>();
         }
     }
