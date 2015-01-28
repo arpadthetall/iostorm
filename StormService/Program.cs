@@ -1,25 +1,27 @@
-﻿using System.ServiceProcess;
+﻿using System;
+using System.ServiceProcess;
 
 namespace IoStorm.StormService
 {
     public partial class Service
     {
-        static private NoServiceForm _noServiceForm;
-
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         static void Main(string[] args)
         {
-            if (args.Length == 1 && args[0].Equals("-noservice"))
+            if (args.Length == 1 && args[0].Equals("-console"))
             {
-                _noServiceForm = new NoServiceForm {Text = "StormService"};
+                Console.WriteLine("press 'q' to quit.");
 
-                var service = new Service();
-                service.OnStart(new string[1]);
+                var service = new StormService();
+                service.Start();
 
-                _noServiceForm.ShowDialog();
-                service.OnStop();
+                while (Console.ReadKey().KeyChar != 'q')
+                {
+                }
+
+                service.Stop();
             }
             else
             {

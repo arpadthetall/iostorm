@@ -187,7 +187,11 @@ namespace IoStorm.StormService
             }
         }
 
-        private static void ValidateConfig(IEnumerable<Config.PluginConfig> devices, IEnumerable<Config.ZoneConfig> zones)
+        public void Stop()
+        {
+        }
+
+        private static void ValidateConfig(IEnumerable<DeviceConfig> devices, IEnumerable<ZoneConfig> zones)
         {
             foreach (var deviceConfig in devices)
             {
