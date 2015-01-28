@@ -34,6 +34,7 @@ namespace IoStorm
 
         public StormHub(IUnityContainer container, string ourDeviceId, string remoteHubHost = null)
         {
+            var assemblyPath = AppDomain.CurrentDomain.BaseDirectory;
             this.container = container;
             this.ourDeviceId = ourDeviceId;
 
@@ -48,8 +49,8 @@ namespace IoStorm
                 Directory.CreateDirectory(this.configPath);
 
             // Copy common dependencies
-            File.Copy("IoStorm.CorePayload.dll", Path.Combine(pluginFullPath, "IoStorm.CorePayload.dll"), true);
-            File.Copy("IoStorm.Framework.dll", Path.Combine(pluginFullPath, "IoStorm.Framework.dll"), true);
+            File.Copy(Path.Combine(assemblyPath, "IoStorm.CorePayload.dll"), Path.Combine(pluginFullPath, "IoStorm.CorePayload.dll"), true);
+            File.Copy(Path.Combine(assemblyPath, "IoStorm.Framework.dll"), Path.Combine(pluginFullPath, "IoStorm.Framework.dll"), true);
             this.pluginManager = new PluginManager<IPlugin>(pluginFullPath,
                 "IoStorm.CorePayload.dll",
                 "IoStorm.Framework.dll");
