@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using IoStorm.StormService.Config;
 using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 
@@ -191,7 +192,7 @@ namespace IoStorm.StormService
         {
         }
 
-        private static void ValidateConfig(IEnumerable<DeviceConfig> devices, IEnumerable<ZoneConfig> zones)
+        private static void ValidateConfig(IEnumerable<Config.PluginConfig> devices, IEnumerable<Config.ZoneConfig> zones)
         {
             foreach (var deviceConfig in devices)
             {
