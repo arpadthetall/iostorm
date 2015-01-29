@@ -14,37 +14,45 @@ namespace IoStorm.StormService
 {
     public class StormService
     {
-        private static IUnityContainer container;
-        private static Qlue.Logging.ILog log;
+        private IUnityContainer container;
+        private Qlue.Logging.ILogFactory logFactory;
+        private Qlue.Logging.ILog log;
+        private string configPath;
+        private string pluginPath;
+        private IoStorm.StormHub hub;
+        private Config.RootZoneConfig rootZoneConfig;
+
+        public StormService()
+        {
+            string currentFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            this.configPath = GetFullPath(ConfigurationManager.AppSettings["ConfigFilePath"]);
+            this.pluginPath = GetFullPath(ConfigurationManager.AppSettings["PluginFilePath"]);
+
+            if (!Directory.Exists(this.configPath))
+                Directory.CreateDirectory(this.configPath);
+            if (!Directory.Exists(this.pluginPath))
+                Directory.CreateDirectory(this.pluginPath);
+
+            this.container = new UnityContainer();
+
+            this.logFactory = new Qlue.Logging.NLogFactoryProvider();
+            this.container.RegisterInstance<Qlue.Logging.ILogFactory>(this.logFactory);
+
+            this.log = logFactory.GetLogger("Main");
+        }
 
         public void Start()
         {
-            string currentFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string configPath = GetFullPath(ConfigurationManager.AppSettings["ConfigFilePath"]);
-            string pluginPath = GetFullPath(ConfigurationManager.AppSettings["PluginFilePath"]);
-
-            if (!Directory.Exists(configPath))
-                Directory.CreateDirectory(configPath);
-            if (!Directory.Exists(pluginPath))
-                Directory.CreateDirectory(pluginPath);
-
-            container = new UnityContainer();
-
-            var logFactory = new Qlue.Logging.NLogFactoryProvider();
-            container.RegisterInstance<Qlue.Logging.ILogFactory>(logFactory);
-
-            log = logFactory.GetLogger("Main");
-
             log.Info("Start up");
 
-            log.Info("Config file path {0}", configPath);
-            log.Info("Plugin file path {0}", pluginPath);
+            log.Info("Config file path {0}", this.configPath);
+            log.Info("Plugin file path {0}", this.pluginPath);
 
             // Singletons (put in unity later?)
-            var configManager = new ConfigManager(logFactory, configPath);
-            var pluginManager = new IoStorm.Plugin.PluginManager(logFactory, pluginPath);
+            var configManager = new ConfigManager(this.logFactory, this.configPath);
+            var pluginManager = new IoStorm.Plugin.PluginManager(this.logFactory, this.pluginPath);
 
-            Config.RootZoneConfig rootZoneConfig = configManager.LoadRootZoneConfig();
+            this.rootZoneConfig = configManager.LoadRootZoneConfig();
             Config.HubConfig hubConfig = configManager.LoadHubConfig();
 
             log.Info("Hub Device Id {0}", hubConfig.DeviceId);
@@ -52,102 +60,106 @@ namespace IoStorm.StormService
             if (!string.IsNullOrEmpty(hubConfig.UpstreamHub))
                 log.Info("Connecting to remote hub at {0}", hubConfig.UpstreamHub);
 
-            using (var hub = new IoStorm.StormHub(
+            this.hub = new IoStorm.StormHub(
                 hubConfig: hubConfig,
                 pluginManager: pluginManager,
-                container: container,
-                configPath: configPath))
-            {
-                pluginManager.LoadPlugins(hub, hubConfig.DeviceId, hubConfig.Plugins);
+                container: container);
 
-                var activityController = hub.AddDeviceInstance<ActivityController>("Activity Controller",
-                    InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin), hubConfig.DeviceId, null);
+            var activityController = this.hub.AddDeviceInstance<ActivityController>("Activity Controller",
+                InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin), hubConfig.DeviceId);
 
-                // Map remote controls
-                //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
-                //                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
+            if (hubConfig.IsDirty)
+                configManager.SaveHubConfig(hubConfig);
 
-                //                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
-                //                    xlat.MapSqueezeBoxRemote();
+            // Map remote controls
+            //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
+            //                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
 
-
-                //var sample = hub.LoadPlugin<Sample1>();
-                //hub.Incoming<Payload.Navigation.Up>(x =>
-                //{
-                //    hub.BroadcastPayload(sample, new Payload.Light.On
-                //    {
-                //        LightId = "053"
-                //    });
-                //});
-
-                //hub.Incoming<Payload.Navigation.Down>(x =>
-                //{
-                //    hub.BroadcastPayload(sample, new Payload.Light.Off
-                //    {
-                //        LightId = "053"
-                //    });
-                //});
+            //                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
+            //                    xlat.MapSqueezeBoxRemote();
 
 
-                /*                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
-                                    hub.LoadPlugin<IoStorm.CorePlugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
+            //var sample = hub.LoadPlugin<Sample1>();
+            //hub.Incoming<Payload.Navigation.Up>(x =>
+            //{
+            //    hub.BroadcastPayload(sample, new Payload.Light.On
+            //    {
+            //        LightId = "053"
+            //    });
+            //});
 
-                                hub.LoadPlugin<IoStorm.CorePlugins.YamahaReceiver>();
+            //hub.Incoming<Payload.Navigation.Down>(x =>
+            //{
+            //    hub.BroadcastPayload(sample, new Payload.Light.Off
+            //    {
+            //        LightId = "053"
+            //    });
+            //});
 
-                                if (!string.IsNullOrEmpty(arguments.IrManSerialPort))
+
+            /*                if (!string.IsNullOrEmpty(arguments.UpbSerialPort))
+                                hub.LoadPlugin<IoStorm.CorePlugins.UpbPim>(new ParameterOverride("serialPortName", arguments.UpbSerialPort));
+
+                            hub.LoadPlugin<IoStorm.CorePlugins.YamahaReceiver>();
+
+                            if (!string.IsNullOrEmpty(arguments.IrManSerialPort))
+                            {
+                                var irMan = hub.LoadPlugin<IoStorm.CorePlugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
+
+                                // Map remote controls
+                                CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
+                                CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
+
+                                var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
+                                xlat.MapSqueezeBoxRemote();
+                            }
+
+                            if (!string.IsNullOrEmpty(arguments.AudioSwitcherSerialPort))
+                            {
+                                hub.LoadPlugin<CorePlugins.SerialSwitcher>(new ParameterOverride("serialPortName", arguments.AudioSwitcherSerialPort));
+                            }
+
+
+                            //                hub.LoadPlugin<Storm.Sonos.Sonos>();
+
+                            // Test
+                            var sample = hub.LoadPlugin<Sample1>();
+                            hub.BroadcastPayload(sample, new Payload.Audio.ChangeVolume { Steps = 1 });
+
+                            hub.Incoming<Payload.Navigation.Up>(x =>
+                            {
+                                hub.BroadcastPayload(sample, new Payload.Light.On
                                 {
-                                    var irMan = hub.LoadPlugin<IoStorm.CorePlugins.IrmanReceiver>(new ParameterOverride("serialPortName", arguments.IrManSerialPort));
-
-                                    // Map remote controls
-                                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
-                                    CorePlugins.RemoteMapping.IrManSqueezebox.MapRemoteControl(irMan);
-
-                                    var xlat = hub.LoadPlugin<IoStorm.CorePlugins.RemoteMapping.ProtocolToPayload>();
-                                    xlat.MapSqueezeBoxRemote();
-                                }
-
-                                if (!string.IsNullOrEmpty(arguments.AudioSwitcherSerialPort))
-                                {
-                                    hub.LoadPlugin<CorePlugins.SerialSwitcher>(new ParameterOverride("serialPortName", arguments.AudioSwitcherSerialPort));
-                                }
-
-
-                                //                hub.LoadPlugin<Storm.Sonos.Sonos>();
-
-                                // Test
-                                var sample = hub.LoadPlugin<Sample1>();
-                                hub.BroadcastPayload(sample, new Payload.Audio.ChangeVolume { Steps = 1 });
-
-                                hub.Incoming<Payload.Navigation.Up>(x =>
-                                {
-                                    hub.BroadcastPayload(sample, new Payload.Light.On
-                                    {
-                                        LightId = "072"
-                                    });
+                                    LightId = "072"
                                 });
+                            });
 
-                                hub.Incoming<Payload.Navigation.Down>(x =>
+                            hub.Incoming<Payload.Navigation.Down>(x =>
+                            {
+                                hub.BroadcastPayload(sample, new Payload.Light.Off
                                 {
-                                    hub.BroadcastPayload(sample, new Payload.Light.Off
-                                    {
-                                        LightId = "072"
-                                    });
+                                    LightId = "072"
                                 });
-                                */
-                //hub.BroadcastPayload(sample, new Payload.Audio.SetInputOutput
-                //    {
-                //        Input = 3,
-                //        Output = 3
-                //    });
+                            });
+                            */
+            //hub.BroadcastPayload(sample, new Payload.Audio.SetInputOutput
+            //    {
+            //        Input = 3,
+            //        Output = 3
+            //    });
 
 
 
-                //Console.ReadLine();
-            }
+            //Console.ReadLine();
         }
 
         public void Stop()
         {
+            if (this.hub != null)
+            {
+                this.hub.Dispose();
+                this.hub = null;
+            }
         }
 
         private static string GetFullPath(string subFolder)

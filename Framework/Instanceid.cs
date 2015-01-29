@@ -12,6 +12,7 @@ namespace IoStorm
         public const string InstanceType_Zone = "ZONE";
         public const string InstanceType_Plugin = "PLUG";
         public const string InstanceType_Node = "NODE";
+        public const string InstanceType_PhysicalDeviceId = "PDI";
 
         public static string GetInstanceId(string type)
         {

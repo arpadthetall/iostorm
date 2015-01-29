@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace IoStorm
 {
-    public static class DeviceId
+    public static class PhysicalDeviceId
     {
         public static string GetDeviceId()
         {
@@ -26,10 +26,10 @@ namespace IoStorm
             if (nic == null)
             {
                 // None?
-                return "GUID:" + Guid.NewGuid().ToString("n");
+                return InstanceId.InstanceType_PhysicalDeviceId + ":" + Guid.NewGuid().ToString("n");
             }
 
-            return "MAC:" + nic.GetPhysicalAddress().ToString();
+            return InstanceId.InstanceType_PhysicalDeviceId + ":" + nic.GetPhysicalAddress().ToString();
         }
     }
 }

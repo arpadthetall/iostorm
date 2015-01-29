@@ -28,19 +28,16 @@ namespace IoStorm
         private ISubject<Payload.InternalMessage> localQueue;
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
-        private string configPath;
-        protected Dictionary<string, DeviceInstance> deviceInstances;
+        protected Dictionary<string, PluginInstance> deviceInstances;
         private List<IPlugin> runningInstances;
-        private Dictionary<string, Config.InstanceSettings> pluginSettings;
         private Config.HubConfig hubConfig;
         private Plugin.PluginManager pluginManager;
 
-        public StormHub(Config.HubConfig hubConfig, Plugin.PluginManager pluginManager, IUnityContainer container, string configPath)
+        public StormHub(Config.HubConfig hubConfig, Plugin.PluginManager pluginManager, IUnityContainer container)
         {
             this.hubConfig = hubConfig;
             this.pluginManager = pluginManager;
             this.container = container;
-            this.configPath = configPath;
 
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
 
@@ -48,7 +45,6 @@ namespace IoStorm
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
-            this.pluginSettings = new Dictionary<string, Config.InstanceSettings>();
 
             if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
             {
@@ -88,23 +84,18 @@ namespace IoStorm
                     }
                 });
 
-            this.deviceInstances = new Dictionary<string, DeviceInstance>();
+            this.deviceInstances = new Dictionary<string, PluginInstance>();
 
             // Load plugins
             this.pluginManager.LoadPlugins(this, this.hubConfig.DeviceId, this.hubConfig.Plugins);
         }
 
-        public IReadOnlyList<DeviceInstance> DeviceInstances
-        {
-            get { return this.deviceInstances.Values.ToList().AsReadOnly(); }
-        }
-
-        internal Tuple<DeviceInstance, IPlugin> AddDeviceInstance(string pluginId, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
+        internal Tuple<PluginInstance, IPlugin> AddDeviceInstance(string pluginId, string name, string instanceId, string zoneId)
         {
             if (this.deviceInstances.ContainsKey(instanceId))
                 throw new ArgumentException("Duplicate InstanceId");
 
-            var deviceInstance = new DeviceInstance(pluginId, instanceId)
+            var pluginInstance = new PluginInstance(pluginId, instanceId)
             {
                 ZoneId = zoneId,
                 Name = name
@@ -112,30 +103,24 @@ namespace IoStorm
 
             lock (this.deviceInstances)
             {
-                this.deviceInstances.Add(deviceInstance.InstanceId, deviceInstance);
+                this.deviceInstances.Add(pluginInstance.InstanceId, pluginInstance);
             }
 
-            // Save settings
-            foreach (var setting in settings)
-            {
-                LoadSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
-            }
+            var plugin = StartPluginInstance(pluginInstance);
 
-            // Resave config?
+            var pluginConfig = this.hubConfig.GetPluginConfig(pluginInstance.PluginId, pluginInstance.InstanceId);
 
-            var pluginInstance = StartDeviceInstance(deviceInstance);
-
-            return Tuple.Create(deviceInstance, pluginInstance);
+            return Tuple.Create(pluginInstance, plugin);
         }
 
-        public Tuple<DeviceInstance, IPlugin> AddDeviceInstance<T>(string name, string instanceId, string zoneId, IDictionary<string, string> settings) where T : IPlugin
+        public Tuple<PluginInstance, IPlugin> AddDeviceInstance<T>(string name, string instanceId, string zoneId) where T : IPlugin
         {
             string pluginId = typeof(T).FullName;
 
             if (this.deviceInstances.ContainsKey(instanceId))
                 throw new ArgumentException("Duplicate InstanceId");
 
-            var deviceInstance = new DeviceInstance(pluginId, instanceId)
+            var deviceInstance = new PluginInstance(pluginId, instanceId)
             {
                 ZoneId = zoneId,
                 Name = name
@@ -146,41 +131,25 @@ namespace IoStorm
                 this.deviceInstances.Add(deviceInstance.InstanceId, deviceInstance);
             }
 
-            // Save settings
-            if (settings != null)
-            {
-                foreach (var setting in settings)
-                {
-                    LoadSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
-                }
-            }
-
             var pluginInstance = LoadPlugin(deviceInstance, typeof(T));
+
+            //FIXME: Re-save settings?
 
             return Tuple.Create(deviceInstance, pluginInstance);
         }
 
-        public Tuple<DeviceInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId, IDictionary<string, string> settings)
+        public Tuple<PluginInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId)
         {
-            return AddDeviceInstance(plugin.PluginId, name, instanceId, zoneId, settings);
+            return AddDeviceInstance(plugin.PluginId, name, instanceId, zoneId);
         }
 
         [Obsolete]
-        public Tuple<DeviceInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
+        public Tuple<PluginInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name)
         {
-            return AddDeviceInstance(plugin, name, Guid.NewGuid().ToString("N"), this.hubConfig.DeviceId,
-                settings.ToDictionary(k => k.Item1, v => v.Item2));
+            return AddDeviceInstance(plugin, name, Guid.NewGuid().ToString("N"), this.hubConfig.DeviceId);
         }
 
-        //private void StartDeviceInstances()
-        //{
-        //    foreach (var deviceInstance in this.deviceInstances.Values)
-        //    {
-        //        StartDeviceInstance(deviceInstance);
-        //    }
-        //}
-
-        private IPlugin StartDeviceInstance(DeviceInstance deviceInstance)
+        private IPlugin StartPluginInstance(PluginInstance deviceInstance)
         {
             try
             {
@@ -212,7 +181,7 @@ namespace IoStorm
         }
 
         private void WireUpPlugin(
-            DeviceInstance deviceInstance,
+            PluginInstance deviceInstance,
             IPlugin plugin,
             IObservable<Payload.BusPayload> externalIncoming,
             IObservable<Payload.InternalMessage> internalIncoming)
@@ -290,7 +259,7 @@ namespace IoStorm
         }
 
         [Obsolete]
-        public T LoadPlugin<T>(DeviceInstance deviceInstance /*params ParameterOverride[] overrides*/) where T : IPlugin
+        public T LoadPlugin<T>(PluginInstance deviceInstance /*params ParameterOverride[] overrides*/) where T : IPlugin
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
@@ -305,7 +274,7 @@ namespace IoStorm
             return plugin;
         }
 
-        public IPlugin LoadPlugin(DeviceInstance deviceInstance, Type type, params ParameterOverride[] overrides)
+        public IPlugin LoadPlugin(PluginInstance deviceInstance, Type type, params ParameterOverride[] overrides)
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
@@ -362,7 +331,7 @@ namespace IoStorm
 
         public void BroadcastPayload(IPlugin sender, Payload.IPayload payload)
         {
-            DeviceInstance instance;
+            PluginInstance instance;
             if (!this.deviceInstances.TryGetValue(sender.InstanceId, out instance))
                 throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
 
@@ -388,76 +357,11 @@ namespace IoStorm
                 });
         }
 
-        public void SaveSettingsToFile(string pluginId, string instanceId)
+        public string GetSetting(IPlugin device, string key, string defaultValue)
         {
-            if (Path.GetInvalidFileNameChars().Any(x => instanceId.Contains(x)))
-                throw new InvalidDataException("InstanceId has to be a valid file name");
+            var pluginConfig = this.hubConfig.GetPluginConfig(device.GetType().FullName, device.InstanceId);
 
-            Config.InstanceSettings instanceSettings = GetInstanceSettings(pluginId, instanceId);
-
-            string configFileName = Path.Combine(this.configPath, "Plugin", instanceId + ".json");
-
-            using (var file = File.CreateText(configFileName))
-            {
-                file.Write(instanceSettings.GetJson());
-            }
-
-            instanceSettings.ResetDirtyFlag();
-        }
-
-        private Config.InstanceSettings GetInstanceSettings(string pluginId, string instanceId)
-        {
-            Config.InstanceSettings instanceSettings;
-            lock (this)
-            {
-                string key = pluginId + ":" + instanceId;
-                if (!this.pluginSettings.TryGetValue(key, out instanceSettings))
-                {
-                    instanceSettings = new Config.InstanceSettings(instanceId);
-
-                    this.pluginSettings.Add(key, instanceSettings);
-                }
-            }
-
-            return instanceSettings;
-        }
-
-        public void SaveHubConfig(string hubConfigFileAndPath)
-        {
-            // Saving config
-            var jsonSettings = new JsonSerializerSettings
-            {
-                Formatting = Formatting.Indented
-            };
-            string configContent = JsonConvert.SerializeObject(hubConfig, jsonSettings);
-
-            if (configContent.GetHashCode() != this.hubConfig.LastSavedHashCode)
-            {
-                using (var file = File.CreateText(hubConfigFileAndPath))
-                {
-                    file.Write(configContent);
-                }
-                this.hubConfig.LastSavedHashCode = configContent.GetHashCode();
-            }
-        }
-
-        public string GetSetting(IPlugin device, string key)
-        {
-            var instanceSettings = GetInstanceSettings(device.GetType().Name, device.InstanceId);
-
-            return instanceSettings.GetSetting(key, null);
-        }
-
-        private void LoadSetting(string pluginId, string instanceId, string key, string value)
-        {
-            var instanceSettings = GetInstanceSettings(pluginId, instanceId);
-
-            instanceSettings.SetSetting(key, value);
-        }
-
-        public void SaveSetting(IPlugin device, string key, string value)
-        {
-            LoadSetting(device.GetType().Name, device.InstanceId, key, value);
+            return pluginConfig.GetSetting(key, defaultValue);
         }
 
         [Obsolete("Not right")]

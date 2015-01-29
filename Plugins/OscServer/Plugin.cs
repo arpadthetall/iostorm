@@ -29,7 +29,7 @@ namespace IoStorm.Plugins.OscServer
             this.log = logFactory.GetLogger("OscServer");
 
             int listenPort;
-            int.TryParse(this.hub.GetSetting(this, "ListenPort"), out listenPort);
+            int.TryParse(this.hub.GetSetting(this, "ListenPort", "8000"), out listenPort);
             if (listenPort == 0)
                 throw new ArgumentException("Missing ListenPort setting");
 

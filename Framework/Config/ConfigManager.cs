@@ -50,9 +50,10 @@ namespace IoStorm.Config
                 configContent = File.ReadAllText(hubConfigFile);
 
             hubConfig = JsonConvert.DeserializeObject<Config.HubConfig>(configContent, GetJsonSettings());
-            hubConfig.LastSavedHashCode = configContent.GetHashCode();
+            hubConfig.ResetDirtyFlag(configContent.GetHashCode());
 
             hubConfig.Validate(this.log);
+            hubConfig.PopulateDictionary();
 
             // Call Save in case Validate changed the config
             SaveHubConfig(hubConfig, fileName);
@@ -71,7 +72,10 @@ namespace IoStorm.Config
             if (hubConfig.LastSavedHashCode != configHash)
             {
                 File.WriteAllText(hubConfigFile, configContent);
-                hubConfig.LastSavedHashCode = configHash;
+                hubConfig.ResetDirtyFlag(configHash);
+
+                // Re-populate internal dictionary
+                hubConfig.PopulateDictionary();
             }
         }
 

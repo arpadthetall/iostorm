@@ -10,11 +10,11 @@ namespace IoStorm
     {
         void BroadcastPayload(IPlugin sender, Payload.IPayload payload);
 
-        string GetSetting(IPlugin device, string key);
+        string GetSetting(IPlugin device, string key, string defaultValue = null);
 
         string ZoneId { get; }
 
         [Obsolete]
-        T LoadPlugin<T>(DeviceInstance deviceInstance) where T : IPlugin;
+        T LoadPlugin<T>(PluginInstance deviceInstance) where T : IPlugin;
     }
 }

@@ -84,8 +84,7 @@ namespace IoStorm.Plugin
                         plugin,
                         pluginConfig.Name,
                         pluginConfig.InstanceId,
-                        zoneId,
-                        pluginConfig.Settings);
+                        zoneId);
                 }
                 catch (Exception ex)
                 {

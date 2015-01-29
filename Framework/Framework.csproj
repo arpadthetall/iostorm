@@ -95,9 +95,8 @@
     <Compile Include="IRProtocol\Nokia32.cs" />
     <Compile Include="IRProtocol\NEC.cs" />
     <Compile Include="IRProtocol\Sony20.cs" />
-    <Compile Include="Config\InstanceSettings.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />
-    <Compile Include="DeviceInstance.cs" />
+    <Compile Include="PluginInstance.cs" />
     <Compile Include="Helper\SerialFixedManager.cs" />
     <Compile Include="IRProtocol\SonyBase.cs" />
     <Compile Include="IRProtocol\NECx.cs" />
@@ -109,7 +108,7 @@
     <Compile Include="Plugin\RemoteLoader.cs" />
     <Compile Include="RemoteHub.cs" />
     <Compile Include="Plugin\BaseDevice.cs" />
-    <Compile Include="DeviceId.cs" />
+    <Compile Include="PhysicalDeviceId.cs" />
     <Compile Include="Interface\IHub.cs" />
     <Compile Include="Interface\IPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

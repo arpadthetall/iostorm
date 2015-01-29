@@ -7,17 +7,18 @@ using System.Threading.Tasks;
 namespace IoStorm
 {
     [Serializable]
-    public class DeviceInstance
+    public class PluginInstance
     {
         public string InstanceId { get; private set; }
 
+        [Obsolete]
         public string ZoneId { get; set; }
 
         public string PluginId { get; private set; }
 
         public string Name { get; set; }
 
-        public DeviceInstance(string pluginId, string instanceId)
+        public PluginInstance(string pluginId, string instanceId)
         {
             PluginId = pluginId;
             InstanceId = instanceId;

@@ -51,6 +51,11 @@ namespace IoStorm.Config
             {
                 if (Settings.TryGetValue(key, out value))
                     return value;
+                else
+                {
+                    Settings[key] = defaultValue;
+                    this.dirty = true;
+                }
             }
 
             return defaultValue;
