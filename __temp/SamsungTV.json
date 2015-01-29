@@ -1,0 +1,24 @@
+["Power.Set": {
+	"Match": {
+		"Value": "True"
+	},
+	"Transmit": {
+		"Repeat": 2,
+		"Protocol": "NECx",
+		"Device": 7,
+		"SubDevice": 7,
+		"Command": 153
+	}
+},
+"Power.Set": {
+	"Match": {
+		"Value": "False"
+	},
+	"Transmit": {
+		"Repeat": 2,
+		"Protocol": "NECx",
+		"Device": 7,
+		"SubDevice": 7,
+		"Command": 152
+	}
+}]

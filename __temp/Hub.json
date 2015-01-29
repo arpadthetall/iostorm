@@ -1,0 +1,48 @@
+{
+  "DeviceId": "MAC:5C514F38892A",
+  "Name": "Lindestaf Home",
+  "UpstreamHub": "192.168.240.125",
+  "Plugins": [
+    {
+      "InstanceId": "PLUG:fac45edb48e4488683266b7cc0dce060",
+      "PluginId": "IoStorm.Plugins.IguanaWorks.Plugin",
+      "Name": "The IR receiver",
+      "Settings": {
+        "ReceivesInZoneId": "ZONE:db72e661d0184a03bf8f2949f98ec453"
+      }
+    },
+    {
+      "InstanceId": "PLUG:2a42d3d13c1b46ecbfaef955b5a13c8e",
+      "PluginId": "IoStorm.CorePlugins.UpbPim",
+      "Name": "The UPB Transceiver",
+      "Settings": {
+        "SerialPortName": "COM11"
+      },
+      "Disabled": true
+    },
+    {
+      "InstanceId": "PLUG:55cd67c5a291484f859c851260f3667d",
+      "PluginId": "IoStorm.Plugins.OscServer.Plugin",
+      "Name": "OSC Server",
+      "Settings": {
+        "ListenPort": "8000"
+      }
+    },
+    {
+      "InstanceId": "PLUG:18622a4f64f949048b4a16d00dc8fb5a",
+      "PluginId": "IoStorm.Plugins.Rainforest.Plugin",
+      "Name": "SDG&E Smart Meter",
+      "Settings": {
+        "RainforestEagleHostName": "192.168.240.151"
+      }
+    },
+    {
+      "InstanceId": "PLUG:bd2412ef39514699a67749911ba3fb3a",
+      "PluginId": "IoStorm.Plugins.Enphase.Plugin",
+      "Name": "Enphase Solar Panels",
+      "Settings": {
+        "EnphaseHostName": "192.168.240.146"
+      }
+    }
+  ]
+}

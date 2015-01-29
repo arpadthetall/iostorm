@@ -1,0 +1,20 @@
+{"Power.Set": {
+	"Match": {
+		"Value": "True"
+	},
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Device": 1,
+		"Command": 46
+	}
+},
+"Power.Set": {
+	"Match": {
+		"Value": "False"
+	},
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Device": 1,
+		"Command": 47
+	}
+}}

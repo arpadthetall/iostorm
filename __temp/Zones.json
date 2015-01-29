@@ -1,0 +1,33 @@
+{
+  "Zones": [
+    {
+      "ZoneId": "ZONE:9f14cb61da7f4bdb9d59968606b4cbf0",
+      "Name": "Main",
+      "Zones": [
+        {
+          "ZoneId": "ZONE:db72e661d0184a03bf8f2949f98ec453",
+          "Name": "Living Room",
+          "Zones": [],
+          "Nodes": [
+            {
+              "InstanceId": "NODE:b637144897784ef7b898750849c5503d",
+              "PluginInstanceId": null,
+              "Name": "Sony TV",
+              "Type": "IrOutputNode",
+              "Settings": {
+                "IrMapping": "SonyTV.json"
+              }
+            }
+          ]
+        },
+        {
+          "ZoneId": "ZONE:9cf83396eb9847b6854aa01232916306",
+          "Name": "Master Bed Room",
+          "Zones": [],
+          "Nodes": []
+        }
+      ],
+      "Nodes": []
+    }
+  ]
+}
