@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace IoStorm.PluginConfig
+namespace IoStorm.Config
 {
     public class InstanceSettings
     {

@@ -74,6 +74,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivityController.cs" />
+    <Compile Include="Config\ConfigManager.cs" />
+    <Compile Include="Config\HubConfig.cs" />
+    <Compile Include="Config\NodeConfig.cs" />
+    <Compile Include="Config\PluginConfig.cs" />
+    <Compile Include="Config\RootZoneConfig.cs" />
+    <Compile Include="Config\ZoneConfig.cs" />
     <Compile Include="InstanceId.cs" />
     <Compile Include="Interface\INode.cs" />
     <Compile Include="IRCoder\BitBuilder.cs" />
@@ -89,7 +95,7 @@
     <Compile Include="IRProtocol\Nokia32.cs" />
     <Compile Include="IRProtocol\NEC.cs" />
     <Compile Include="IRProtocol\Sony20.cs" />
-    <Compile Include="PluginConfig\InstanceSettings.cs" />
+    <Compile Include="Config\InstanceSettings.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />
     <Compile Include="DeviceInstance.cs" />
     <Compile Include="Helper\SerialFixedManager.cs" />
@@ -98,6 +104,7 @@
     <Compile Include="IRProtocol\Sony12.cs" />
     <Compile Include="IRProtocol\Sony15.cs" />
     <Compile Include="Plugin\PluginAttribute.cs" />
+    <Compile Include="Plugin\PluginDiscovery.cs" />
     <Compile Include="Plugin\PluginManager.cs" />
     <Compile Include="Plugin\RemoteLoader.cs" />
     <Compile Include="RemoteHub.cs" />

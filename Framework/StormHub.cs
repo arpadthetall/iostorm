@@ -16,11 +16,12 @@ using Newtonsoft.Json;
 
 namespace IoStorm
 {
+    //TODO: At some point we should probably split this into a StormHub component that handles communication/IPC
+    //TODO:   and a PluginManager
     public class StormHub : IDisposable, IHub
     {
         private ILog log;
         private IUnityContainer container;
-        private string ourDeviceId;
         private CancellationTokenSource cts;
         private RemoteHub remoteHub;
         private Task amqpReceivingTask;
@@ -28,39 +29,31 @@ namespace IoStorm
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
         private string configPath;
-        private PluginManager<IPlugin> pluginManager;
         protected Dictionary<string, DeviceInstance> deviceInstances;
-        private IReadOnlyList<AvailablePlugin> availablePlugins;
         private List<IPlugin> runningInstances;
-        private Dictionary<string, PluginConfig.InstanceSettings> pluginSettings;
+        private Dictionary<string, Config.InstanceSettings> pluginSettings;
+        private Config.HubConfig hubConfig;
+        private Plugin.PluginManager pluginManager;
 
-        public StormHub(IUnityContainer container, string ourDeviceId, string configPath, string pluginPath, string remoteHubHost = null)
+        public StormHub(Config.HubConfig hubConfig, Plugin.PluginManager pluginManager, IUnityContainer container, string configPath)
         {
-            var assemblyPath = AppDomain.CurrentDomain.BaseDirectory;
+            this.hubConfig = hubConfig;
+            this.pluginManager = pluginManager;
             this.container = container;
-            this.ourDeviceId = ourDeviceId;
             this.configPath = configPath;
 
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
 
-            // Copy common dependencies
-            File.Copy(Path.Combine(assemblyPath, "IoStorm.CorePayload.dll"), Path.Combine(pluginPath, "IoStorm.CorePayload.dll"), true);
-            File.Copy(Path.Combine(assemblyPath, "IoStorm.Framework.dll"), Path.Combine(pluginPath, "IoStorm.Framework.dll"), true);
-            this.pluginManager = new PluginManager<IPlugin>(pluginPath,
-                "IoStorm.CorePayload.dll",
-                "IoStorm.Framework.dll");
-
-            this.availablePlugins = this.pluginManager.GetAvailablePlugins();
             this.runningInstances = new List<IPlugin>();
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
-            this.pluginSettings = new Dictionary<string, PluginConfig.InstanceSettings>();
+            this.pluginSettings = new Dictionary<string, Config.InstanceSettings>();
 
-            if (!string.IsNullOrEmpty(remoteHubHost))
+            if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
             {
                 this.cts = new CancellationTokenSource();
-                this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), remoteHubHost, ourDeviceId);
+                this.remoteHub = new RemoteHub(container.Resolve<ILogFactory>(), this.hubConfig.UpstreamHub, this.hubConfig.DeviceId);
 
                 this.amqpReceivingTask = Task.Run(() =>
                 {
@@ -80,7 +73,7 @@ namespace IoStorm
                     // Send locally
                     this.localQueue.OnNext(p);
 
-                    if (!string.IsNullOrEmpty(remoteHubHost))
+                    if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
                     {
                         // Broadcast on amqp
                         try
@@ -96,11 +89,9 @@ namespace IoStorm
                 });
 
             this.deviceInstances = new Dictionary<string, DeviceInstance>();
-        }
 
-        public IReadOnlyList<AvailablePlugin> AvailablePlugins
-        {
-            get { return this.availablePlugins; }
+            // Load plugins
+            this.pluginManager.LoadPlugins(this, this.hubConfig.DeviceId, this.hubConfig.Plugins);
         }
 
         public IReadOnlyList<DeviceInstance> DeviceInstances
@@ -127,8 +118,10 @@ namespace IoStorm
             // Save settings
             foreach (var setting in settings)
             {
-                SaveSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
+                LoadSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
             }
+
+            // Resave config?
 
             var pluginInstance = StartDeviceInstance(deviceInstance);
 
@@ -158,7 +151,7 @@ namespace IoStorm
             {
                 foreach (var setting in settings)
                 {
-                    SaveSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
+                    LoadSetting(deviceInstance.PluginId, deviceInstance.InstanceId, setting.Key, setting.Value);
                 }
             }
 
@@ -175,7 +168,7 @@ namespace IoStorm
         [Obsolete]
         public Tuple<DeviceInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name, params Tuple<string, string>[] settings)
         {
-            return AddDeviceInstance(plugin, name, Guid.NewGuid().ToString("N"), this.ourDeviceId,
+            return AddDeviceInstance(plugin, name, Guid.NewGuid().ToString("N"), this.hubConfig.DeviceId,
                 settings.ToDictionary(k => k.Item1, v => v.Item2));
         }
 
@@ -191,7 +184,7 @@ namespace IoStorm
         {
             try
             {
-                var pluginType = this.pluginManager.GetAvailablePlugins().FirstOrDefault(x => x.PluginId == deviceInstance.PluginId);
+                var pluginType = this.pluginManager.GetPluginTypeFromPluginId(deviceInstance.PluginId);
 
                 if (pluginType == null)
                 {
@@ -199,7 +192,7 @@ namespace IoStorm
                     return null;
                 }
 
-                var pluginInstanceType = this.pluginManager.LoadPluginType(pluginType.AssemblyQualifiedName);
+                var pluginInstanceType = this.pluginManager.LoadPluginType(pluginType);
 
                 if (pluginInstanceType == null)
                 {
@@ -400,7 +393,7 @@ namespace IoStorm
             if (Path.GetInvalidFileNameChars().Any(x => instanceId.Contains(x)))
                 throw new InvalidDataException("InstanceId has to be a valid file name");
 
-            PluginConfig.InstanceSettings instanceSettings = GetInstanceSettings(pluginId, instanceId);
+            Config.InstanceSettings instanceSettings = GetInstanceSettings(pluginId, instanceId);
 
             string configFileName = Path.Combine(this.configPath, "Plugin", instanceId + ".json");
 
@@ -412,21 +405,40 @@ namespace IoStorm
             instanceSettings.ResetDirtyFlag();
         }
 
-        private PluginConfig.InstanceSettings GetInstanceSettings(string pluginId, string instanceId)
+        private Config.InstanceSettings GetInstanceSettings(string pluginId, string instanceId)
         {
-            PluginConfig.InstanceSettings instanceSettings;
+            Config.InstanceSettings instanceSettings;
             lock (this)
             {
                 string key = pluginId + ":" + instanceId;
                 if (!this.pluginSettings.TryGetValue(key, out instanceSettings))
                 {
-                    instanceSettings = new PluginConfig.InstanceSettings(instanceId);
+                    instanceSettings = new Config.InstanceSettings(instanceId);
 
                     this.pluginSettings.Add(key, instanceSettings);
                 }
             }
 
             return instanceSettings;
+        }
+
+        public void SaveHubConfig(string hubConfigFileAndPath)
+        {
+            // Saving config
+            var jsonSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            };
+            string configContent = JsonConvert.SerializeObject(hubConfig, jsonSettings);
+
+            if (configContent.GetHashCode() != this.hubConfig.LastSavedHashCode)
+            {
+                using (var file = File.CreateText(hubConfigFileAndPath))
+                {
+                    file.Write(configContent);
+                }
+                this.hubConfig.LastSavedHashCode = configContent.GetHashCode();
+            }
         }
 
         public string GetSetting(IPlugin device, string key)
@@ -436,22 +448,22 @@ namespace IoStorm
             return instanceSettings.GetSetting(key, null);
         }
 
-        private void SaveSetting(string pluginId, string instanceId, string key, string value)
+        private void LoadSetting(string pluginId, string instanceId, string key, string value)
         {
             var instanceSettings = GetInstanceSettings(pluginId, instanceId);
 
-            if (instanceSettings.SetSetting(key, value))
-                SaveSettingsToFile(pluginId, instanceId);
+            instanceSettings.SetSetting(key, value);
         }
 
         public void SaveSetting(IPlugin device, string key, string value)
         {
-            SaveSetting(device.GetType().Name, device.InstanceId, key, value);
+            LoadSetting(device.GetType().Name, device.InstanceId, key, value);
         }
 
+        [Obsolete("Not right")]
         public string ZoneId
         {
-            get { return this.ourDeviceId; }
+            get { return this.hubConfig.DeviceId; }
         }
     }
 }

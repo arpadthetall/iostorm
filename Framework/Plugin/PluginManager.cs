@@ -1,109 +1,97 @@
-using System;
-using System.Collections;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text;
-using System.Threading;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels;
-using System.Data;
-using System.Security;
-using System.Security.Permissions;
-using System.Security.Policy;
-using System.Collections.Generic;
+using System.Threading.Tasks;
+using Qlue.Logging;
 
-namespace IoStorm
+namespace IoStorm.Plugin
 {
-    /// <summary>
-    /// PluginManager
-    /// </summary>
-    /// <remarks>Derived from this work: http://www.codeproject.com/Articles/8832/Plug-in-Manager</remarks>
-    internal class PluginManager<TPluginBase>
+    public class PluginManager
     {
-        protected string pluginPath;
-        protected AppDomain pluginAppDomain;
-        protected RemoteLoader<TPluginBase> remoteLoader;
-        protected List<AvailablePlugin> loadedTypes;
+        private ILog log;
+        private PluginDiscovery<IPlugin> pluginDiscovery;
+        private IReadOnlyList<AvailablePlugin> availablePlugins;
 
-        /// <summary>
-        /// Constructs a plugin manager
-        /// </summary>
-        /// <param name="pluginRelativePath">The relative path to the plugins directory</param>
-        public PluginManager(string pluginFullPath, params string[] excludeAssemblies)
+        public PluginManager(ILogFactory logFactory, string pluginPath)
         {
-            this.pluginPath = pluginFullPath;
+            this.log = logFactory.GetLogger("PluginManager");
 
-            CreateAppDomainAndLoader(pluginFullPath);
+            // Copy common dependencies
+            string assemblyPath = AppDomain.CurrentDomain.BaseDirectory;
+            File.Copy(Path.Combine(assemblyPath, "IoStorm.CorePayload.dll"), Path.Combine(pluginPath, "IoStorm.CorePayload.dll"), true);
+            File.Copy(Path.Combine(assemblyPath, "IoStorm.Framework.dll"), Path.Combine(pluginPath, "IoStorm.Framework.dll"), true);
 
-            LoadUserAssemblies(pluginFullPath, excludeAssemblies);
-
-            this.loadedTypes = this.remoteLoader.GetSubclasses().ToList();
-
-            AppDomain.Unload(this.pluginAppDomain);
-            this.pluginAppDomain = null;
-        }
-
-        private void CreateAppDomainAndLoader(string pluginDirectory)
-        {
-            var setup = new AppDomainSetup();
-            setup.ApplicationName = "Plugins";
-            setup.ApplicationBase = AppDomain.CurrentDomain.BaseDirectory;
-            setup.PrivateBinPath = Path.GetFileName(pluginDirectory);// Di Path.GetDirectoryName(pluginDirectory).Substring(
-            //Path.GetDirectoryName(pluginDirectory).LastIndexOf(Path.DirectorySeparatorChar) + 1);
-            //setup.CachePath = Path.Combine(pluginDirectory, "cache" + Path.DirectorySeparatorChar);
-            //setup.ShadowCopyFiles = "true";
-            //setup.ShadowCopyDirectories = pluginDirectory;
-
-            this.pluginAppDomain = AppDomain.CreateDomain(
-                "Plugins", null, setup);
-
-            this.remoteLoader = (RemoteLoader<TPluginBase>)pluginAppDomain.CreateInstanceAndUnwrap(
-                 Assembly.GetExecutingAssembly().FullName,
-                typeof(RemoteLoader<TPluginBase>).FullName);
-        }
-
-        /// <summary>
-        /// Loads all user created plugin assemblies
-        /// </summary>
-        protected void LoadUserAssemblies(string pluginDirectory, string[] excludeAssemblies)
-        {
-            DirectoryInfo directory = new DirectoryInfo(pluginDirectory);
-            foreach (FileInfo file in directory.GetFiles("*.dll"))
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, arg) =>
             {
-                if (excludeAssemblies.Contains(file.Name))
+                // Search plugins subfolder for plugins
+                string[] parts = arg.Name.Split(',');
+                if (parts.Length > 0)
+                {
+                    string pluginFolder = pluginPath;
+
+                    string assemblyFileName = Path.Combine(pluginFolder, parts[0] + ".dll");
+                    if (File.Exists(assemblyFileName))
+                    {
+                        return System.Reflection.Assembly.LoadFile(assemblyFileName);
+                    }
+                }
+                return null;
+            };
+
+            this.pluginDiscovery = new PluginDiscovery<IPlugin>(pluginPath,
+                "IoStorm.CorePayload.dll",
+                "IoStorm.Framework.dll");
+
+            this.availablePlugins = this.pluginDiscovery.GetAvailablePlugins();
+        }
+
+        public IReadOnlyList<AvailablePlugin> AvailablePlugins
+        {
+            get { return this.availablePlugins; }
+        }
+
+        public AvailablePlugin GetPluginTypeFromPluginId(string pluginId)
+        {
+            return this.pluginDiscovery.GetAvailablePlugins().FirstOrDefault(x => x.PluginId == pluginId);
+        }
+
+        public Type LoadPluginType(AvailablePlugin plugin)
+        {
+            return this.pluginDiscovery.LoadPluginType(plugin.AssemblyQualifiedName);
+        }
+
+        public void LoadPlugins(StormHub hub, string zoneId, IEnumerable<IoStorm.Config.PluginConfig> pluginConfigs)
+        {
+            foreach (var pluginConfig in pluginConfigs)
+            {
+                if (pluginConfig.Disabled)
                     continue;
 
                 try
                 {
-                    this.remoteLoader.LoadAssembly(file.FullName);
+                    var plugin = AvailablePlugins.SingleOrDefault(x => x.PluginId == pluginConfig.PluginId);
+                    if (plugin == null)
+                    {
+                        log.Warn("Plugin {0} ({1}) not found", pluginConfig.PluginId, pluginConfig.Name);
+                        continue;
+                    }
+
+                    log.Info("Loading plugin {0} ({1})", plugin.PluginId, plugin.Name);
+
+                    var devInstance = hub.AddDeviceInstance(
+                        plugin,
+                        pluginConfig.Name,
+                        pluginConfig.InstanceId,
+                        zoneId,
+                        pluginConfig.Settings);
                 }
-                catch (PolicyException e)
+                catch (Exception ex)
                 {
-                    throw new PolicyException(
-                        string.Format("Cannot load {0} - code requires privilege to execute", file.Name),
-                        e);
+                    log.WarnException(ex, "Failed to load device {0} ({1})", pluginConfig.InstanceId, pluginConfig.Name);
                 }
             }
-        }
-
-        /// <summary>
-        /// Retrieves the type objects for all subclasses of the given type within the loaded plugins.
-        /// </summary>
-        /// <param name="baseClass">The base class</param>
-        /// <returns>All subclases</returns>
-        public IReadOnlyList<AvailablePlugin> GetAvailablePlugins()
-        {
-            return this.loadedTypes.AsReadOnly();
-        }
-
-        public Type LoadPluginType(string qualifiedAssembly)
-        {
-            return Type.GetType(qualifiedAssembly, (assemblyName) =>
-                {
-                    string assemblyFileName = assemblyName.Name + ".dll";
-                    return Assembly.LoadFile(Path.Combine(this.pluginPath, assemblyFileName));
-                }, null);
         }
     }
 }

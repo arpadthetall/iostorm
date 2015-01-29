@@ -9,9 +9,13 @@ namespace IoStorm
 {
     public static class InstanceId
     {
-        public static string GetInstanceId()
+        public const string InstanceType_Zone = "ZONE";
+        public const string InstanceType_Plugin = "PLUG";
+        public const string InstanceType_Node = "NODE";
+
+        public static string GetInstanceId(string type)
         {
-            return Guid.NewGuid().ToString("n");
+            return type + ":" + Guid.NewGuid().ToString("n");
         }
     }
 }

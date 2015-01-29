@@ -47,7 +47,7 @@ namespace Stormcloud.Controllers
                 hub.SendPayload(rabbitChannel, payload);
                 //_logger.Info("Sent {0}", command);
             }
-            catch (Exception ex)
+            catch (Exception /*ex*/)
             {
                 //_logger.ErrorException("Failed to send payload", ex);
             }
