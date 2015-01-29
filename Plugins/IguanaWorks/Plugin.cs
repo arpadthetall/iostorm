@@ -45,6 +45,7 @@ namespace IoStorm.Plugins.IguanaWorks
         private List<CoderBase> decoders;
         private int firmwareVersion;
         private byte cycles;
+        private string receivesInZoneId;
 
         public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
@@ -52,6 +53,8 @@ namespace IoStorm.Plugins.IguanaWorks
             this.hub = hub;
 
             this.log = logFactory.GetLogger("IguanaWorks");
+
+            this.receivesInZoneId = hub.GetSetting(this, "ReceivesInZoneId");
 
             this.deviceInitializationTimeout = TimeSpan.FromSeconds(5);
 
@@ -66,7 +69,7 @@ namespace IoStorm.Plugins.IguanaWorks
                     Command = cmd
                 };
 
-                hub.BroadcastPayload(this, payload);
+                hub.BroadcastPayload(this, payload, this.receivesInZoneId);
             });
 
             this.decoders = new List<CoderBase>()

@@ -52,6 +52,9 @@ namespace IoStorm.StormService
             var configManager = new ConfigManager(this.logFactory, this.configPath);
             var pluginManager = new IoStorm.Plugin.PluginManager(this.logFactory, this.pluginPath);
 
+            foreach (var availablePlugin in pluginManager.AvailablePlugins)
+                this.log.Info("Available Plugin: {0} - {1}", availablePlugin.PluginId, availablePlugin.Name);
+
             this.rootZoneConfig = configManager.LoadRootZoneConfig();
             Config.HubConfig hubConfig = configManager.LoadHubConfig();
 

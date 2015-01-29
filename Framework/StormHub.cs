@@ -175,7 +175,8 @@ namespace IoStorm
             }
             catch (Exception ex)
             {
-                this.log.WarnException(ex, "Failed to load plugin for device instance {0}", deviceInstance.Name);
+                this.log.Warn("Failed to load plugin for device instance {0}, error: {1}, msg: {2}",
+                    deviceInstance.Name, ex.GetType().Name, ex.Message);
                 return null;
             }
         }
@@ -281,7 +282,18 @@ namespace IoStorm
             allOverrides.Add(new ParameterOverride("instanceId", deviceInstance.InstanceId));
             allOverrides.AddRange(overrides);
 
-            var plugin = this.container.Resolve(type, allOverrides.ToArray()) as IPlugin;
+            IPlugin plugin;
+            try
+            {
+                plugin = this.container.Resolve(type, allOverrides.ToArray()) as IPlugin;
+            }
+            catch (Microsoft.Practices.Unity.ResolutionFailedException ex)
+            {
+                if (ex.InnerException != null)
+                    // Unwrap
+                    throw ex.InnerException;
+                throw;
+            }
 
             WireUpPlugin(deviceInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
@@ -329,19 +341,28 @@ namespace IoStorm
             }
         }
 
-        public void BroadcastPayload(IPlugin sender, Payload.IPayload payload)
+        public void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string sourceZoneId)
         {
             PluginInstance instance;
             if (!this.deviceInstances.TryGetValue(sender.InstanceId, out instance))
                 throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
 
-            var zonePayload = new IoStorm.Payload.ZoneSourcePayload
+            if (!string.IsNullOrEmpty(sourceZoneId))
             {
-                SourceZoneId = instance.ZoneId,
-                Payload = payload
-            };
+                // Wrap in ZoneSourcePayload
+                var zonePayload = new IoStorm.Payload.ZoneSourcePayload
+                {
+                    SourceZoneId = sourceZoneId,
+                    Payload = payload
+                };
 
-            this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, zonePayload));
+                this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, zonePayload));
+            }
+            else
+            {
+                // No zone attached
+                this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, payload));
+            }
         }
 
         public void Incoming<T>(Action<T> action) where T : Payload.IPayload
