@@ -80,7 +80,7 @@ namespace IoStorm.Plugin
 
                     log.Info("Loading plugin {0} ({1})", plugin.PluginId, plugin.Name);
 
-                    var devInstance = hub.AddDeviceInstance(
+                    var devInstance = hub.AddPluginInstance(
                         plugin,
                         pluginConfig.Name,
                         pluginConfig.InstanceId,

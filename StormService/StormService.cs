@@ -68,11 +68,15 @@ namespace IoStorm.StormService
                 pluginManager: pluginManager,
                 container: container);
 
-            var activityController = this.hub.AddDeviceInstance<ActivityController>("Activity Controller",
+            var activityController = this.hub.AddPluginInstance<ActivityController>("Activity Controller",
                 InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin), hubConfig.DeviceId);
 
             if (hubConfig.IsDirty)
                 configManager.SaveHubConfig(hubConfig);
+
+            // Wire up nodes in zones
+            foreach (var zoneConfig in this.rootZoneConfig.Zones)
+                WireUpNode(zoneConfig);
 
             // Map remote controls
             //                    CorePlugins.RemoteMapping.IrManSony.MapRemoteControl(irMan);
@@ -154,6 +158,44 @@ namespace IoStorm.StormService
 
 
             //Console.ReadLine();
+        }
+
+        private void WireUpNode(ZoneConfig zoneConfig)
+        {
+            foreach (var node in zoneConfig.Nodes)
+            {
+                if (node.Disabled)
+                    continue;
+
+                this.log.Info("Node {0}", node.Name);
+
+                INode nodeInstance = null;
+                try
+                {
+                    switch (node.Type)
+                    {
+                        case "IrOutputNode":
+                            nodeInstance = new IoStorm.Nodes.IrOutputNode(node);
+                            break;
+
+                        default:
+                            this.log.Warn("Unknown node type {0}", node.Type);
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.log.WarnException(ex, "Failed to instantiate node type {0}", node.Type);
+                    continue;
+                }
+                if (nodeInstance == null)
+                    continue;
+
+                this.hub.AddNode(nodeInstance);
+            }
+
+            foreach (var child in zoneConfig.Zones)
+                WireUpNode(child);
         }
 
         public void Stop()

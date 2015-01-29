@@ -76,6 +76,7 @@
     <Compile Include="ActivityController.cs" />
     <Compile Include="Config\ConfigManager.cs" />
     <Compile Include="Config\HubConfig.cs" />
+    <Compile Include="Config\IrOutputMapping.cs" />
     <Compile Include="Config\NodeConfig.cs" />
     <Compile Include="Config\PluginConfig.cs" />
     <Compile Include="Config\RootZoneConfig.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="IRProtocol\Nokia32.cs" />
     <Compile Include="IRProtocol\NEC.cs" />
     <Compile Include="IRProtocol\Sony20.cs" />
+    <Compile Include="Nodes\IrOutputNode.cs" />
     <Compile Include="Plugin\AvailablePlugin.cs" />
     <Compile Include="PluginInstance.cs" />
     <Compile Include="Helper\SerialFixedManager.cs" />

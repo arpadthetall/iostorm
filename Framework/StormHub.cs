@@ -28,8 +28,9 @@ namespace IoStorm
         private ISubject<Payload.InternalMessage> localQueue;
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
-        protected Dictionary<string, PluginInstance> deviceInstances;
+        protected Dictionary<string, PluginInstance> pluginInstances;
         private List<IPlugin> runningInstances;
+        private List<INode> runningNodes;
         private Config.HubConfig hubConfig;
         private Plugin.PluginManager pluginManager;
 
@@ -42,6 +43,7 @@ namespace IoStorm
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
 
             this.runningInstances = new List<IPlugin>();
+            this.runningNodes = new List<INode>();
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
@@ -84,15 +86,15 @@ namespace IoStorm
                     }
                 });
 
-            this.deviceInstances = new Dictionary<string, PluginInstance>();
+            this.pluginInstances = new Dictionary<string, PluginInstance>();
 
             // Load plugins
             this.pluginManager.LoadPlugins(this, this.hubConfig.DeviceId, this.hubConfig.Plugins);
         }
 
-        internal Tuple<PluginInstance, IPlugin> AddDeviceInstance(string pluginId, string name, string instanceId, string zoneId)
+        internal Tuple<PluginInstance, IPlugin> AddPluginInstance(string pluginId, string name, string instanceId, string zoneId)
         {
-            if (this.deviceInstances.ContainsKey(instanceId))
+            if (this.pluginInstances.ContainsKey(instanceId))
                 throw new ArgumentException("Duplicate InstanceId");
 
             var pluginInstance = new PluginInstance(pluginId, instanceId)
@@ -101,63 +103,59 @@ namespace IoStorm
                 Name = name
             };
 
-            lock (this.deviceInstances)
+            lock (this.pluginInstances)
             {
-                this.deviceInstances.Add(pluginInstance.InstanceId, pluginInstance);
+                this.pluginInstances.Add(pluginInstance.InstanceId, pluginInstance);
             }
 
             var plugin = StartPluginInstance(pluginInstance);
 
-            var pluginConfig = this.hubConfig.GetPluginConfig(pluginInstance.PluginId, pluginInstance.InstanceId);
-
             return Tuple.Create(pluginInstance, plugin);
         }
 
-        public Tuple<PluginInstance, IPlugin> AddDeviceInstance<T>(string name, string instanceId, string zoneId) where T : IPlugin
+        public Tuple<PluginInstance, IPlugin> AddPluginInstance<T>(string name, string instanceId, string zoneId) where T : IPlugin
         {
             string pluginId = typeof(T).FullName;
 
-            if (this.deviceInstances.ContainsKey(instanceId))
+            if (this.pluginInstances.ContainsKey(instanceId))
                 throw new ArgumentException("Duplicate InstanceId");
 
-            var deviceInstance = new PluginInstance(pluginId, instanceId)
+            var pluginInstance = new PluginInstance(pluginId, instanceId)
             {
                 ZoneId = zoneId,
                 Name = name
             };
 
-            lock (this.deviceInstances)
+            lock (this.pluginInstances)
             {
-                this.deviceInstances.Add(deviceInstance.InstanceId, deviceInstance);
+                this.pluginInstances.Add(pluginInstance.InstanceId, pluginInstance);
             }
 
-            var pluginInstance = LoadPlugin(deviceInstance, typeof(T));
+            var plugin = LoadPlugin(pluginInstance, typeof(T));
 
-            //FIXME: Re-save settings?
-
-            return Tuple.Create(deviceInstance, pluginInstance);
+            return Tuple.Create(pluginInstance, plugin);
         }
 
-        public Tuple<PluginInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId)
+        public Tuple<PluginInstance, IPlugin> AddPluginInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId)
         {
-            return AddDeviceInstance(plugin.PluginId, name, instanceId, zoneId);
+            return AddPluginInstance(plugin.PluginId, name, instanceId, zoneId);
         }
 
         [Obsolete]
-        public Tuple<PluginInstance, IPlugin> AddDeviceInstance(AvailablePlugin plugin, string name)
+        public Tuple<PluginInstance, IPlugin> AddPluginInstance(AvailablePlugin plugin, string name)
         {
-            return AddDeviceInstance(plugin, name, Guid.NewGuid().ToString("N"), this.hubConfig.DeviceId);
+            return AddPluginInstance(plugin, name, Guid.NewGuid().ToString("N"), this.hubConfig.DeviceId);
         }
 
-        private IPlugin StartPluginInstance(PluginInstance deviceInstance)
+        private IPlugin StartPluginInstance(PluginInstance pluginInstance)
         {
             try
             {
-                var pluginType = this.pluginManager.GetPluginTypeFromPluginId(deviceInstance.PluginId);
+                var pluginType = this.pluginManager.GetPluginTypeFromPluginId(pluginInstance.PluginId);
 
                 if (pluginType == null)
                 {
-                    this.log.Error("Plugin {0} for instance {1} not found", deviceInstance.PluginId, deviceInstance.Name);
+                    this.log.Error("Plugin {0} for instance {1} not found", pluginInstance.PluginId, pluginInstance.Name);
                     return null;
                 }
 
@@ -169,20 +167,20 @@ namespace IoStorm
                     return null;
                 }
 
-                var pluginInstance = LoadPlugin(deviceInstance, pluginInstanceType);
+                var plugin = LoadPlugin(pluginInstance, pluginInstanceType);
 
-                return pluginInstance;
+                return plugin;
             }
             catch (Exception ex)
             {
                 this.log.Warn("Failed to load plugin for device instance {0}, error: {1}, msg: {2}",
-                    deviceInstance.Name, ex.GetType().Name, ex.Message);
+                    pluginInstance.Name, ex.GetType().Name, ex.Message);
                 return null;
             }
         }
 
         private void WireUpPlugin(
-            PluginInstance deviceInstance,
+            PluginInstance pluginInstance,
             IPlugin plugin,
             IObservable<Payload.BusPayload> externalIncoming,
             IObservable<Payload.InternalMessage> internalIncoming)
@@ -207,7 +205,7 @@ namespace IoStorm
                         try
                         {
                             // Unwrap
-                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
+                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, pluginInstance.ZoneId);
 
                             if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
                                 method.Invoke(plugin, new object[] { unwrappedPayload });
@@ -226,7 +224,7 @@ namespace IoStorm
                         try
                         {
                             // Unwrap
-                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, deviceInstance.ZoneId);
+                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, pluginInstance.ZoneId);
 
                             if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
                                 method.Invoke(plugin, new object[] { unwrappedPayload });
@@ -260,7 +258,7 @@ namespace IoStorm
         }
 
         [Obsolete]
-        public T LoadPlugin<T>(PluginInstance deviceInstance /*params ParameterOverride[] overrides*/) where T : IPlugin
+        public T LoadPlugin<T>(PluginInstance pluginInstance /*params ParameterOverride[] overrides*/) where T : IPlugin
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
@@ -268,18 +266,18 @@ namespace IoStorm
 
             var plugin = this.container.Resolve<T>(allOverrides.ToArray());
 
-            WireUpPlugin(deviceInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+            WireUpPlugin(pluginInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
             this.runningInstances.Add(plugin);
 
             return plugin;
         }
 
-        public IPlugin LoadPlugin(PluginInstance deviceInstance, Type type, params ParameterOverride[] overrides)
+        public IPlugin LoadPlugin(PluginInstance pluginInstance, Type type, params ParameterOverride[] overrides)
         {
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
-            allOverrides.Add(new ParameterOverride("instanceId", deviceInstance.InstanceId));
+            allOverrides.Add(new ParameterOverride("instanceId", pluginInstance.InstanceId));
             allOverrides.AddRange(overrides);
 
             IPlugin plugin;
@@ -295,7 +293,7 @@ namespace IoStorm
                 throw;
             }
 
-            WireUpPlugin(deviceInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+            WireUpPlugin(pluginInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
             this.runningInstances.Add(plugin);
 
@@ -337,14 +335,34 @@ namespace IoStorm
                     }
                 }
 
-                this.deviceInstances = null;
+                this.runningInstances = null;
             }
+
+            if (this.runningNodes != null)
+            {
+                foreach (var nodeInstance in this.runningNodes)
+                {
+                    var disposable = nodeInstance as IDisposable;
+
+                    if (disposable != null)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+
+                this.runningNodes = null;
+            }
+        }
+
+        public void AddNode(INode nodeInstance)
+        {
+            this.runningNodes.Add(nodeInstance);
         }
 
         public void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string sourceZoneId)
         {
             PluginInstance instance;
-            if (!this.deviceInstances.TryGetValue(sender.InstanceId, out instance))
+            if (!this.pluginInstances.TryGetValue(sender.InstanceId, out instance))
                 throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
 
             if (!string.IsNullOrEmpty(sourceZoneId))
@@ -383,12 +401,6 @@ namespace IoStorm
             var pluginConfig = this.hubConfig.GetPluginConfig(device.GetType().FullName, device.InstanceId);
 
             return pluginConfig.GetSetting(key, defaultValue);
-        }
-
-        [Obsolete("Not right")]
-        public string ZoneId
-        {
-            get { return this.hubConfig.DeviceId; }
         }
     }
 }
