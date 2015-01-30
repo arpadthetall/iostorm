@@ -25,6 +25,7 @@ namespace IoStorm
         private CancellationTokenSource cts;
         private RemoteHub remoteHub;
         private Task amqpReceivingTask;
+        private Task amqpReceivingTaskRpc;
         private ISubject<Payload.InternalMessage> localQueue;
         private IObservable<Payload.BusPayload> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
@@ -46,6 +47,7 @@ namespace IoStorm
             this.runningNodes = new List<INode>();
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
+            var externalIncomingRpcSubject = new Subject<Payload.RPCPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
 
             if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
@@ -56,6 +58,11 @@ namespace IoStorm
                 this.amqpReceivingTask = Task.Run(() =>
                 {
                     this.remoteHub.Receiver("Global", cts.Token, externalIncomingSubject.AsObserver());
+                }, cts.Token);
+
+                this.amqpReceivingTaskRpc = Task.Run(() =>
+                {
+                    this.remoteHub.ReceiverRPC("rpc_queue", cts.Token, externalIncomingRpcSubject.AsObserver());
                 }, cts.Token);
 
                 this.externalIncomingQueue.Subscribe(p =>
@@ -309,6 +316,7 @@ namespace IoStorm
                 try
                 {
                     this.amqpReceivingTask.Wait();
+                    this.amqpReceivingTaskRpc.Wait();
                 }
                 catch
                 {
@@ -401,6 +409,14 @@ namespace IoStorm
             var pluginConfig = this.hubConfig.GetPluginConfig(device.GetType().FullName, device.InstanceId);
 
             return pluginConfig.GetSetting(key, defaultValue);
+        }
+
+        public Payload.IPayload Rpc(Payload.IPayload request)
+        {
+            if (this.remoteHub == null)
+                throw new InvalidOperationException("Remote hub not configured");
+
+            return this.remoteHub.SendRpc("rpc_queue", request);
         }
     }
 }

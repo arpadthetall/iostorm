@@ -37,6 +37,15 @@ namespace IoStorm
                     }
                 });
             }
+
+            if (payload.Address == "/1/toggle2")
+            {
+                // Test RPC
+
+                var listZonesRequest = new Payload.Management.ListZonesRequest();
+
+                var response = hub.Rpc(listZonesRequest);
+            }
         }
     }
 }

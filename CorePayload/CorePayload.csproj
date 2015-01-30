@@ -48,6 +48,7 @@
     <Compile Include="Audio\ChangeVolume.cs" />
     <Compile Include="Audio\SetVolume.cs" />
     <Compile Include="Base\BasePayload.cs" />
+    <Compile Include="RPCPayload.cs" />
     <Compile Include="Dummy.cs" />
     <Compile Include="Interface\IIRProtocol.cs" />
     <Compile Include="Interface\IRemotePayload.cs" />
@@ -56,6 +57,9 @@
     <Compile Include="IRCommand.cs" />
     <Compile Include="Light\Off.cs" />
     <Compile Include="Light\On.cs" />
+    <Compile Include="Management\ListZonesResponse.cs" />
+    <Compile Include="Management\ListZonesRequest.cs" />
+    <Compile Include="Management\Zone.cs" />
     <Compile Include="Navigation\Jump.cs" />
     <Compile Include="Navigation\Options.cs" />
     <Compile Include="Navigation\Return.cs" />

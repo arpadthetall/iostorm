@@ -14,5 +14,7 @@ namespace IoStorm
 
         [Obsolete]
         T LoadPlugin<T>(PluginInstance deviceInstance) where T : IPlugin;
+
+        Payload.IPayload Rpc(Payload.IPayload request);
     }
 }
