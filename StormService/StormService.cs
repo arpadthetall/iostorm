@@ -66,6 +66,7 @@ namespace IoStorm.StormService
             this.hub = new IoStorm.StormHub(
                 hubConfig: hubConfig,
                 pluginManager: pluginManager,
+                rootZoneConfig: this.rootZoneConfig,
                 container: container);
 
             var activityController = this.hub.AddPluginInstance<ActivityController>("Activity Controller",

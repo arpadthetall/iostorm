@@ -1,4 +1,4 @@
-﻿#define VERBOSE_LOGGING
+﻿//#define VERBOSE_LOGGING
 
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,32 @@ namespace IoStorm
 {
     public class RemoteHub : IDisposable
     {
+        protected class Waiter
+        {
+            private ManualResetEvent waitEvent;
+            private Payload.IPayload response;
+
+            public Waiter()
+            {
+                this.waitEvent = new ManualResetEvent(false);
+            }
+
+            public Payload.IPayload GetResponse(TimeSpan timeout)
+            {
+                if (!this.waitEvent.WaitOne(timeout))
+                    throw new TimeoutException("No response");
+
+                return this.response;
+            }
+
+            public void ReplyReceived(Payload.IPayload payload)
+            {
+                this.response = payload;
+
+                this.waitEvent.Set();
+            }
+        }
+
         private Qlue.Logging.ILog log;
         private string hostName;
         private ConnectionFactory factory;
@@ -25,15 +51,21 @@ namespace IoStorm
         private IConnection connection;
         private string ourDeviceId;
         private IModel rpcModel;
-        private QueueDeclareOk replyQueue;
+        private string rpcQueueName;
+        private QueueDeclareOk rpcReplyQueue;
+        private Dictionary<string, Waiter> waiters;
+        private CancellationTokenSource cts;
+        private Task rpcReplyReceiverTask;
 
-        public RemoteHub(Qlue.Logging.ILogFactory logFactory, string hostName, string ourDeviceId)
+        public RemoteHub(Qlue.Logging.ILogFactory logFactory, string hostName, string ourDeviceId, string rpcQueueName = "gutter")
         {
             this.log = logFactory.GetLogger("RemoteHub");
             this.hostName = hostName;
             this.ourDeviceId = ourDeviceId;
+            this.rpcQueueName = rpcQueueName;
 
             this.exchanges = new Dictionary<string, IModel>();
+            this.waiters = new Dictionary<string, Waiter>();
 
             this.factory = new ConnectionFactory
             {
@@ -42,24 +74,23 @@ namespace IoStorm
                 RequestedConnectionTimeout = 4000
             };
 
+            this.connection = factory.CreateConnection();
+
             this.serializer = new Serializer();
+
+            this.rpcModel = this.connection.CreateModel();
+            this.rpcReplyQueue = this.rpcModel.QueueDeclare();
+
+            this.cts = new CancellationTokenSource();
+            this.rpcReplyReceiverTask = Task.Run(() =>
+            {
+                InternalReceiverRPCReply(cts.Token);
+            }, cts.Token);
         }
 
         private IModel GetFanoutModel(string exchangeName)
         {
             IModel model;
-
-            if (this.connection == null)
-            {
-                lock (this)
-                {
-                    if (this.connection == null)
-                    {
-                        this.connection = factory.CreateConnection();
-                    }
-                }
-            }
-
             lock (this.exchanges)
             {
                 if (!this.exchanges.TryGetValue(exchangeName, out model))
@@ -75,24 +106,11 @@ namespace IoStorm
             return model;
         }
 
-        private IModel GetRpcModel()
-        {
-            if (this.connection == null)
-            {
-                lock (this)
-                {
-                    if (this.connection == null)
-                    {
-                        this.connection = factory.CreateConnection();
-                    }
-                }
-            }
-
-            return connection.CreateModel();
-        }
-
         public void Dispose()
         {
+            this.cts.Cancel();
+            this.rpcReplyReceiverTask.Wait();
+
             if (this.exchanges != null)
             {
                 lock (this.exchanges)
@@ -108,6 +126,14 @@ namespace IoStorm
                 }
 
                 this.exchanges = null;
+            }
+
+            if (this.rpcModel != null)
+            {
+                this.rpcModel.Close();
+                this.rpcModel.Dispose();
+
+                this.rpcModel = null;
             }
 
             if (this.connection != null)
@@ -154,28 +180,65 @@ namespace IoStorm
 #endif
         }
 
-        public Payload.IPayload SendRpc(string channelName, Payload.IPayload payload)
+        public Payload.IPayload SendRpc(Payload.IPayload payload)
         {
-//FIXME
+            return SendRpc(payload, TimeSpan.Zero);
+        }
+
+        public T SendRpc<T>(Payload.IPayload payload, TimeSpan timeout) where T : class
+        {
+            return SendRpc(payload, timeout) as T;
+        }
+
+        public Payload.IPayload SendRpc(Payload.IPayload payload, TimeSpan timeout)
+        {
+            if (timeout == TimeSpan.Zero)
+            {
+                // Default timeout is 10 seconds
+                timeout = TimeSpan.FromSeconds(10);
+            }
+
             IBasicProperties properties;
             var busPayload = GenerateBusMessage(payload, out properties);
-
-            if (this.rpcModel == null)
-                this.rpcModel = GetRpcModel();
-            if (this.replyQueue == null)
-                this.replyQueue = this.rpcModel.QueueDeclare();
 
             string message = this.serializer.SerializeObject(busPayload);
 
             var body = Encoding.UTF8.GetBytes(message);
 
-            this.rpcModel.BasicPublish(string.Empty, channelName, properties, body);
+            properties.ReplyTo = this.rpcReplyQueue;
+
+            try
+            {
+                var waiter = new Waiter();
+                lock (this.waiters)
+                {
+                    this.waiters.Add(properties.MessageId, waiter);
+                }
+
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+
+                this.rpcModel.BasicPublish(string.Empty, this.rpcQueueName, properties, body);
 
 #if VERBOSE_LOGGING
-            this.log.Trace("Sent {0} bytes", body.Length);
+                this.log.Trace("Sent {0} bytes", body.Length);
 #endif
 
-            return null;
+                // Wait for response
+                var response = waiter.GetResponse(timeout);
+
+                watch.Stop();
+
+                this.log.Debug("RPC Duration {0:N0} ms", watch.ElapsedMilliseconds);
+
+                return response;
+            }
+            finally
+            {
+                lock (this.waiters)
+                {
+                    this.waiters.Remove(properties.MessageId);
+                }
+            }
         }
 
         public void Receiver(string channelName, CancellationToken cancelToken, IObserver<Payload.BusPayload> bus)
@@ -226,15 +289,15 @@ namespace IoStorm
             }
         }
 
-        public void ReceiverRPC(string channelName, CancellationToken cancelToken, IObserver<Payload.RPCPayload> bus)
+        public void ReceiverRPC(CancellationToken cancelToken, Func<Payload.RPCPayload, Payload.IPayload> func)
         {
-            var channel = GetRpcModel();
+            var channel = this.connection.CreateModel();
 
-            channel.QueueDeclare(channelName, false, false, false, null);
+            channel.QueueDeclare(this.rpcQueueName, false, false, false, null);
             channel.BasicQos(0, 1, false);
 
             var consumer = new QueueingBasicConsumer(channel);
-            channel.BasicConsume(channelName, false, consumer);
+            channel.BasicConsume(this.rpcQueueName, false, consumer);
 
             this.log.Debug("Waiting for messages");
             while (!cancelToken.IsCancellationRequested)
@@ -250,28 +313,31 @@ namespace IoStorm
                         this.log.Trace("Received {0} bytes", body.Length);
 #endif
 
-                        var payload = this.serializer.DeserializeString(Encoding.UTF8.GetString(body)) as Payload.IPayload;
+                        var busPayload = this.serializer.DeserializeString(Encoding.UTF8.GetString(body)) as Payload.BusPayload;
 
-                        if (payload != null)
+                        if (busPayload != null)
                         {
                             var rpcPayload = new Payload.RPCPayload
                             {
-                                Request = payload
+                                OriginDeviceId = busPayload.OriginDeviceId,
+                                Request = busPayload.Payload
                             };
 
-                            bus.NotifyOn(TaskPoolScheduler.Default).OnNext(rpcPayload);
+                            Observable.Start<Payload.IPayload>(() => func(rpcPayload), TaskPoolScheduler.Default)
+                                .Subscribe(response =>
+                                {
+                                    if (response != null)
+                                    {
+                                        // Send response
+                                        var replyProps = channel.CreateBasicProperties();
+                                        replyProps.CorrelationId = result.BasicProperties.MessageId;
 
-                            if (rpcPayload.Response != null)
-                            {
-                                // Send response
-                                var replyProps = channel.CreateBasicProperties();
-                                replyProps.CorrelationId = result.BasicProperties.CorrelationId;
+                                        byte[] responseBody = Encoding.UTF8.GetBytes(this.serializer.SerializeObject(response));
 
-                                byte[] responseBody = Encoding.UTF8.GetBytes(this.serializer.SerializeObject(rpcPayload.Response));
-
-                                channel.BasicPublish(string.Empty, result.BasicProperties.ReplyTo, replyProps, responseBody);
-                                channel.BasicAck(result.DeliveryTag, false);
-                            }
+                                        channel.BasicPublish(string.Empty, result.BasicProperties.ReplyTo, replyProps, responseBody);
+                                        channel.BasicAck(result.DeliveryTag, false);
+                                    }
+                                });
                         }
                     }
                 }
@@ -287,6 +353,54 @@ namespace IoStorm
             }
 
             channel.Dispose();
+        }
+
+        private void InternalReceiverRPCReply(CancellationToken cancelToken)
+        {
+            using (var channel = this.connection.CreateModel())
+            {
+                var consumer = new QueueingBasicConsumer(channel);
+                channel.BasicConsume(this.rpcReplyQueue, true, consumer);
+
+                this.log.Trace("Waiting for messages");
+                while (!cancelToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        BasicDeliverEventArgs result;
+                        if (consumer.Queue.Dequeue(300, out result))
+                        {
+                            var body = result.Body;
+
+#if VERBOSE_LOGGING
+                            this.log.Trace("Received {0} bytes", body.Length);
+#endif
+
+                            var payload = this.serializer.DeserializeString(Encoding.UTF8.GetString(body)) as Payload.IPayload;
+
+                            Waiter waiter;
+                            if (!this.waiters.TryGetValue(result.BasicProperties.CorrelationId, out waiter))
+                            {
+                                this.log.Debug("Nobody waited for correlation id {0}", result.BasicProperties.CorrelationId);
+                                continue;
+                            }
+
+                            waiter.ReplyReceived(payload);
+                        }
+                    }
+                    catch (System.IO.EndOfStreamException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Ignore
+                        this.log.WarnException("Receive remote hub payload", ex);
+                    }
+                }
+
+                channel.Dispose();
+            }
         }
     }
 }

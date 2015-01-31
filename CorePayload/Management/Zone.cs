@@ -13,5 +13,10 @@ namespace IoStorm.Payload.Management
         public string Name { get; set; }
 
         public List<Zone> Zones { get; set; }
+
+        public Zone()
+        {
+            Zones = new List<Zone>();
+        }
     }
 }

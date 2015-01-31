@@ -34,12 +34,14 @@ namespace IoStorm
         private List<INode> runningNodes;
         private Config.HubConfig hubConfig;
         private Plugin.PluginManager pluginManager;
+        private Config.RootZoneConfig rootZoneConfig;
 
-        public StormHub(Config.HubConfig hubConfig, Plugin.PluginManager pluginManager, IUnityContainer container)
+        public StormHub(Config.HubConfig hubConfig, Plugin.PluginManager pluginManager, Config.RootZoneConfig rootZoneConfig, IUnityContainer container)
         {
             this.hubConfig = hubConfig;
             this.pluginManager = pluginManager;
             this.container = container;
+            this.rootZoneConfig = rootZoneConfig;
 
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
 
@@ -47,8 +49,23 @@ namespace IoStorm
             this.runningNodes = new List<INode>();
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
-            var externalIncomingRpcSubject = new Subject<Payload.RPCPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
+
+            // Temp
+            var func = new Func<Payload.RPCPayload, Payload.IPayload>(req =>
+            {
+                if (req.Request is Payload.Management.ListZonesRequest)
+                {
+                    var zoneResponse = new Payload.Management.ListZonesResponse
+                    {
+                        Zones = GetZones(this.rootZoneConfig.Zones)
+                    };
+
+                    return zoneResponse;
+                }
+
+                return null;
+            });
 
             if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
             {
@@ -62,7 +79,7 @@ namespace IoStorm
 
                 this.amqpReceivingTaskRpc = Task.Run(() =>
                 {
-                    this.remoteHub.ReceiverRPC("rpc_queue", cts.Token, externalIncomingRpcSubject.AsObserver());
+                    this.remoteHub.ReceiverRPC(cts.Token, func);
                 }, cts.Token);
 
                 this.externalIncomingQueue.Subscribe(p =>
@@ -97,6 +114,27 @@ namespace IoStorm
 
             // Load plugins
             this.pluginManager.LoadPlugins(this, this.hubConfig.DeviceId, this.hubConfig.Plugins);
+        }
+
+        private List<Payload.Management.Zone> GetZones(List<Config.ZoneConfig> zoneConfigs)
+        {
+            var list = new List<Payload.Management.Zone>();
+
+            foreach (var zoneConfig in zoneConfigs)
+            {
+                var newZone = new Payload.Management.Zone
+                {
+                    Name = zoneConfig.Name,
+                    ZoneId = zoneConfig.ZoneId
+                };
+
+                if (zoneConfig.Zones.Any())
+                    newZone.Zones = GetZones(zoneConfig.Zones);
+
+                list.Add(newZone);
+            }
+
+            return list;
         }
 
         internal Tuple<PluginInstance, IPlugin> AddPluginInstance(string pluginId, string name, string instanceId, string zoneId)
@@ -416,7 +454,7 @@ namespace IoStorm
             if (this.remoteHub == null)
                 throw new InvalidOperationException("Remote hub not configured");
 
-            return this.remoteHub.SendRpc("rpc_queue", request);
+            return this.remoteHub.SendRpc(request, TimeSpan.FromSeconds(10));
         }
     }
 }

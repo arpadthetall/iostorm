@@ -78,5 +78,17 @@ namespace IoStorm.Sample2
                 LightId = textBoxDeviceId.Text
             });
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            // List zones
+
+            var response = remoteHub.SendRpc<Payload.Management.ListZonesResponse>(new Payload.Management.ListZonesRequest(), TimeSpan.FromSeconds(10));
+
+            foreach (var item in response.Zones)
+            {
+                listBox1.Items.Add(string.Format("Zone {0}   {1}", item.ZoneId, item.Name));
+            }
+        }
     }
 }
