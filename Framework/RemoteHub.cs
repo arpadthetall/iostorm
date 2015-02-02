@@ -43,6 +43,19 @@ namespace IoStorm
             }
         }
 
+        public class InvokeContext
+        {
+            public Payload.IPayload Request { get; private set; }
+
+            public IObserver<Payload.IPayload> Response { get; private set; }
+
+            public InvokeContext(Payload.IPayload request, IObserver<Payload.IPayload> response)
+            {
+                Request = request;
+                Response = response;
+            }
+        }
+
         private Qlue.Logging.ILog log;
         private string hostName;
         private ConnectionFactory factory;
@@ -289,7 +302,7 @@ namespace IoStorm
             }
         }
 
-        public void ReceiverRPC(CancellationToken cancelToken, Func<Payload.RPCPayload, Payload.IPayload> func)
+        public void ReceiverRPC(CancellationToken cancelToken, IObserver<InvokeContext> obs)
         {
             var channel = this.connection.CreateModel();
 
@@ -323,21 +336,19 @@ namespace IoStorm
                                 Request = busPayload.Payload
                             };
 
-                            Observable.Start<Payload.IPayload>(() => func(rpcPayload), TaskPoolScheduler.Default)
-                                .Subscribe(response =>
+                            var invCtx = new InvokeContext(busPayload.Payload, Observer.Create<Payload.IPayload>(ont =>
                                 {
-                                    if (response != null)
-                                    {
-                                        // Send response
-                                        var replyProps = channel.CreateBasicProperties();
-                                        replyProps.CorrelationId = result.BasicProperties.MessageId;
+                                    // Send response
+                                    var replyProps = channel.CreateBasicProperties();
+                                    replyProps.CorrelationId = result.BasicProperties.MessageId;
 
-                                        byte[] responseBody = Encoding.UTF8.GetBytes(this.serializer.SerializeObject(response));
+                                    byte[] responseBody = Encoding.UTF8.GetBytes(this.serializer.SerializeObject(ont));
 
-                                        channel.BasicPublish(string.Empty, result.BasicProperties.ReplyTo, replyProps, responseBody);
-                                        channel.BasicAck(result.DeliveryTag, false);
-                                    }
-                                });
+                                    channel.BasicPublish(string.Empty, result.BasicProperties.ReplyTo, replyProps, responseBody);
+                                    channel.BasicAck(result.DeliveryTag, false);
+                                }));
+
+                            obs.NotifyOn(TaskPoolScheduler.Default).OnNext(invCtx);
                         }
                     }
                 }

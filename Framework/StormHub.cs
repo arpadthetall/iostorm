@@ -51,21 +51,33 @@ namespace IoStorm
             var externalIncomingSubject = new Subject<Payload.BusPayload>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
 
-            // Temp
-            var func = new Func<Payload.RPCPayload, Payload.IPayload>(req =>
-            {
-                if (req.Request is Payload.Management.ListZonesRequest)
+            var moj = new Subject<RemoteHub.InvokeContext>();
+
+            moj.Where(x => x.Request is Payload.Management.ListZonesRequest).Subscribe(x =>
                 {
                     var zoneResponse = new Payload.Management.ListZonesResponse
                     {
                         Zones = GetZones(this.rootZoneConfig.Zones)
                     };
 
-                    return zoneResponse;
-                }
+                    x.Response.OnNext(zoneResponse);
+                });
 
-                return null;
-            });
+            // Temp
+            //var func = new Func<Payload.RPCPayload, Payload.IPayload>(req =>
+            //{
+            //    if (req.Request is Payload.Management.ListZonesRequest)
+            //    {
+            //        var zoneResponse = new Payload.Management.ListZonesResponse
+            //        {
+            //            Zones = GetZones(this.rootZoneConfig.Zones)
+            //        };
+
+            //        return zoneResponse;
+            //    }
+
+            //    return null;
+            //});
 
             if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
             {
@@ -79,7 +91,7 @@ namespace IoStorm
 
                 this.amqpReceivingTaskRpc = Task.Run(() =>
                 {
-                    this.remoteHub.ReceiverRPC(cts.Token, func);
+                    this.remoteHub.ReceiverRPC(cts.Token, moj);
                 }, cts.Token);
 
                 this.externalIncomingQueue.Subscribe(p =>
