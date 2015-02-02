@@ -104,7 +104,7 @@ namespace IoStorm.LircSvc
 
             try
             {
-                hub.SendPayload(RabbitChannel, payload);
+                hub.SendPayload(payload);
                 _logger.Info("Sent {0}", command);
             }
             catch(Exception ex)

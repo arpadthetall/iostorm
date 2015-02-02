@@ -23,9 +23,9 @@ namespace IoStorm.Sample2
 
             log.Info("Start up");
 
-            string deviceId = IoStorm.PhysicalDeviceId.GetDeviceId() + "_B";
+            string deviceId = IoStorm.InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_App);
 
-            using (var remoteHub = new RemoteHub(logFactory, "192.168.240.125", deviceId))
+            using (var remoteHub = new RemoteHub(logFactory, "192.168.1.113", deviceId))
             {
                 Application.Run(new Form1(remoteHub));
             }

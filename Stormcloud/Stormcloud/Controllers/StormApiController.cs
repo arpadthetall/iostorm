@@ -44,7 +44,7 @@ namespace Stormcloud.Controllers
 
             try
             {
-                hub.SendPayload(rabbitChannel, payload);
+                hub.SendPayload(payload);
                 //_logger.Info("Sent {0}", command);
             }
             catch (Exception /*ex*/)

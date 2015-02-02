@@ -10,6 +10,8 @@ namespace IoStorm
     {
         void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string sourceZoneId = null);
 
+        void SendPayload(string senderInstanceId, string destinationInstanceId, Payload.IPayload payload);
+
         string GetSetting(IPlugin device, string key, string defaultValue = null);
 
         [Obsolete]

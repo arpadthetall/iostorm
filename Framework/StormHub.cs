@@ -18,7 +18,7 @@ namespace IoStorm
 {
     //TODO: At some point we should probably split this into a StormHub component that handles communication/IPC
     //TODO:   and a PluginManager
-    public class StormHub : IDisposable, IHub
+    public class StormHub : IDisposable, IHub, IPlugin
     {
         private ILog log;
         private IUnityContainer container;
@@ -27,7 +27,7 @@ namespace IoStorm
         private Task amqpReceivingTask;
         private Task amqpReceivingTaskRpc;
         private ISubject<Payload.InternalMessage> localQueue;
-        private IObservable<Payload.BusPayload> externalIncomingQueue;
+        private IObservable<Tuple<Payload.IPayload, InvokeContext>> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
         protected Dictionary<string, PluginInstance> pluginInstances;
         private List<IPlugin> runningInstances;
@@ -48,36 +48,18 @@ namespace IoStorm
             this.runningInstances = new List<IPlugin>();
             this.runningNodes = new List<INode>();
             this.localQueue = new Subject<Payload.InternalMessage>();
-            var externalIncomingSubject = new Subject<Payload.BusPayload>();
+            var externalIncomingSubject = new Subject<Tuple<Payload.IPayload, InvokeContext>>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
 
-            var moj = new Subject<RemoteHub.InvokeContext>();
-
-            moj.Where(x => x.Request is Payload.Management.ListZonesRequest).Subscribe(x =>
-                {
-                    var zoneResponse = new Payload.Management.ListZonesResponse
-                    {
-                        Zones = GetZones(this.rootZoneConfig.Zones)
-                    };
-
-                    x.Response.OnNext(zoneResponse);
-                });
-
-            // Temp
-            //var func = new Func<Payload.RPCPayload, Payload.IPayload>(req =>
-            //{
-            //    if (req.Request is Payload.Management.ListZonesRequest)
+            //moj.Where(x => x.Request is Payload.Management.ListZonesRequest).Subscribe(x =>
             //    {
             //        var zoneResponse = new Payload.Management.ListZonesResponse
             //        {
             //            Zones = GetZones(this.rootZoneConfig.Zones)
             //        };
 
-            //        return zoneResponse;
-            //    }
-
-            //    return null;
-            //});
+            //        x.Response.OnNext(zoneResponse);
+            //    });
 
             if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
             {
@@ -86,17 +68,17 @@ namespace IoStorm
 
                 this.amqpReceivingTask = Task.Run(() =>
                 {
-                    this.remoteHub.Receiver("Global", cts.Token, externalIncomingSubject.AsObserver());
+                    this.remoteHub.Receiver(cts.Token, externalIncomingSubject.AsObserver());
                 }, cts.Token);
 
                 this.amqpReceivingTaskRpc = Task.Run(() =>
                 {
-                    this.remoteHub.ReceiverRPC(cts.Token, moj);
+                    this.remoteHub.ReceiverRPC(cts.Token, externalIncomingSubject.AsObserver());
                 }, cts.Token);
 
                 this.externalIncomingQueue.Subscribe(p =>
                 {
-                    this.log.Debug("Received external payload {0} ({1})", p.OriginDeviceId, p.Payload.GetDebugInfo());
+                    this.log.Debug("Received external payload {0} ({1})", p.Item2.OriginDeviceId, p.Item1.GetDebugInfo());
                 });
             }
 
@@ -109,11 +91,11 @@ namespace IoStorm
 
                     if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
                     {
-                        // Broadcast on amqp
+                        // Broadcast to remote hub
                         try
                         {
                             if (p.Payload is Payload.IRemotePayload)
-                                this.remoteHub.SendPayload("Global", p.Payload);
+                                this.remoteHub.SendPayload(p.Payload);
                         }
                         catch (Exception ex)
                         {
@@ -123,6 +105,9 @@ namespace IoStorm
                 });
 
             this.pluginInstances = new Dictionary<string, PluginInstance>();
+
+            // Wire-up the storm hub itself
+            WireUpPlugin(this, this.externalIncomingQueue, this.localQueue.AsObservable());
 
             // Load plugins
             this.pluginManager.LoadPlugins(this, this.hubConfig.DeviceId, this.hubConfig.Plugins);
@@ -148,6 +133,17 @@ namespace IoStorm
 
             return list;
         }
+
+        //public IPlugin GetPlugin(string pluginInstanceId)
+        //{
+        //    foreach (IPlugin instance in this.runningInstances)
+        //    {
+        //        if (instance.InstanceId == pluginInstanceId)
+        //            return instance;
+        //    }
+
+        //    throw new ArgumentException("Plugin Instance not found");
+        //}
 
         internal Tuple<PluginInstance, IPlugin> AddPluginInstance(string pluginId, string name, string instanceId, string zoneId)
         {
@@ -237,9 +233,8 @@ namespace IoStorm
         }
 
         private void WireUpPlugin(
-            PluginInstance pluginInstance,
             IPlugin plugin,
-            IObservable<Payload.BusPayload> externalIncoming,
+            IObservable<Tuple<Payload.IPayload, InvokeContext>> externalIncoming,
             IObservable<Payload.InternalMessage> internalIncoming)
         {
             var methods = plugin.GetType().GetMethods().Where(x => x.Name == "Incoming");
@@ -248,24 +243,26 @@ namespace IoStorm
             {
                 var parameters = method.GetParameters();
 
-                if (parameters.Length != 1)
+                if (parameters.Length < 1)
                 {
-                    // Unknown signature
+                    // Unsupported signature
                     continue;
                 }
 
-                var parameterType = parameters.First().ParameterType;
+                var payloadType = parameters.First().ParameterType;
+
+                if (!typeof(Payload.IPayload).IsAssignableFrom(payloadType))
+                    continue;
+
+                if (parameters.Length > 1 && parameters[1].ParameterType != typeof(InvokeContext))
+                    continue;
 
                 externalIncoming
                     .Subscribe(x =>
                     {
                         try
                         {
-                            // Unwrap
-                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, pluginInstance.ZoneId);
-
-                            if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
-                                method.Invoke(plugin, new object[] { unwrappedPayload });
+                            UnwrapAndInvoke(x, payloadType, method, plugin);
                         }
                         catch (Exception ex)
                         {
@@ -280,10 +277,14 @@ namespace IoStorm
                     {
                         try
                         {
+                            //                            UnwrapAndInvoke(x, parameterType, method, plugin);
                             // Unwrap
-                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload, pluginInstance.ZoneId);
+                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload/*, pluginInstance.ZoneId*/);
 
-                            if (unwrappedPayload != null && parameterType.IsInstanceOfType(unwrappedPayload))
+                            if (unwrappedPayload == null)
+                                return;
+
+                            if (unwrappedPayload != null && payloadType.IsInstanceOfType(unwrappedPayload))
                                 method.Invoke(plugin, new object[] { unwrappedPayload });
                         }
                         catch (Exception ex)
@@ -294,7 +295,88 @@ namespace IoStorm
             }
         }
 
-        private Payload.IPayload UnwrapPayload(Payload.IPayload incoming, string zoneId)
+        private void WireUpNode(
+            INode node,
+            IObservable<Tuple<Payload.IPayload, InvokeContext>> externalIncoming,
+            IObservable<Payload.InternalMessage> internalIncoming)
+        {
+            var methods = node.GetType().GetMethods().Where(x => x.Name == "Incoming");
+
+            foreach (var method in methods)
+            {
+                var parameters = method.GetParameters();
+
+                if (parameters.Length < 1)
+                {
+                    // Unsupported signature
+                    continue;
+                }
+
+                var payloadType = parameters.First().ParameterType;
+
+                if (!typeof(Payload.IPayload).IsAssignableFrom(payloadType))
+                    continue;
+
+                if (parameters.Length > 1 && parameters[1].ParameterType != typeof(InvokeContext))
+                    continue;
+
+                externalIncoming
+                    .Subscribe(x =>
+                    {
+                        try
+                        {
+                            UnwrapAndInvoke(x, payloadType, method, node);
+                        }
+                        catch (Exception ex)
+                        {
+                            this.log.WarnException("Exception when invoking Incoming method", ex);
+                        }
+                    });
+
+                // Filter out our own messages
+                //internalIncoming
+                //    .Where(x => x.OriginatingInstanceId != node.InstanceId)
+                //    .Subscribe(x =>
+                //    {
+                //        try
+                //        {
+                //            //                            UnwrapAndInvoke(x, parameterType, method, plugin);
+                //            // Unwrap
+                //            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload/*, pluginInstance.ZoneId*/);
+
+                //            if (unwrappedPayload == null)
+                //                return;
+
+                //            if (unwrappedPayload != null && payloadType.IsInstanceOfType(unwrappedPayload))
+                //                method.Invoke(node, new object[] { unwrappedPayload });
+                //        }
+                //        catch (Exception ex)
+                //        {
+                //            this.log.WarnException("Exception when invoking Incoming method", ex);
+                //        }
+                //    });
+            }
+        }
+
+        private void UnwrapAndInvoke(Tuple<Payload.IPayload, InvokeContext> incoming, Type parameterType, MethodInfo method, object instance)
+        {
+            Payload.IPayload unwrappedPayload = UnwrapPayload(incoming.Item1/*, pluginInstance.ZoneId*/);
+
+            if (unwrappedPayload == null)
+                return;
+
+            if (parameterType.IsInstanceOfType(unwrappedPayload))
+            {
+                var parameters = method.GetParameters();
+
+                if (parameters.Length > 1)
+                    method.Invoke(instance, new object[] { unwrappedPayload, incoming.Item2 });
+                else
+                    method.Invoke(instance, new object[] { unwrappedPayload });
+            }
+        }
+
+        private Payload.IPayload UnwrapPayload(Payload.IPayload incoming/*, string destinationZoneId*/)
         {
             string sourceZoneId = null;
             var zoneSourcePayload = incoming as Payload.ZoneSourcePayload;
@@ -307,8 +389,8 @@ namespace IoStorm
             var zoneDestinationPayload = incoming as Payload.ZoneDestinationPayload;
             if (zoneDestinationPayload != null)
             {
-                if (string.Equals(zoneDestinationPayload.DestinationZoneId, zoneId))
-                    return zoneDestinationPayload.Payload;
+                /*if (string.Equals(zoneDestinationPayload.DestinationZoneId, destinationZoneId))*/
+                return zoneDestinationPayload.Payload;
             }
 
             return incoming;
@@ -323,7 +405,7 @@ namespace IoStorm
 
             var plugin = this.container.Resolve<T>(allOverrides.ToArray());
 
-            WireUpPlugin(pluginInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+            WireUpPlugin(plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
             this.runningInstances.Add(plugin);
 
@@ -350,7 +432,7 @@ namespace IoStorm
                 throw;
             }
 
-            WireUpPlugin(pluginInstance, plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
+            WireUpPlugin(plugin, this.externalIncomingQueue, this.localQueue.AsObservable());
 
             this.runningInstances.Add(plugin);
 
@@ -414,6 +496,7 @@ namespace IoStorm
 
         public void AddNode(INode nodeInstance)
         {
+            WireUpNode(nodeInstance, this.externalIncomingQueue, this.localQueue.AsObservable());
             this.runningNodes.Add(nodeInstance);
         }
 
@@ -441,18 +524,24 @@ namespace IoStorm
             }
         }
 
-        public void Incoming<T>(Action<T> action) where T : Payload.IPayload
+        public void SendPayload(string senderInstanceId, string destinationInstanceId, Payload.IPayload payload)
         {
-            this.externalIncomingQueue.Where(x => typeof(T).IsInstanceOfType(x.Payload)).Subscribe(bp =>
-                {
-                    action((T)bp.Payload);
-                });
-
-            this.localQueue.Where(x => typeof(T).IsInstanceOfType(x.Payload)).Subscribe(bp =>
-                {
-                    action((T)bp.Payload);
-                });
+            // No zone attached
+            this.broadcastQueue.OnNext(new Payload.InternalMessage(senderInstanceId, payload, destinationInstanceId));
         }
+
+        //public void Incoming<T>(Action<T> action) where T : Payload.IPayload
+        //{
+        //    this.externalIncomingQueue.Where(x => typeof(T).IsInstanceOfType(x.Request)).Subscribe(bp =>
+        //        {
+        //            action((T)bp.Request);
+        //        });
+
+        //    this.localQueue.Where(x => typeof(T).IsInstanceOfType(x.Payload)).Subscribe(bp =>
+        //        {
+        //            action((T)bp.Payload);
+        //        });
+        //}
 
         public string GetSetting(IPlugin device, string key, string defaultValue)
         {
@@ -467,6 +556,21 @@ namespace IoStorm
                 throw new InvalidOperationException("Remote hub not configured");
 
             return this.remoteHub.SendRpc(request, TimeSpan.FromSeconds(10));
+        }
+
+        public void Incoming(Payload.Management.ListZonesRequest request, InvokeContext invCtx)
+        {
+            var zoneResponse = new Payload.Management.ListZonesResponse
+            {
+                Zones = GetZones(this.rootZoneConfig.Zones)
+            };
+
+            invCtx.Response.OnNext(zoneResponse);
+        }
+
+        public string InstanceId
+        {
+            get { return this.hubConfig.DeviceId; }
         }
     }
 }

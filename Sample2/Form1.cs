@@ -19,7 +19,7 @@ namespace IoStorm.Sample2
         private CancellationTokenSource cts;
         private Task amqpReceivingTask;
         private RemoteHub remoteHub;
-        private IObservable<Payload.BusPayload> incomingMessages;
+        private IObservable<Tuple<Payload.IPayload, InvokeContext>> incomingMessages;
 
         public Form1(RemoteHub remoteHub)
         {
@@ -28,11 +28,11 @@ namespace IoStorm.Sample2
 
             this.cts = new CancellationTokenSource();
 
-            var incomingSubject = new Subject<Payload.BusPayload>();
+            var incomingSubject = new Subject<Tuple<Payload.IPayload, InvokeContext>>();
 
             this.amqpReceivingTask = Task.Run(() =>
             {
-                this.remoteHub.Receiver("Global", cts.Token, incomingSubject.AsObserver());
+                this.remoteHub.Receiver(cts.Token, incomingSubject.AsObserver());
             }, cts.Token);
 
             this.incomingMessages = incomingSubject.AsObservable();
@@ -41,7 +41,7 @@ namespace IoStorm.Sample2
                 .ObserveOn(SynchronizationContext.Current)
                 .Subscribe(x =>
                 {
-                    listBox1.Items.Add(string.Format("Received {1} from {0}", x.OriginDeviceId, x.Payload.GetType().Name));
+                    listBox1.Items.Add(string.Format("Received {1} from {0}", x.Item2.OriginDeviceId, x.Item1.GetType().Name));
                 });
         }
 
@@ -65,15 +65,20 @@ namespace IoStorm.Sample2
 
         private void buttonOn_Click(object sender, EventArgs e)
         {
-            remoteHub.SendPayload("Global", new Payload.Light.On
+            //remoteHub.SendPayload("Global", new Payload.Light.On
+            //    {
+            //        LightId = textBoxDeviceId.Text
+            //    });
+
+            remoteHub.SendPayload(new Payload.Power.Set
                 {
-                    LightId = textBoxDeviceId.Text
+                    Value = true
                 });
         }
 
         private void buttonOff_Click(object sender, EventArgs e)
         {
-            remoteHub.SendPayload("Global", new Payload.Light.Off
+            remoteHub.SendPayload(new Payload.Light.Off
             {
                 LightId = textBoxDeviceId.Text
             });

@@ -43,19 +43,6 @@ namespace IoStorm
             }
         }
 
-        public class InvokeContext
-        {
-            public Payload.IPayload Request { get; private set; }
-
-            public IObserver<Payload.IPayload> Response { get; private set; }
-
-            public InvokeContext(Payload.IPayload request, IObserver<Payload.IPayload> response)
-            {
-                Request = request;
-                Response = response;
-            }
-        }
-
         private Qlue.Logging.ILog log;
         private string hostName;
         private ConnectionFactory factory;
@@ -64,17 +51,19 @@ namespace IoStorm
         private IConnection connection;
         private string ourDeviceId;
         private IModel rpcModel;
+        private string broastcastQueueName;
         private string rpcQueueName;
         private QueueDeclareOk rpcReplyQueue;
         private Dictionary<string, Waiter> waiters;
         private CancellationTokenSource cts;
         private Task rpcReplyReceiverTask;
 
-        public RemoteHub(Qlue.Logging.ILogFactory logFactory, string hostName, string ourDeviceId, string rpcQueueName = "gutter")
+        public RemoteHub(Qlue.Logging.ILogFactory logFactory, string hostName, string ourDeviceId, string broastcastQueueName = "vortex", string rpcQueueName = "gutter")
         {
             this.log = logFactory.GetLogger("RemoteHub");
             this.hostName = hostName;
             this.ourDeviceId = ourDeviceId;
+            this.broastcastQueueName = broastcastQueueName;
             this.rpcQueueName = rpcQueueName;
 
             this.exchanges = new Dictionary<string, IModel>();
@@ -176,17 +165,17 @@ namespace IoStorm
             return busPayload;
         }
 
-        public void SendPayload(string channelName, Payload.IPayload payload)
+        public void SendPayload(Payload.IPayload payload)
         {
             IBasicProperties properties;
             var busPayload = GenerateBusMessage(payload, out properties);
 
-            var channel = GetFanoutModel(channelName);
+            var channel = GetFanoutModel(this.broastcastQueueName);
             string message = this.serializer.SerializeObject(busPayload);
 
             var body = Encoding.UTF8.GetBytes(message);
 
-            channel.BasicPublish(channelName, string.Empty, properties, body);
+            channel.BasicPublish(this.broastcastQueueName, string.Empty, properties, body);
 
 #if VERBOSE_LOGGING
             this.log.Trace("Sent {0} bytes", body.Length);
@@ -254,12 +243,12 @@ namespace IoStorm
             }
         }
 
-        public void Receiver(string channelName, CancellationToken cancelToken, IObserver<Payload.BusPayload> bus)
+        public void Receiver(CancellationToken cancelToken, IObserver<Tuple<Payload.IPayload, InvokeContext>> bus)
         {
-            var channel = GetFanoutModel(channelName);
+            var channel = GetFanoutModel(this.broastcastQueueName);
 
             var queueName = channel.QueueDeclare();
-            channel.QueueBind(queueName, channelName, string.Empty);
+            channel.QueueBind(queueName, this.broastcastQueueName, string.Empty);
 
             var consumer = new QueueingBasicConsumer(channel);
             channel.BasicConsume(queueName, true, consumer);
@@ -286,7 +275,10 @@ namespace IoStorm
                                 // Ignore our own messages
                                 continue;
 
-                            bus.OnNext(payload);
+                            var invCtx = new InvokeContext(null);
+                            invCtx.OriginDeviceId = payload.OriginDeviceId;
+
+                            bus.OnNext(Tuple.Create(payload.Payload, invCtx));
                         }
                     }
                 }
@@ -302,7 +294,7 @@ namespace IoStorm
             }
         }
 
-        public void ReceiverRPC(CancellationToken cancelToken, IObserver<InvokeContext> obs)
+        public void ReceiverRPC(CancellationToken cancelToken, IObserver<Tuple<Payload.IPayload, InvokeContext>> obs)
         {
             var channel = this.connection.CreateModel();
 
@@ -336,7 +328,7 @@ namespace IoStorm
                                 Request = busPayload.Payload
                             };
 
-                            var invCtx = new InvokeContext(busPayload.Payload, Observer.Create<Payload.IPayload>(ont =>
+                            var invCtx = new InvokeContext(Observer.Create<Payload.IPayload>(ont =>
                                 {
                                     // Send response
                                     var replyProps = channel.CreateBasicProperties();
@@ -348,7 +340,7 @@ namespace IoStorm
                                     channel.BasicAck(result.DeliveryTag, false);
                                 }));
 
-                            obs.NotifyOn(TaskPoolScheduler.Default).OnNext(invCtx);
+                            obs.NotifyOn(TaskPoolScheduler.Default).OnNext(Tuple.Create(busPayload.Payload, invCtx));
                         }
                     }
                 }

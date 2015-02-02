@@ -83,6 +83,7 @@
     <Compile Include="Config\ZoneConfig.cs" />
     <Compile Include="InstanceId.cs" />
     <Compile Include="Interface\INode.cs" />
+    <Compile Include="InvokeContext.cs" />
     <Compile Include="IRCoder\BitBuilder.cs" />
     <Compile Include="IRCoder\CoderBase.cs" />
     <Compile Include="IRCoder\CoderHash.cs" />

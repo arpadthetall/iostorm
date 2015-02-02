@@ -176,7 +176,7 @@ namespace IoStorm.StormService
                     switch (node.Type)
                     {
                         case "IrOutputNode":
-                            nodeInstance = new IoStorm.Nodes.IrOutputNode(node);
+                            nodeInstance = new IoStorm.Nodes.IrOutputNode(this.logFactory, node, this.hub);
                             break;
 
                         default:
