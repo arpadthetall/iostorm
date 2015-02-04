@@ -89,7 +89,7 @@ namespace IoStorm
                     // Send locally
                     this.localQueue.OnNext(p);
 
-                    if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
+                    if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub) && !string.IsNullOrEmpty(p.DestinationZoneId))
                     {
                         // Broadcast to remote hub
                         try
@@ -258,40 +258,12 @@ namespace IoStorm
                     continue;
 
                 externalIncoming
-                    .Subscribe(x =>
-                    {
-                        try
-                        {
-                            UnwrapAndInvoke(x, payloadType, method, plugin);
-                        }
-                        catch (Exception ex)
-                        {
-                            this.log.WarnException("Exception when invoking Incoming method", ex);
-                        }
-                    });
+                    .Subscribe(x => InvokeIncoming(x.Item1, x.Item2, method, parameters, plugin));
 
                 // Filter out our own messages
                 internalIncoming
                     .Where(x => x.OriginatingInstanceId != plugin.InstanceId)
-                    .Subscribe(x =>
-                    {
-                        try
-                        {
-                            //                            UnwrapAndInvoke(x, parameterType, method, plugin);
-                            // Unwrap
-                            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload/*, pluginInstance.ZoneId*/);
-
-                            if (unwrappedPayload == null)
-                                return;
-
-                            if (unwrappedPayload != null && payloadType.IsInstanceOfType(unwrappedPayload))
-                                method.Invoke(plugin, new object[] { unwrappedPayload });
-                        }
-                        catch (Exception ex)
-                        {
-                            this.log.WarnException("Exception when invoking Incoming method", ex);
-                        }
-                    });
+                    .Subscribe(x => InvokeIncoming(x, method, parameters, plugin));
             }
         }
 
@@ -321,79 +293,57 @@ namespace IoStorm
                     continue;
 
                 externalIncoming
-                    .Subscribe(x =>
-                    {
-                        try
-                        {
-                            UnwrapAndInvoke(x, payloadType, method, node);
-                        }
-                        catch (Exception ex)
-                        {
-                            this.log.WarnException("Exception when invoking Incoming method", ex);
-                        }
-                    });
+                    .Subscribe(x => InvokeIncoming(x.Item1, x.Item2, method, parameters, node));
 
                 // Filter out our own messages
-                //internalIncoming
-                //    .Where(x => x.OriginatingInstanceId != node.InstanceId)
-                //    .Subscribe(x =>
-                //    {
-                //        try
-                //        {
-                //            //                            UnwrapAndInvoke(x, parameterType, method, plugin);
-                //            // Unwrap
-                //            Payload.IPayload unwrappedPayload = UnwrapPayload(x.Payload/*, pluginInstance.ZoneId*/);
-
-                //            if (unwrappedPayload == null)
-                //                return;
-
-                //            if (unwrappedPayload != null && payloadType.IsInstanceOfType(unwrappedPayload))
-                //                method.Invoke(node, new object[] { unwrappedPayload });
-                //        }
-                //        catch (Exception ex)
-                //        {
-                //            this.log.WarnException("Exception when invoking Incoming method", ex);
-                //        }
-                //    });
+                internalIncoming
+                    .Where(x => x.OriginatingInstanceId != node.InstanceId)
+                    .Subscribe(x => InvokeIncoming(x, method, parameters, node));
             }
         }
 
-        private void UnwrapAndInvoke(Tuple<Payload.IPayload, InvokeContext> incoming, Type parameterType, MethodInfo method, object instance)
+        private void InvokeIncoming(Payload.IPayload payload, InvokeContext invCtx, MethodInfo method, ParameterInfo[] parameters, object instance)
         {
-            Payload.IPayload unwrappedPayload = UnwrapPayload(incoming.Item1/*, pluginInstance.ZoneId*/);
-
-            if (unwrappedPayload == null)
-                return;
-
-            if (parameterType.IsInstanceOfType(unwrappedPayload))
+            try
             {
-                var parameters = method.GetParameters();
+                var payloadType = parameters.First().ParameterType;
 
-                if (parameters.Length > 1)
-                    method.Invoke(instance, new object[] { unwrappedPayload, incoming.Item2 });
-                else
-                    method.Invoke(instance, new object[] { unwrappedPayload });
+                if (payloadType.IsInstanceOfType(payload))
+                {
+                    if (parameters.Length > 1 && invCtx != null)
+                        method.Invoke(instance, new object[] { payload, invCtx });
+                    else
+                        method.Invoke(instance, new object[] { payload });
+                }
+            }
+            catch (Exception ex)
+            {
+                this.log.WarnException("Exception when invoking Incoming method", ex);
             }
         }
 
-        private Payload.IPayload UnwrapPayload(Payload.IPayload incoming/*, string destinationZoneId*/)
+        private void InvokeIncoming(Payload.InternalMessage intMessage, MethodInfo method, ParameterInfo[] parameters, object instance)
         {
-            string sourceZoneId = null;
-            var zoneSourcePayload = incoming as Payload.ZoneSourcePayload;
-            if (zoneSourcePayload != null)
+            try
             {
-                sourceZoneId = zoneSourcePayload.SourceZoneId;
-                incoming = zoneSourcePayload.Payload;
-            }
+                var payloadType = parameters.First().ParameterType;
 
-            var zoneDestinationPayload = incoming as Payload.ZoneDestinationPayload;
-            if (zoneDestinationPayload != null)
+                if (payloadType.IsInstanceOfType(intMessage.Payload))
+                {
+                    if (parameters.Length > 1)
+                    {
+                        var invCtx = new InvokeContext(intMessage);
+
+                        method.Invoke(instance, new object[] { intMessage.Payload, invCtx });
+                    }
+                    else
+                        method.Invoke(instance, new object[] { intMessage.Payload });
+                }
+            }
+            catch (Exception ex)
             {
-                /*if (string.Equals(zoneDestinationPayload.DestinationZoneId, destinationZoneId))*/
-                return zoneDestinationPayload.Payload;
+                this.log.WarnException("Exception when invoking Incoming method", ex);
             }
-
-            return incoming;
         }
 
         [Obsolete]
@@ -500,34 +450,44 @@ namespace IoStorm
             this.runningNodes.Add(nodeInstance);
         }
 
-        public void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string sourceZoneId)
+        public void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string destinationZoneId, string originatingZoneId)
         {
             PluginInstance instance;
             if (!this.pluginInstances.TryGetValue(sender.InstanceId, out instance))
                 throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
 
-            if (!string.IsNullOrEmpty(sourceZoneId))
-            {
-                // Wrap in ZoneSourcePayload
-                var zonePayload = new IoStorm.Payload.ZoneSourcePayload
-                {
-                    SourceZoneId = sourceZoneId,
-                    Payload = payload
-                };
+            //if (!string.IsNullOrEmpty(originatingZoneId))
+            //{
+            //    // Wrap in ZoneSourcePayload
+            //    var zonePayload = new IoStorm.Payload.ZoneSourcePayload
+            //    {
+            //        SourceZoneId = originatingZoneId,
+            //        Payload = payload
+            //    };
 
-                this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, zonePayload));
-            }
-            else
-            {
-                // No zone attached
-                this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, payload));
-            }
+            //    this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, zonePayload));
+            //}
+            //else
+            //{
+            // No zone attached
+            this.broadcastQueue.OnNext(new Payload.InternalMessage(
+                originatingInstanceId: instance.InstanceId,
+                destinationInstanceId: null,
+                payload: payload,
+                originatingZoneId: originatingZoneId,
+                destinationZoneId: destinationZoneId));
+            //}
         }
 
         public void SendPayload(string senderInstanceId, string destinationInstanceId, Payload.IPayload payload)
         {
             // No zone attached
-            this.broadcastQueue.OnNext(new Payload.InternalMessage(senderInstanceId, payload, destinationInstanceId));
+            this.broadcastQueue.OnNext(new Payload.InternalMessage(
+                originatingInstanceId: senderInstanceId,
+                payload: payload,
+                destinationInstanceId: destinationInstanceId,
+                originatingZoneId: null,
+                destinationZoneId: null));
         }
 
         //public void Incoming<T>(Action<T> action) where T : Payload.IPayload

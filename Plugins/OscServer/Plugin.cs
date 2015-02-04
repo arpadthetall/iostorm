@@ -97,6 +97,25 @@ namespace IoStorm.Plugins.OscServer
                     Address = message.Address,
                     Value = value
                 });
+
+            //HACK
+            if (message.Address == "/1/toggle1")
+            {
+                if (value == "1")
+                    this.hub.BroadcastPayload(this,
+                        payload: new Payload.Activity.SelectActivity
+                        {
+                            ActivityName = "WatchTV"
+                        },
+                        destinationZoneId: "ZONE:db72e661d0184a03bf8f2949f98ec453");
+                else
+                    this.hub.BroadcastPayload(this,
+                        payload: new Payload.Activity.SelectActivity
+                        {
+                            ActivityName = ""
+                        },
+                        destinationZoneId: "ZONE:db72e661d0184a03bf8f2949f98ec453");
+            }
         }
 
         public void Dispose()

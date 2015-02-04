@@ -1,51 +1,187 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Practices.Unity;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using Qlue.Logging;
 
 namespace IoStorm
 {
-    public class ActivityController : BaseDevice
+    public class ActivityController : BaseDevice, IDisposable
     {
         private ILog log;
         private IHub hub;
+        private Dictionary<string, Dictionary<string, List<Action>>> activitiesPerZone;
+        private Dictionary<string, string> currentActivityPerZone;
+        private Queue<Action> executionQueue;
+        private ManualResetEvent executionTrigger;
+        private Task executionTask;
+        private CancellationTokenSource cts;
 
         public ActivityController(ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
         {
             this.log = logFactory.GetLogger("ActivityController");
             this.hub = hub;
-        }
 
-        public void Incoming(Payload.OscMessage payload)
-        {
-            if (payload.Address == "/1/toggle1")
+            this.activitiesPerZone = new Dictionary<string, Dictionary<string, List<Action>>>();
+            this.currentActivityPerZone = new Dictionary<string, string>();
+            this.executionQueue = new Queue<Action>();
+            this.executionTrigger = new ManualResetEvent(false);
+            this.cts = new CancellationTokenSource();
+
+            string content = File.ReadAllText("Config\\Activities.json");
+
+            var loadedActivities = JsonConvert.DeserializeObject<List<Config.Activity>>(content);
+
+            foreach (var loadedActivity in loadedActivities)
             {
-                this.hub.BroadcastPayload(this, new Payload.ZoneDestinationPayload
+                Dictionary<string, List<Action>> activitiesInZone;
+                if (!this.activitiesPerZone.TryGetValue(loadedActivity.ZoneId, out activitiesInZone))
                 {
-                    DestinationZoneId = "a5d4023d3826454daac1c215eda5f0f0",
-                    Payload = new Payload.IRCommand
+                    activitiesInZone = new Dictionary<string, List<Action>>();
+                    this.activitiesPerZone.Add(loadedActivity.ZoneId, activitiesInZone);
+                }
+
+                var actions = ExecuteSequence(loadedActivity.Sequence);
+
+                activitiesInZone.Add(loadedActivity.Name ?? string.Empty, actions);
+            }
+
+            this.executionTask = Task.Run(() =>
+                {
+                    while (true)
                     {
-                        PortId = "1",
-                        Repeat = 2,
-                        //Command = new IoStorm.IRProtocol.Nokia32(35, 64, payload.Value == "1" ? 88 : 89, 38, true)
-                        //Command = new IoStorm.IRProtocol.Sony12(1, payload.Value == "1" ? 46 : 47)
-                        Command = new IoStorm.IRProtocol.NECx(7, 7, payload.Value == "1" ? 153 : 152)
+                        WaitHandle.WaitAny(new WaitHandle[] { this.cts.Token.WaitHandle, this.executionTrigger });
+
+                        if (this.cts.IsCancellationRequested)
+                            break;
+
+                        this.executionTrigger.Reset();
+
+                        while (this.executionQueue.Count > 0)
+                        {
+                            var action = this.executionQueue.Dequeue();
+
+                            // Execute
+                            try
+                            {
+                                action();
+                            }
+                            catch (Exception ex)
+                            {
+                                this.log.WarnException("Exception while executing action in execution queue", ex);
+                            }
+                        }
                     }
                 });
-            }
+        }
 
-            if (payload.Address == "/1/toggle2")
+        private List<Action> ExecuteSequence(IEnumerable<JObject> input)
+        {
+            var list = new List<Action>();
+
+            foreach (var item in input)
             {
-                // Test RPC
+                foreach (var sequenceItem in item)
+                {
+                    switch (sequenceItem.Key)
+                    {
+                        case "SendPayload":
+                            list.Add(BuildActivitySendPayloadAction(sequenceItem.Value.ToObject<Config.ActivitySendPayload>()));
+                            break;
 
-                var listZonesRequest = new Payload.Management.ListZonesRequest();
+                        case "Sleep":
+                            list.Add(BuildActivitySleepAction(sequenceItem.Value.ToObject<Config.ActivitySleep>()));
+                            break;
 
-                var response = hub.Rpc(listZonesRequest);
+                        case "Comment":
+                            break;
+
+                        default:
+                            this.log.Debug("Unknown sequence command {0}", sequenceItem.Key);
+                            break;
+                    }
+                }
             }
+
+            return list;
+        }
+
+        private Action BuildActivitySendPayloadAction(Config.ActivitySendPayload input)
+        {
+            string key = input.Payload;
+            if (!key.StartsWith("IoStorm.Payload."))
+                key = "IoStorm.Payload." + key;
+
+            // Find type
+            if (!key.Contains(","))
+                // Create fully qualified name
+                key = Assembly.CreateQualifiedName(typeof(Payload.IPayload).Assembly.FullName, key);
+
+            var payloadType = Type.GetType(key);
+            if (payloadType == null)
+                throw new ArgumentException("Unknown payload type: " + key);
+
+            var payload = input.Parameters.ToObject(payloadType);
+
+            if (!(payload is Payload.IPayload))
+                throw new ArgumentException("Payload is not inheriting from IPayload");
+
+            return new Action(() =>
+                {
+                    this.hub.SendPayload(InstanceId, input.Destination, (Payload.IPayload)payload);
+                });
+        }
+
+        private Action BuildActivitySleepAction(Config.ActivitySleep input)
+        {
+            if (input.Milliseconds <= 0)
+                throw new ArgumentOutOfRangeException("Milliseconds");
+
+            return new Action(() => System.Threading.Thread.Sleep(input.Milliseconds));
+        }
+
+        public void Incoming(Payload.Activity.SelectActivity payload, InvokeContext invCtx)
+        {
+            if (string.IsNullOrEmpty(invCtx.DestinationZoneId))
+            {
+                this.log.Warn("Unknown zone");
+                return;
+            }
+
+            this.log.Info("Select activity {0} in zone {1}", payload.ActivityName, invCtx.DestinationZoneId);
+
+            lock (this.currentActivityPerZone)
+            {
+                this.currentActivityPerZone[invCtx.DestinationZoneId] = payload.ActivityName;
+            }
+
+            Dictionary<string, List<Action>> activitiesInZone;
+            if (!this.activitiesPerZone.TryGetValue(invCtx.DestinationZoneId, out activitiesInZone))
+                return;
+
+            List<Action> activityActions;
+            if (!activitiesInZone.TryGetValue(payload.ActivityName, out activityActions))
+                return;
+
+            foreach (var action in activityActions)
+                this.executionQueue.Enqueue(action);
+
+            this.executionTrigger.Set();
+        }
+
+        public void Dispose()
+        {
+            this.cts.Cancel();
+            this.executionTask.Wait();
         }
     }
 }

@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Activity\SelectActivity.cs" />
     <Compile Include="Audio\SetInputOutput.cs" />
     <Compile Include="Audio\MuteToggle.cs" />
     <Compile Include="Audio\Sound.cs" />
@@ -104,8 +105,6 @@
     <Compile Include="Power\Toggle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BusPayload.cs" />
-    <Compile Include="ZoneDestinationPayload.cs" />
-    <Compile Include="ZoneSourcePayload.cs" />
     <Compile Include="Transport\Repeat.cs" />
     <Compile Include="Transport\Shuffle.cs" />
     <Compile Include="Navigation\Number2.cs" />

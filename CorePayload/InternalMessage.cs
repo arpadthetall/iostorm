@@ -8,22 +8,23 @@ namespace IoStorm.Payload
 {
     public class InternalMessage
     {
+        public string OriginatingZoneId { get; set; }
+
+        public string DestinationZoneId { get; set; }
+
         public string OriginatingInstanceId { get; set; }
 
         public string DestinationInstanceId { get; set; }
 
         public IPayload Payload { get; set; }
 
-        public InternalMessage(string originatingInstanceId, IPayload payload, string destinationInstanceId)
+        public InternalMessage(string originatingInstanceId, IPayload payload, string destinationInstanceId, string originatingZoneId, string destinationZoneId)
         {
             OriginatingInstanceId = originatingInstanceId;
             Payload = payload;
             DestinationInstanceId = destinationInstanceId;
-        }
-
-        public InternalMessage(string originatingInstanceId, IPayload payload)
-            : this(originatingInstanceId, payload, null)
-        {
+            OriginatingZoneId = originatingZoneId;
+            DestinationZoneId = destinationZoneId;
         }
     }
 }

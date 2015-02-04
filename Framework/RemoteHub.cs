@@ -275,7 +275,7 @@ namespace IoStorm
                                 // Ignore our own messages
                                 continue;
 
-                            var invCtx = new InvokeContext(null);
+                            var invCtx = new InvokeContext();
                             invCtx.OriginDeviceId = payload.OriginDeviceId;
 
                             bus.OnNext(Tuple.Create(payload.Payload, invCtx));

@@ -10,41 +10,19 @@ namespace IoStorm
     {
         public string OriginDeviceId { get; internal set; }
 
-        //public Payload.IPayload Request { get; internal set; }
+        public string DestinationZoneId { get; set; }
 
         public IObserver<Payload.IPayload> Response { get; private set; }
 
-        public InvokeContext(/*Payload.IPayload request,*/ IObserver<Payload.IPayload> response)
+        internal InvokeContext(IoStorm.Payload.InternalMessage intMessage)
         {
-//            Request = request;
-            Response = response;
+            OriginDeviceId = intMessage.OriginatingInstanceId;
+            DestinationZoneId = intMessage.DestinationZoneId;
         }
 
-        //public static object CreateGenericFromPayload(InvokeContext incoming, Payload.IPayload payload)
-        //{
-        //    var genericType = typeof(InvokeContext<>).MakeGenericType(payload.GetType());
-
-        //    var invCtx = (InvokeContext)Activator.CreateInstance(genericType, payload, incoming.Response);
-
-        //    invCtx.OriginDeviceId = incoming.OriginDeviceId;
-
-        //    return invCtx;
-        //}
+        public InvokeContext(IObserver<Payload.IPayload> response = null)
+        {
+            Response = response;
+        }
     }
-
-    //public class InvokeContext<T> : InvokeContext where T : class, Payload.IPayload
-    //{
-    //    public InvokeContext(T request, IObserver<Payload.IPayload> response)
-    //        : base(request, response)
-    //    {
-    //    }
-
-    //    public new T Request
-    //    {
-    //        get
-    //        {
-    //            return (base.Request as T);
-    //        }
-    //    }
-    //}
 }

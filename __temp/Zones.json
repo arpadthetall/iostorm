@@ -11,11 +11,12 @@
           "Nodes": [
             {
               "InstanceId": "NODE:b637144897784ef7b898750849c5503d",
-              "PluginInstanceId": null,
+              "PluginInstanceId": "PLUG:fac45edb48e4488683266b7cc0dce060",
               "Name": "Sony TV",
               "Type": "IrOutputNode",
               "Settings": {
-                "IrMapping": "SonyTV.json"
+                "IrMapping": "SonyTV.json",
+                "OutputPort": "1"
               }
             }
           ]

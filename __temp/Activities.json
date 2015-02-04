@@ -1,0 +1,42 @@
+[{
+	"Name": "WatchTV",
+	"ZoneId": "ZONE:db72e661d0184a03bf8f2949f98ec453",
+	"Sequence": [{
+		"SendPayload": {
+			"Destination": "NODE:b637144897784ef7b898750849c5503d",
+			"Payload": "Power.Set",
+			"Parameters": {
+				"Value": "True"
+			}
+		}
+	},
+	{
+		"Sleep": {
+			"Milliseconds": "3000"
+		}
+	},
+	{
+		"Comment": "Set input on TV to HDMI 1",
+		"SendPayload": {
+			"Destination": "NODE:b637144897784ef7b898750849c5503d",
+			"Payload": "TV.Input",
+			"Parameters": {
+				"Value": "1"
+			}
+		}
+	}]
+},
+{
+	"Name": "",
+	"ZoneId": "ZONE:db72e661d0184a03bf8f2949f98ec453",
+	"Sequence": [{
+		"Comment": "Power off TV",
+		"SendPayload": {
+			"Destination": "NODE:b637144897784ef7b898750849c5503d",
+			"Payload": "Power.Set",
+			"Parameters": {
+				"Value": "False"
+			}
+		}
+	}]
+}]

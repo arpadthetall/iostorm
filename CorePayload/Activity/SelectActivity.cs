@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Reactive;
 
-namespace IoStorm
+namespace IoStorm.Payload.Activity
 {
-    public interface INode
+    public class SelectActivity : BasePayload
     {
-        string InstanceId { get; }
+        public string ActivityName { get; set; }
     }
 }

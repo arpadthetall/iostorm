@@ -1,7 +1,7 @@
 {
   "DeviceId": "MAC:5C514F38892A",
   "Name": "Lindestaf Home",
-  "UpstreamHub": "192.168.240.125",
+  "UpstreamHub": "192.168.1.113",
   "Plugins": [
     {
       "InstanceId": "PLUG:fac45edb48e4488683266b7cc0dce060",
@@ -34,7 +34,8 @@
       "Name": "SDG&E Smart Meter",
       "Settings": {
         "RainforestEagleHostName": "192.168.240.151"
-      }
+      },
+      "Disabled": true
     },
     {
       "InstanceId": "PLUG:bd2412ef39514699a67749911ba3fb3a",
@@ -42,7 +43,8 @@
       "Name": "Enphase Solar Panels",
       "Settings": {
         "EnphaseHostName": "192.168.240.146"
-      }
+      },
+      "Disabled": true
     }
   ]
 }

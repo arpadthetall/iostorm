@@ -1,24 +1,26 @@
-["Power.Set": {
+[{
+	Payload: "Power.Set",
 	"Match": {
 		"Value": "True"
 	},
 	"Transmit": {
 		"Repeat": 2,
 		"Protocol": "NECx",
-		"Device": 7,
-		"SubDevice": 7,
+		"AddressH": 7,
+		"AddressL": 7,
 		"Command": 153
 	}
 },
-"Power.Set": {
+{
+	Payload: "Power.Set",
 	"Match": {
 		"Value": "False"
 	},
 	"Transmit": {
 		"Repeat": 2,
 		"Protocol": "NECx",
-		"Device": 7,
-		"SubDevice": 7,
+		"AddressH": 7,
+		"AddressL": 7,
 		"Command": 152
 	}
 }]

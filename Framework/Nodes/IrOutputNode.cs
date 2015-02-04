@@ -130,5 +130,10 @@ namespace IoStorm.Nodes
                     return null;
             }
         }
+
+        public string InstanceId
+        {
+            get { return this.config.InstanceId; }
+        }
     }
 }

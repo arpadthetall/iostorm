@@ -8,7 +8,7 @@ namespace IoStorm
 {
     public interface IHub
     {
-        void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string sourceZoneId = null);
+        void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string destinationZoneId = null, string sourceZoneId = null);
 
         void SendPayload(string senderInstanceId, string destinationInstanceId, Payload.IPayload payload);
 

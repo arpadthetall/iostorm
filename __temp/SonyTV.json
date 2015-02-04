@@ -1,20 +1,33 @@
-{"Power.Set": {
+[{
+	"Payload": "Power.Set",
 	"Match": {
 		"Value": "True"
 	},
 	"Transmit": {
 		"Protocol": "Sony12",
-		"Device": 1,
+		"Address": 1,
 		"Command": 46
 	}
 },
-"Power.Set": {
+{
+	"Payload": "Power.Set",
 	"Match": {
 		"Value": "False"
 	},
 	"Transmit": {
 		"Protocol": "Sony12",
-		"Device": 1,
+		"Address": 1,
 		"Command": 47
 	}
-}}
+},
+{
+	"Payload": "TV.Input",
+	"Match": {
+		"Value": "1"
+	},
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Address": 1,
+		"Command": 123
+	}
+}]
