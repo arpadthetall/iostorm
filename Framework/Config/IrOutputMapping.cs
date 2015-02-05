@@ -6,6 +6,17 @@ using System.Threading.Tasks;
 
 namespace IoStorm.Config
 {
+    public class IrConfig
+    {
+        public string Make { get; set; }
+
+        public string Models { get; set; }
+
+        public int PowerOnDelayMs { get; set; }
+
+        public List<IrOutputMapping> IrMapping { get; set; }
+    }
+
     public class IrOutputMapping
     {
         public string Payload { get; set; }

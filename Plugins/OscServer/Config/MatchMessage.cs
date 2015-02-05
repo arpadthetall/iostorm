@@ -13,6 +13,6 @@ namespace IoStorm.Plugins.OscServer.Config
 
         public string MatchValue { get; set; }
 
-        public Sendpayload SendPayload { get; set; }
+        public SendPayload SendPayload { get; set; }
     }
 }

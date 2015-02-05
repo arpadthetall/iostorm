@@ -7,9 +7,11 @@ using Newtonsoft.Json.Linq;
 
 namespace IoStorm.Plugins.OscServer.Config
 {
-    public class Sendpayload
+    public class SendPayload
     {
-        public string Destination { get; set; }
+        public string DestinationZoneId { get; set; }
+
+        public string DestinationInstanceId { get; set; }
 
         public string Payload { get; set; }
 

@@ -18,21 +18,26 @@ namespace IoStorm.Nodes
         private string outputPort;
         private IHub hub;
         private bool toggle;
+        private int powerOnDelayMs;
+        private Queue<IrOutputTransmit> outputQueue;
+        private bool powerIsOn;
 
         public IrOutputNode(ILogFactory logFactory, NodeConfig config, IHub hub)
         {
             this.log = logFactory.GetLogger("IrOutputNode");
             this.config = config;
-            string mappingFile = config.Settings["IrMapping"];
+            string irConfigFile = config.Settings["IrConfig"];
             this.outputPort = config.Settings["OutputPort"];
             this.hub = hub;
 
-            string content = File.ReadAllText("Config\\" + mappingFile);
+            string content = File.ReadAllText(Path.Combine(hub.ConfigPath, irConfigFile));
 
-            var loadedMapping = JsonConvert.DeserializeObject<List<IrOutputMapping>>(content);
+            var irConfig = JsonConvert.DeserializeObject<IrConfig>(content);
 
             this.mapping = new Dictionary<string, List<IrOutputMapping>>();
-            foreach (var cfgItem in loadedMapping)
+            this.powerOnDelayMs = irConfig.PowerOnDelayMs;
+
+            foreach (var cfgItem in irConfig.IrMapping)
             {
                 string key = cfgItem.Payload;
 
@@ -89,23 +94,101 @@ namespace IoStorm.Nodes
                 if (isMatch)
                 {
                     // Match
-                    int repeat;
-                    Payload.IIRProtocol irCommand = GetIrProtocol(output.Transmit, out repeat);
 
-                    if (irCommand != null)
+                    Queue<IrOutputTransmit> queue;
+                    lock (this)
                     {
-                        this.hub.SendPayload(
-                            originatingInstanceId: this.config.InstanceId,
-                            destinationInstanceId: this.config.PluginInstanceId,
-                            payload: new Payload.IRCommand
+                        queue = this.outputQueue;
+                    }
+
+                    if (queue != null)
+                    {
+                        // Queue for after power on delay
+                        queue.Enqueue(output.Transmit);
+                    }
+                    else
+                    {
+                        // Send now
+                        SendOutput(output.Transmit);
+                    }
+
+                    bool? newPower = null;
+                    if (payload is Payload.Power.Set)
+                    {
+                        var powerPayload = (Payload.Power.Set)payload;
+
+                        newPower = powerPayload.Value;
+                    }
+                    if (payload is Payload.Power.Toggle)
+                    {
+                        newPower = !this.powerIsOn;
+                    }
+
+                    if (newPower.HasValue)
+                    {
+                        if (!this.powerIsOn && newPower.Value)
+                        {
+                            // Power is turned on, see if we should delay commands
+                            if (this.powerOnDelayMs > 0)
                             {
-                                PortId = this.outputPort,
-                                Repeat = repeat,
-                                Command = irCommand
+                                lock (this)
+                                {
+                                    if (this.outputQueue == null)
+                                        this.outputQueue = new Queue<IrOutputTransmit>();
+                                }
+
+                                Task.Delay(this.powerOnDelayMs).ContinueWith(x =>
+                                        {
+                                            lock (this)
+                                            {
+                                                queue = this.outputQueue;
+                                                this.outputQueue = null;
+                                            }
+
+                                            if (queue != null)
+                                                SendQueue(queue);
+                                        });
                             }
-                        );
+                        }
+
+                        this.powerIsOn = newPower.Value;
                     }
                 }
+            }
+        }
+
+        private void SendQueue(Queue<IrOutputTransmit> queue)
+        {
+            try
+            {
+                while (queue.Count > 0)
+                {
+                    SendOutput(queue.Dequeue());
+                }
+            }
+            catch (Exception ex)
+            {
+                this.log.WarnException("Failed to send Ir output", ex);
+            }
+        }
+
+        private void SendOutput(IrOutputTransmit command)
+        {
+            int repeat;
+            Payload.IIRProtocol irCommand = GetIrProtocol(command, out repeat);
+
+            if (irCommand != null)
+            {
+                this.hub.SendPayload(
+                    originatingInstanceId: this.config.InstanceId,
+                    destinationInstanceId: this.config.PluginInstanceId,
+                    payload: new Payload.IRCommand
+                    {
+                        PortId = this.outputPort,
+                        Repeat = repeat,
+                        Command = irCommand
+                    }
+                );
             }
         }
 

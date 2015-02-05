@@ -164,7 +164,8 @@ namespace IoStorm
                 {
                     this.hub.SendPayload(
                         originatingInstanceId: InstanceId,
-                        destinationInstanceId: input.Destination,
+                        destinationInstanceId: input.DestinationInstanceId,
+                        destinationZoneId: input.DestinationZoneId,
                         payload: (Payload.IPayload)payload);
                 });
         }

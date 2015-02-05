@@ -20,7 +20,9 @@ namespace IoStorm.Config
 
     public class ActivitySendPayload
     {
-        public string Destination { get; set; }
+        public string DestinationZoneId { get; set; }
+        
+        public string DestinationInstanceId { get; set; }
 
         public string Payload { get; set; }
 

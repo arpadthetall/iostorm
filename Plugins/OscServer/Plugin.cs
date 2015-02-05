@@ -122,7 +122,7 @@ namespace IoStorm.Plugins.OscServer
             }
         }
 
-        private Action BuildSendPayloadAction(Config.Sendpayload input)
+        private Action BuildSendPayloadAction(Config.SendPayload input)
         {
             string key = input.Payload;
             if (!key.StartsWith("IoStorm.Payload."))
@@ -148,7 +148,7 @@ namespace IoStorm.Plugins.OscServer
 
             return new Action(() =>
             {
-                this.hub.SendPayload(this, (Payload.IPayload)payload, destinationInstanceId: input.Destination);
+                this.hub.SendPayload(this, (Payload.IPayload)payload, destinationInstanceId: input.DestinationInstanceId, destinationZoneId: input.DestinationZoneId);
             });
         }
 

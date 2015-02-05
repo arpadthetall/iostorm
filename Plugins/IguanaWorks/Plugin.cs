@@ -681,9 +681,6 @@ namespace IoStorm.Plugins.IguanaWorks
 
         public void Incoming(Payload.IRCommand payload)
         {
-            if (!this.isDeviceInitialized)
-                return;
-
             int channel = 1;
 
             if (!string.IsNullOrEmpty(payload.PortId))
@@ -695,9 +692,12 @@ namespace IoStorm.Plugins.IguanaWorks
             if (payload.Repeat == 0)
                 payload.Repeat = 1;
 
-            IrData irData = null;
+            this.log.Debug("Sending IR, port {0}, rpt {1}, cmd {2}", channel, payload.Repeat, payload.GetDebugInfo());
 
-            this.log.Trace("Sending IR, port {0}, rpt {1}, cmd {2}", channel, payload.Repeat, payload.GetDebugInfo());
+            if (!this.isDeviceInitialized)
+                return;
+
+            IrData irData = null;
 
             foreach (var decoder in this.decoders)
             {
