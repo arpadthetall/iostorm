@@ -101,7 +101,7 @@ namespace IoStorm.Plugins.Rainforest
                             break;
                     }
 
-                    this.hub.BroadcastPayload(this, consumption);
+                    this.hub.SendPayload(this, consumption);
                 }
                 catch (Exception ex)
                 {

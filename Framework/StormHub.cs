@@ -290,6 +290,12 @@ namespace IoStorm
 
                 if (payloadType.IsInstanceOfType(intMessage.Payload))
                 {
+                    this.log.Trace("Invoke internal message {0} from {1} to {2} into {3}",
+                        intMessage.Payload.GetType().FullName,
+                        intMessage.OriginatingInstanceId,
+                        intMessage.DestinationInstanceId,
+                        instance.GetType().FullName);
+
                     if (parameters.Length > 1)
                     {
                         var invCtx = new InvokeContext(intMessage);
@@ -410,29 +416,19 @@ namespace IoStorm
             this.runningNodes.Add(nodeInstance);
         }
 
-        public void BroadcastPayload(IPlugin sender, Payload.IPayload payload, string destinationZoneId, string originatingZoneId)
+        public void SendPayload(IPlugin sender, Payload.IPayload payload, string destinationZoneId, string destinationInstanceId)
         {
-            PluginInstance instance;
-            if (!this.pluginInstances.TryGetValue(sender.InstanceId, out instance))
-                throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
-
-            this.broadcastQueue.OnNext(new Payload.InternalMessage(
-                originatingInstanceId: instance.InstanceId,
-                destinationInstanceId: null,
-                payload: payload,
-                originatingZoneId: originatingZoneId,
-                destinationZoneId: destinationZoneId));
+            SendPayload(sender.InstanceId, payload, destinationZoneId, destinationInstanceId);
         }
 
-        public void SendPayload(string senderInstanceId, string destinationInstanceId, Payload.IPayload payload)
+        public void SendPayload(string originatingInstanceId, Payload.IPayload payload, string destinationZoneId, string destinationInstanceId)
         {
-            // No zone attached
             this.broadcastQueue.OnNext(new Payload.InternalMessage(
-                originatingInstanceId: senderInstanceId,
-                payload: payload,
+                originatingInstanceId: originatingInstanceId,
                 destinationInstanceId: destinationInstanceId,
+                payload: payload,
                 originatingZoneId: null,
-                destinationZoneId: null));
+                destinationZoneId: destinationZoneId));
         }
 
         public string GetSetting(IPlugin device, string key, string defaultValue)

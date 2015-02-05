@@ -41,6 +41,16 @@ namespace IoStorm
             this.hub = hub;
 
             this.activitiesPerZone = new Dictionary<string, Dictionary<string, ActivityActions>>();
+
+            try
+            {
+                this.currentActivityPerZone = BinaryRage.DB.Get<Dictionary<string, string>>("CurrentActivity", this.hub.ConfigPath);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                this.currentActivityPerZone = new Dictionary<string, string>();
+            }
+
             this.currentActivityPerZone = new Dictionary<string, string>();
             this.executionQueue = new Queue<Action>();
             this.executionTrigger = new ManualResetEvent(false);
@@ -152,7 +162,10 @@ namespace IoStorm
 
             return new Action(() =>
                 {
-                    this.hub.SendPayload(InstanceId, input.Destination, (Payload.IPayload)payload);
+                    this.hub.SendPayload(
+                        originatingInstanceId: InstanceId,
+                        destinationInstanceId: input.Destination,
+                        payload: (Payload.IPayload)payload);
                 });
         }
 
@@ -177,9 +190,11 @@ namespace IoStorm
             lock (this.currentActivityPerZone)
             {
                 this.currentActivityPerZone[invCtx.DestinationZoneId] = payload.ActivityName;
+
+                BinaryRage.DB.Insert("CurrentActivity", this.currentActivityPerZone, this.hub.ConfigPath);
             }
 
-            this.hub.BroadcastPayload(this, new Payload.Activity.Feedback { CurrentActivityName = payload.ActivityName }, invCtx.DestinationZoneId);
+            this.hub.SendPayload(this, new Payload.Activity.Feedback { CurrentActivityName = payload.ActivityName }, invCtx.DestinationZoneId);
 
             Dictionary<string, ActivityActions> activitiesInZone;
             if (!this.activitiesPerZone.TryGetValue(invCtx.DestinationZoneId, out activitiesInZone))
@@ -202,7 +217,7 @@ namespace IoStorm
             {
                 foreach (var route in activityActions.Routes)
                 {
-                    this.hub.BroadcastPayload(this, new Payload.Activity.SetRoute
+                    this.hub.SendPayload(this, new Payload.Activity.SetRoute
                         {
                             IncomingInstanceId = route.Incoming,
                             OutgoingInstanceId = route.Outgoing,

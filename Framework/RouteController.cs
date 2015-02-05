@@ -87,7 +87,8 @@ namespace IoStorm
                         if (payloadType.StartsWith(routedPayload))
                         {
                             // Match
-                            this.hub.SendPayload(this.InstanceId, routeInfo.DestinationInstanceId, payload);
+                            this.hub.SendPayload(this.InstanceId, payload,
+                                destinationInstanceId: routeInfo.DestinationInstanceId);
                         }
                     }
                 }

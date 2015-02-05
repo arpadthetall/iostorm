@@ -601,7 +601,7 @@ namespace IoStorm.CorePlugins
 
                         if (upbMessage != null)
                         {
-                            this.hub.BroadcastPayload(this, new Payload.UpbCommand
+                            this.hub.SendPayload(this, new Payload.UpbCommand
                                 {
                                     Message = upbMessage
                                 });

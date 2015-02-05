@@ -109,7 +109,7 @@ namespace IoStorm.Plugins.OscServer
             if (message.Count > 0)
                 value = string.Join(",", message);
 
-            this.hub.BroadcastPayload(this, new Payload.OscMessage
+            this.hub.SendPayload(this, new Payload.OscMessage
                 {
                     Address = message.Address,
                     Value = value
@@ -148,7 +148,7 @@ namespace IoStorm.Plugins.OscServer
 
             return new Action(() =>
             {
-                this.hub.BroadcastPayload(this, (Payload.IPayload)payload, input.Destination);
+                this.hub.SendPayload(this, (Payload.IPayload)payload, destinationInstanceId: input.Destination);
             });
         }
 

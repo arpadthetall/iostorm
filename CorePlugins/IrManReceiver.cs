@@ -182,7 +182,7 @@ namespace IoStorm.CorePlugins
                     irPayload.Repeat = this.repeated;
                 }
 
-                this.hub.BroadcastPayload(this, payload);
+                this.hub.SendPayload(this, payload);
             }
             else
             {

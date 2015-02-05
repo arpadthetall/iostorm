@@ -69,7 +69,7 @@ namespace IoStorm.Plugins.IguanaWorks
                     Command = cmd
                 };
 
-                hub.BroadcastPayload(this, payload, this.receivesInZoneId);
+                hub.SendPayload(this, payload, this.receivesInZoneId);
             });
 
             this.decoders = new List<CoderBase>()

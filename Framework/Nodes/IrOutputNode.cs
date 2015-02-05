@@ -94,8 +94,10 @@ namespace IoStorm.Nodes
 
                     if (irCommand != null)
                     {
-                        this.hub.SendPayload(this.config.InstanceId, this.config.PluginInstanceId,
-                            new Payload.IRCommand
+                        this.hub.SendPayload(
+                            originatingInstanceId: this.config.InstanceId,
+                            destinationInstanceId: this.config.PluginInstanceId,
+                            payload: new Payload.IRCommand
                             {
                                 PortId = this.outputPort,
                                 Repeat = repeat,

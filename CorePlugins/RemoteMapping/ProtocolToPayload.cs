@@ -33,7 +33,7 @@ namespace IoStorm.CorePlugins.RemoteMapping
             }
 
             if (payloadFunc != null)
-                this.hub.BroadcastPayload(this, payloadFunc());
+                this.hub.SendPayload(this, payloadFunc());
         }
 
         public void Add(Payload.IIRProtocol command, Func<Payload.IPayload> payloadFunc)

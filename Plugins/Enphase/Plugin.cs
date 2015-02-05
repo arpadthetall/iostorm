@@ -61,7 +61,7 @@ namespace IoStorm.Plugins.Enphase
                             WattHoursToday = productionData.wattHoursToday
                         };
 
-                        this.hub.BroadcastPayload(this, generationPayload);
+                        this.hub.SendPayload(this, generationPayload);
                     }
                 }
                 catch (Exception ex)
