@@ -66,6 +66,7 @@ namespace IoStorm.Nodes
 
             foreach (var output in outputs)
             {
+                bool isMatch = true;
                 if (output.Match != null && output.Match.Any())
                 {
                     // Check match
@@ -78,23 +79,29 @@ namespace IoStorm.Nodes
                         object value = property.GetValue(payload);
 
                         if (value.ToString() != match.Value)
-                            continue;
-
-                        // Match
-                        int repeat;
-                        Payload.IIRProtocol irCommand = GetIrProtocol(output.Transmit, out repeat);
-
-                        if (irCommand != null)
                         {
-                            this.hub.SendPayload(this.config.InstanceId, this.config.PluginInstanceId,
-                                new Payload.IRCommand
-                                {
-                                    PortId = this.outputPort,
-                                    Repeat = repeat,
-                                    Command = irCommand
-                                }
-                            );
+                            isMatch = false;
+                            break;
                         }
+                    }
+                }
+
+                if (isMatch)
+                {
+                    // Match
+                    int repeat;
+                    Payload.IIRProtocol irCommand = GetIrProtocol(output.Transmit, out repeat);
+
+                    if (irCommand != null)
+                    {
+                        this.hub.SendPayload(this.config.InstanceId, this.config.PluginInstanceId,
+                            new Payload.IRCommand
+                            {
+                                PortId = this.outputPort,
+                                Repeat = repeat,
+                                Command = irCommand
+                            }
+                        );
                     }
                 }
             }

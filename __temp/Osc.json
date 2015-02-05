@@ -1,0 +1,62 @@
+[{
+	"Address": "/1/toggle1",
+	"MatchValue": "1",
+	"SendPayload": {
+		"Destination": "ZONE:db72e661d0184a03bf8f2949f98ec453",
+		"Payload": "Activity.SelectActivity",
+		"Parameters": {
+			"ActivityName": "WatchTV"
+		}
+	}
+},
+{
+	"Address": "/1/toggle1",
+	"MatchValue": "0",
+	"SendPayload": {
+		"Destination": "ZONE:db72e661d0184a03bf8f2949f98ec453",
+		"Payload": "Activity.SelectActivity",
+		"Parameters": {
+			"ActivityName": ""
+		}
+	}
+},
+{
+	"Address": "/2/push2",
+	"MatchValue": "1",
+	"SendPayload": {
+		"Destination": "NODE:b637144897784ef7b898750849c5503d",
+		"Payload": "Navigation.Up"
+	}
+},
+{
+	"Address": "/2/push10",
+	"MatchValue": "1",
+	"SendPayload": {
+		"Destination": "NODE:b637144897784ef7b898750849c5503d",
+		"Payload": "Navigation.Down"
+	}
+},
+{
+	"Address": "/2/push5",
+	"MatchValue": "1",
+	"SendPayload": {
+		"Destination": "NODE:b637144897784ef7b898750849c5503d",
+		"Payload": "Navigation.Left"
+	}
+},
+{
+	"Address": "/2/push7",
+	"MatchValue": "1",
+	"SendPayload": {
+		"Destination": "NODE:b637144897784ef7b898750849c5503d",
+		"Payload": "Navigation.Right"
+	}
+},
+{
+	"Address": "/2/push6",
+	"MatchValue": "1",
+	"SendPayload": {
+		"Destination": "NODE:b637144897784ef7b898750849c5503d",
+		"Payload": "Navigation.Select"
+	}
+}]

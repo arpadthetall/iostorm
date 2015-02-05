@@ -11,9 +11,6 @@ namespace IoStorm
     {
         public string InstanceId { get; private set; }
 
-        [Obsolete]
-        public string ZoneId { get; set; }
-
         public string PluginId { get; private set; }
 
         public string Name { get; set; }

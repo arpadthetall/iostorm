@@ -39,7 +39,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Activity\Feedback.cs" />
     <Compile Include="Activity\SelectActivity.cs" />
+    <Compile Include="Activity\ClearRoute.cs" />
+    <Compile Include="Activity\SetRoute.cs" />
     <Compile Include="Audio\SetInputOutput.cs" />
     <Compile Include="Audio\MuteToggle.cs" />
     <Compile Include="Audio\Sound.cs" />

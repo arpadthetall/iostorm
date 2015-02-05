@@ -73,6 +73,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RouteController.cs" />
     <Compile Include="ActivityController.cs" />
     <Compile Include="Config\Activity.cs" />
     <Compile Include="Config\ConfigManager.cs" />

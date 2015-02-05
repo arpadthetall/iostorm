@@ -67,9 +67,13 @@ namespace IoStorm.StormService
                 hubConfig: hubConfig,
                 pluginManager: pluginManager,
                 rootZoneConfig: this.rootZoneConfig,
-                container: container);
+                container: container,
+                configPath: this.configPath);
 
             var activityController = this.hub.AddPluginInstance<ActivityController>("Activity Controller",
+                InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin), hubConfig.DeviceId);
+
+            var routeController = this.hub.AddPluginInstance<RouteController>("Route Controller",
                 InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin), hubConfig.DeviceId);
 
             if (hubConfig.IsDirty)

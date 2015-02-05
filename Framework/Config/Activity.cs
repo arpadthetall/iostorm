@@ -13,7 +13,9 @@ namespace IoStorm.Config
 
         public string ZoneId { get; set; }
 
-        public List<JObject> Sequence { get; set; }
+        public List<Route> Routes { get; set; }
+
+        public List<JObject> Setup { get; set; }
     }
 
     public class ActivitySendPayload
@@ -28,5 +30,14 @@ namespace IoStorm.Config
     public class ActivitySleep
     {
         public int Milliseconds { get; set; }
+    }
+
+    public class Route
+    {
+        public string Incoming { get; set; }
+
+        public string Outgoing { get; set; }
+
+        public List<string> Payloads { get; set; }
     }
 }

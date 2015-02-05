@@ -35,13 +35,15 @@ namespace IoStorm
         private Config.HubConfig hubConfig;
         private Plugin.PluginManager pluginManager;
         private Config.RootZoneConfig rootZoneConfig;
+        private string configPath;
 
-        public StormHub(Config.HubConfig hubConfig, Plugin.PluginManager pluginManager, Config.RootZoneConfig rootZoneConfig, IUnityContainer container)
+        public StormHub(Config.HubConfig hubConfig, Plugin.PluginManager pluginManager, Config.RootZoneConfig rootZoneConfig, IUnityContainer container, string configPath)
         {
             this.hubConfig = hubConfig;
             this.pluginManager = pluginManager;
             this.container = container;
             this.rootZoneConfig = rootZoneConfig;
+            this.configPath = configPath;
 
             this.log = container.Resolve<ILogFactory>().GetLogger("StormHub");
 
@@ -50,16 +52,6 @@ namespace IoStorm
             this.localQueue = new Subject<Payload.InternalMessage>();
             var externalIncomingSubject = new Subject<Tuple<Payload.IPayload, InvokeContext>>();
             this.externalIncomingQueue = externalIncomingSubject.AsObservable();
-
-            //moj.Where(x => x.Request is Payload.Management.ListZonesRequest).Subscribe(x =>
-            //    {
-            //        var zoneResponse = new Payload.Management.ListZonesResponse
-            //        {
-            //            Zones = GetZones(this.rootZoneConfig.Zones)
-            //        };
-
-            //        x.Response.OnNext(zoneResponse);
-            //    });
 
             if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub))
             {
@@ -89,13 +81,14 @@ namespace IoStorm
                     // Send locally
                     this.localQueue.OnNext(p);
 
-                    if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub) && !string.IsNullOrEmpty(p.DestinationZoneId))
+                    if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub) &&
+                        !string.IsNullOrEmpty(p.DestinationZoneId) &&
+                        p.Payload is Payload.IRemotePayload)
                     {
                         // Broadcast to remote hub
                         try
                         {
-                            if (p.Payload is Payload.IRemotePayload)
-                                this.remoteHub.SendPayload(p.Payload);
+                            this.remoteHub.SendPayload(p.Payload);
                         }
                         catch (Exception ex)
                         {
@@ -113,38 +106,6 @@ namespace IoStorm
             this.pluginManager.LoadPlugins(this, this.hubConfig.DeviceId, this.hubConfig.Plugins);
         }
 
-        private List<Payload.Management.Zone> GetZones(List<Config.ZoneConfig> zoneConfigs)
-        {
-            var list = new List<Payload.Management.Zone>();
-
-            foreach (var zoneConfig in zoneConfigs)
-            {
-                var newZone = new Payload.Management.Zone
-                {
-                    Name = zoneConfig.Name,
-                    ZoneId = zoneConfig.ZoneId
-                };
-
-                if (zoneConfig.Zones.Any())
-                    newZone.Zones = GetZones(zoneConfig.Zones);
-
-                list.Add(newZone);
-            }
-
-            return list;
-        }
-
-        //public IPlugin GetPlugin(string pluginInstanceId)
-        //{
-        //    foreach (IPlugin instance in this.runningInstances)
-        //    {
-        //        if (instance.InstanceId == pluginInstanceId)
-        //            return instance;
-        //    }
-
-        //    throw new ArgumentException("Plugin Instance not found");
-        //}
-
         internal Tuple<PluginInstance, IPlugin> AddPluginInstance(string pluginId, string name, string instanceId, string zoneId)
         {
             if (this.pluginInstances.ContainsKey(instanceId))
@@ -152,7 +113,6 @@ namespace IoStorm
 
             var pluginInstance = new PluginInstance(pluginId, instanceId)
             {
-                ZoneId = zoneId,
                 Name = name
             };
 
@@ -175,7 +135,6 @@ namespace IoStorm
 
             var pluginInstance = new PluginInstance(pluginId, instanceId)
             {
-                ZoneId = zoneId,
                 Name = name
             };
 
@@ -194,10 +153,9 @@ namespace IoStorm
             return AddPluginInstance(plugin.PluginId, name, instanceId, zoneId);
         }
 
-        [Obsolete]
-        public Tuple<PluginInstance, IPlugin> AddPluginInstance(AvailablePlugin plugin, string name)
+        public string InstanceId
         {
-            return AddPluginInstance(plugin, name, Guid.NewGuid().ToString("N"), this.hubConfig.DeviceId);
+            get { return this.hubConfig.DeviceId; }
         }
 
         private IPlugin StartPluginInstance(PluginInstance pluginInstance)
@@ -262,7 +220,8 @@ namespace IoStorm
 
                 // Filter out our own messages
                 internalIncoming
-                    .Where(x => x.OriginatingInstanceId != plugin.InstanceId)
+                    .Where(x => x.OriginatingInstanceId != plugin.InstanceId &&
+                        (string.IsNullOrEmpty(x.DestinationInstanceId) || x.DestinationInstanceId == plugin.InstanceId))
                     .Subscribe(x => InvokeIncoming(x, method, parameters, plugin));
             }
         }
@@ -297,7 +256,8 @@ namespace IoStorm
 
                 // Filter out our own messages
                 internalIncoming
-                    .Where(x => x.OriginatingInstanceId != node.InstanceId)
+                    .Where(x => x.OriginatingInstanceId != node.InstanceId &&
+                        (string.IsNullOrEmpty(x.DestinationInstanceId) || x.DestinationInstanceId == node.InstanceId))
                     .Subscribe(x => InvokeIncoming(x, method, parameters, node));
             }
         }
@@ -456,27 +416,12 @@ namespace IoStorm
             if (!this.pluginInstances.TryGetValue(sender.InstanceId, out instance))
                 throw new ArgumentException("Unknown/invalid sender (missing InstanceId)");
 
-            //if (!string.IsNullOrEmpty(originatingZoneId))
-            //{
-            //    // Wrap in ZoneSourcePayload
-            //    var zonePayload = new IoStorm.Payload.ZoneSourcePayload
-            //    {
-            //        SourceZoneId = originatingZoneId,
-            //        Payload = payload
-            //    };
-
-            //    this.broadcastQueue.OnNext(new Payload.InternalMessage(instance.InstanceId, zonePayload));
-            //}
-            //else
-            //{
-            // No zone attached
             this.broadcastQueue.OnNext(new Payload.InternalMessage(
                 originatingInstanceId: instance.InstanceId,
                 destinationInstanceId: null,
                 payload: payload,
                 originatingZoneId: originatingZoneId,
                 destinationZoneId: destinationZoneId));
-            //}
         }
 
         public void SendPayload(string senderInstanceId, string destinationInstanceId, Payload.IPayload payload)
@@ -489,19 +434,6 @@ namespace IoStorm
                 originatingZoneId: null,
                 destinationZoneId: null));
         }
-
-        //public void Incoming<T>(Action<T> action) where T : Payload.IPayload
-        //{
-        //    this.externalIncomingQueue.Where(x => typeof(T).IsInstanceOfType(x.Request)).Subscribe(bp =>
-        //        {
-        //            action((T)bp.Request);
-        //        });
-
-        //    this.localQueue.Where(x => typeof(T).IsInstanceOfType(x.Payload)).Subscribe(bp =>
-        //        {
-        //            action((T)bp.Payload);
-        //        });
-        //}
 
         public string GetSetting(IPlugin device, string key, string defaultValue)
         {
@@ -518,6 +450,27 @@ namespace IoStorm
             return this.remoteHub.SendRpc(request, TimeSpan.FromSeconds(10));
         }
 
+        private List<Payload.Management.Zone> GetZones(List<Config.ZoneConfig> zoneConfigs)
+        {
+            var list = new List<Payload.Management.Zone>();
+
+            foreach (var zoneConfig in zoneConfigs)
+            {
+                var newZone = new Payload.Management.Zone
+                {
+                    Name = zoneConfig.Name,
+                    ZoneId = zoneConfig.ZoneId
+                };
+
+                if (zoneConfig.Zones.Any())
+                    newZone.Zones = GetZones(zoneConfig.Zones);
+
+                list.Add(newZone);
+            }
+
+            return list;
+        }
+
         public void Incoming(Payload.Management.ListZonesRequest request, InvokeContext invCtx)
         {
             var zoneResponse = new Payload.Management.ListZonesResponse
@@ -528,9 +481,9 @@ namespace IoStorm
             invCtx.Response.OnNext(zoneResponse);
         }
 
-        public string InstanceId
+        public string ConfigPath
         {
-            get { return this.hubConfig.DeviceId; }
+            get { return this.configPath; }
         }
     }
 }

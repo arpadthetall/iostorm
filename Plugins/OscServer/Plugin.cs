@@ -9,6 +9,9 @@ using Qlue.Logging;
 using IoStorm.Plugin;
 using System.IO;
 using System.Net;
+using Newtonsoft.Json;
+using System.Reflection;
+using Newtonsoft.Json.Linq;
 
 namespace IoStorm.Plugins.OscServer
 {
@@ -20,6 +23,7 @@ namespace IoStorm.Plugins.OscServer
         private Rug.Osc.OscReceiver receiver;
         private Task receiverTask;
         private System.Threading.CancellationTokenSource cancelSource;
+        private Dictionary<Tuple<string, string>, Action> mappedAddresses;
 
         public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
@@ -35,6 +39,19 @@ namespace IoStorm.Plugins.OscServer
 
             this.receiver = new Rug.Osc.OscReceiver(listenPort);
             this.cancelSource = new System.Threading.CancellationTokenSource();
+
+            this.mappedAddresses = new Dictionary<Tuple<string, string>, Action>();
+
+            string content = File.ReadAllText("Config\\Osc.json");
+
+            var loadedRoutes = JsonConvert.DeserializeObject<List<Config.MatchMessage>>(content);
+
+            foreach (var loadedRoute in loadedRoutes)
+            {
+                var key = Tuple.Create(loadedRoute.Address, loadedRoute.MatchValue);
+
+                this.mappedAddresses[key] = BuildSendPayloadAction(loadedRoute.SendPayload);
+            }
 
             this.receiverTask = new Task(x =>
             {
@@ -98,24 +115,41 @@ namespace IoStorm.Plugins.OscServer
                     Value = value
                 });
 
-            //HACK
-            if (message.Address == "/1/toggle1")
+            Action action;
+            if (this.mappedAddresses.TryGetValue(Tuple.Create(message.Address, value), out action))
             {
-                if (value == "1")
-                    this.hub.BroadcastPayload(this,
-                        payload: new Payload.Activity.SelectActivity
-                        {
-                            ActivityName = "WatchTV"
-                        },
-                        destinationZoneId: "ZONE:db72e661d0184a03bf8f2949f98ec453");
-                else
-                    this.hub.BroadcastPayload(this,
-                        payload: new Payload.Activity.SelectActivity
-                        {
-                            ActivityName = ""
-                        },
-                        destinationZoneId: "ZONE:db72e661d0184a03bf8f2949f98ec453");
+                action();
             }
+        }
+
+        private Action BuildSendPayloadAction(Config.Sendpayload input)
+        {
+            string key = input.Payload;
+            if (!key.StartsWith("IoStorm.Payload."))
+                key = "IoStorm.Payload." + key;
+
+            // Find type
+            if (!key.Contains(","))
+                // Create fully qualified name
+                key = Assembly.CreateQualifiedName(typeof(Payload.IPayload).Assembly.FullName, key);
+
+            var payloadType = Type.GetType(key);
+            if (payloadType == null)
+                throw new ArgumentException("Unknown payload type: " + key);
+
+            object payload;
+            if (input.Parameters == null)
+                payload = new JObject().ToObject(payloadType);
+            else
+                payload = input.Parameters.ToObject(payloadType);
+
+            if (!(payload is Payload.IPayload))
+                throw new ArgumentException("Payload is not inheriting from IPayload");
+
+            return new Action(() =>
+            {
+                this.hub.BroadcastPayload(this, (Payload.IPayload)payload, input.Destination);
+            });
         }
 
         public void Dispose()

@@ -16,9 +16,18 @@ namespace IoStorm
 {
     public class ActivityController : BaseDevice, IDisposable
     {
+        protected class ActivityActions
+        {
+            public List<Action> SetupActions { get; set; }
+
+            public List<Action> TeardownActions { get; set; }
+
+            public List<Config.Route> Routes { get; set; }
+        }
+
         private ILog log;
         private IHub hub;
-        private Dictionary<string, Dictionary<string, List<Action>>> activitiesPerZone;
+        private Dictionary<string, Dictionary<string, ActivityActions>> activitiesPerZone;
         private Dictionary<string, string> currentActivityPerZone;
         private Queue<Action> executionQueue;
         private ManualResetEvent executionTrigger;
@@ -31,7 +40,7 @@ namespace IoStorm
             this.log = logFactory.GetLogger("ActivityController");
             this.hub = hub;
 
-            this.activitiesPerZone = new Dictionary<string, Dictionary<string, List<Action>>>();
+            this.activitiesPerZone = new Dictionary<string, Dictionary<string, ActivityActions>>();
             this.currentActivityPerZone = new Dictionary<string, string>();
             this.executionQueue = new Queue<Action>();
             this.executionTrigger = new ManualResetEvent(false);
@@ -43,16 +52,22 @@ namespace IoStorm
 
             foreach (var loadedActivity in loadedActivities)
             {
-                Dictionary<string, List<Action>> activitiesInZone;
+                Dictionary<string, ActivityActions> activitiesInZone;
                 if (!this.activitiesPerZone.TryGetValue(loadedActivity.ZoneId, out activitiesInZone))
                 {
-                    activitiesInZone = new Dictionary<string, List<Action>>();
+                    activitiesInZone = new Dictionary<string, ActivityActions>();
                     this.activitiesPerZone.Add(loadedActivity.ZoneId, activitiesInZone);
                 }
 
-                var actions = ExecuteSequence(loadedActivity.Sequence);
+                var actions = ExecuteSequence(loadedActivity.Setup);
 
-                activitiesInZone.Add(loadedActivity.Name ?? string.Empty, actions);
+                var activityActions = new ActivityActions
+                {
+                    SetupActions = actions,
+                    Routes = loadedActivity.Routes
+                };
+
+                activitiesInZone.Add(loadedActivity.Name ?? string.Empty, activityActions);
             }
 
             this.executionTask = Task.Run(() =>
@@ -164,18 +179,37 @@ namespace IoStorm
                 this.currentActivityPerZone[invCtx.DestinationZoneId] = payload.ActivityName;
             }
 
-            Dictionary<string, List<Action>> activitiesInZone;
+            this.hub.BroadcastPayload(this, new Payload.Activity.Feedback { CurrentActivityName = payload.ActivityName }, invCtx.DestinationZoneId);
+
+            Dictionary<string, ActivityActions> activitiesInZone;
             if (!this.activitiesPerZone.TryGetValue(invCtx.DestinationZoneId, out activitiesInZone))
                 return;
 
-            List<Action> activityActions;
+            ActivityActions activityActions;
             if (!activitiesInZone.TryGetValue(payload.ActivityName, out activityActions))
                 return;
 
-            foreach (var action in activityActions)
-                this.executionQueue.Enqueue(action);
+            lock (this.executionQueue)
+            {
+                if (activityActions.SetupActions != null)
+                    foreach (var action in activityActions.SetupActions)
+                        this.executionQueue.Enqueue(action);
 
-            this.executionTrigger.Set();
+                this.executionTrigger.Set();
+            }
+
+            if (activityActions.Routes != null)
+            {
+                foreach (var route in activityActions.Routes)
+                {
+                    this.hub.BroadcastPayload(this, new Payload.Activity.SetRoute
+                        {
+                            IncomingInstanceId = route.Incoming,
+                            OutgoingInstanceId = route.Outgoing,
+                            Payloads = route.Payloads
+                        });
+                }
+            }
         }
 
         public void Dispose()

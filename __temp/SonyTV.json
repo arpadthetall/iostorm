@@ -30,4 +30,44 @@
 		"Address": 1,
 		"Command": 123
 	}
+},
+{
+	"Payload": "Navigation.Up",
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Address": 1,
+		"Command": 124
+	}
+},
+{
+	"Payload": "Navigation.Down",
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Address": 1,
+		"Command": 125
+	}
+},
+{
+	"Payload": "Navigation.Left",
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Address": 1,
+		"Command": 126
+	}
+},
+{
+	"Payload": "Navigation.Right",
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Address": 1,
+		"Command": 127
+	}
+},
+{
+	"Payload": "Navigation.Select",
+	"Transmit": {
+		"Protocol": "Sony12",
+		"Address": 1,
+		"Command": 128
+	}
 }]
