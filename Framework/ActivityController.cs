@@ -25,10 +25,23 @@ namespace IoStorm
             public List<Config.Route> Routes { get; set; }
         }
 
+        [Serializable]
+        protected class ActiveActivity
+        {
+            public string ActivityName { get; set; }
+
+            public HashSet<string> RouteIncoming { get; set; }
+
+            public ActiveActivity()
+            {
+                RouteIncoming = new HashSet<string>();
+            }
+        }
+
         private ILog log;
         private IHub hub;
         private Dictionary<string, Dictionary<string, ActivityActions>> activitiesPerZone;
-        private Dictionary<string, string> currentActivityPerZone;
+        private Dictionary<string, ActiveActivity> currentActivityPerZone;
         private Queue<Action> executionQueue;
         private ManualResetEvent executionTrigger;
         private Task executionTask;
@@ -44,14 +57,13 @@ namespace IoStorm
 
             try
             {
-                this.currentActivityPerZone = BinaryRage.DB.Get<Dictionary<string, string>>("CurrentActivity", this.hub.ConfigPath);
+                this.currentActivityPerZone = BinaryRage.DB.Get<Dictionary<string, ActiveActivity>>("CurrentActivity", this.hub.ConfigPath);
             }
-            catch (DirectoryNotFoundException)
+            catch
             {
-                this.currentActivityPerZone = new Dictionary<string, string>();
+                this.currentActivityPerZone = new Dictionary<string, ActiveActivity>();
             }
 
-            this.currentActivityPerZone = new Dictionary<string, string>();
             this.executionQueue = new Queue<Action>();
             this.executionTrigger = new ManualResetEvent(false);
             this.cts = new CancellationTokenSource();
@@ -188,9 +200,29 @@ namespace IoStorm
 
             this.log.Info("Select activity {0} in zone {1}", payload.ActivityName, invCtx.DestinationZoneId);
 
+            ActiveActivity activeActivity;
+
             lock (this.currentActivityPerZone)
             {
-                this.currentActivityPerZone[invCtx.DestinationZoneId] = payload.ActivityName;
+                ActiveActivity existingActivity;
+                if (this.currentActivityPerZone.TryGetValue(invCtx.DestinationZoneId, out existingActivity))
+                {
+                    foreach (var routeIncoming in existingActivity.RouteIncoming)
+                    {
+                        this.hub.SendPayload(this, new Payload.Activity.ClearRoute
+                        {
+                            IncomingInstanceId = routeIncoming
+                        });
+                    }
+
+                    // Do something else with existing?
+                }
+
+                activeActivity = new ActiveActivity
+                    {
+                        ActivityName = payload.ActivityName
+                    };
+                this.currentActivityPerZone[invCtx.DestinationZoneId] = activeActivity;
 
                 BinaryRage.DB.Insert("CurrentActivity", this.currentActivityPerZone, this.hub.ConfigPath);
             }
@@ -218,6 +250,8 @@ namespace IoStorm
             {
                 foreach (var route in activityActions.Routes)
                 {
+                    activeActivity.RouteIncoming.Add(route.Incoming);
+
                     this.hub.SendPayload(this, new Payload.Activity.SetRoute
                         {
                             IncomingInstanceId = route.Incoming,

@@ -67,8 +67,11 @@ namespace IoStorm
         {
             lock (this.routes)
             {
-                if (this.routes.ContainsKey(payload.IncomingInstanceId))
-                    this.routes.Remove(payload.IncomingInstanceId);
+                foreach (string instanceId in payload.IncomingInstanceId.Split(','))
+                {
+                    if (this.routes.ContainsKey(instanceId.Trim()))
+                        this.routes.Remove(instanceId.Trim());
+                }
             }
         }
 
