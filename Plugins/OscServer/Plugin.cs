@@ -18,12 +18,33 @@ namespace IoStorm.Plugins.OscServer
     [Plugin(Name = "OSC Server", Description = "OSC Server", Author = "IoStorm")]
     public class Plugin : BaseDevice, IDisposable
     {
+        protected class ConnectedDevice : IDisposable
+        {
+            public DateTime LastCommunication { get; set; }
+
+            public Rug.Osc.OscSender Sender { get; private set; }
+
+            public ConnectedDevice(IPAddress ipAddress)
+            {
+                this.Sender = new Rug.Osc.OscSender(ipAddress, 9000);
+
+                this.Sender.Connect();
+            }
+
+            public void Dispose()
+            {
+                this.Sender.Close();
+                this.Sender.Dispose();
+            }
+        }
+
         private ILog log;
         private IHub hub;
         private Rug.Osc.OscReceiver receiver;
         private Task receiverTask;
         private System.Threading.CancellationTokenSource cancelSource;
         private Dictionary<Tuple<string, string>, Action> mappedAddresses;
+        private Dictionary<IPAddress, ConnectedDevice> connectedDevices;
 
         public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
             : base(instanceId)
@@ -41,6 +62,7 @@ namespace IoStorm.Plugins.OscServer
             this.cancelSource = new System.Threading.CancellationTokenSource();
 
             this.mappedAddresses = new Dictionary<Tuple<string, string>, Action>();
+            this.connectedDevices = new Dictionary<IPAddress, ConnectedDevice>();
 
             string content = File.ReadAllText("Config\\Osc.json");
 
@@ -67,6 +89,19 @@ namespace IoStorm.Plugins.OscServer
 #if DEBUG_OSC
                                 log.Debug("Received OSC message: {0}", packet);
 #endif
+
+                                ConnectedDevice connectedDevice;
+                                lock (this.connectedDevices)
+                                {
+                                    if (!this.connectedDevices.TryGetValue(packet.Origin.Address, out connectedDevice))
+                                    {
+                                        connectedDevice = new ConnectedDevice(packet.Origin.Address);
+
+                                        this.connectedDevices.Add(packet.Origin.Address, connectedDevice);
+                                    }
+                                }
+
+                                connectedDevice.LastCommunication = DateTime.Now;
 
                                 if (packet is Rug.Osc.OscBundle)
                                 {
@@ -152,10 +187,38 @@ namespace IoStorm.Plugins.OscServer
             });
         }
 
+        public void Incoming(Payload.Activity.Feedback payload, InvokeContext ctx)
+        {
+            lock (this.connectedDevices)
+            {
+                foreach (var connectedDevice in this.connectedDevices.Values)
+                {
+                    switch (payload.CurrentActivityName)
+                    {
+                        case "":
+                            connectedDevice.Sender.Send(new Rug.Osc.OscMessage("/1/labelActivity", "Off"));
+                            connectedDevice.Sender.Send(new Rug.Osc.OscMessage("/1/Activity-WatchTV", 0));
+                            connectedDevice.Sender.Send(new Rug.Osc.OscMessage("/1/Activity-Off", 1));
+                            break;
+
+                        default:
+                            connectedDevice.Sender.Send(new Rug.Osc.OscMessage("/1/labelActivity", payload.CurrentActivityName));
+                            connectedDevice.Sender.Send(new Rug.Osc.OscMessage("/1/Activity-WatchTV", 1));
+                            connectedDevice.Sender.Send(new Rug.Osc.OscMessage("/1/Activity-Off", 0));
+                            break;
+                    }
+
+                }
+            }
+        }
+
         public void Dispose()
         {
             this.cancelSource.Cancel();
             this.receiver.Close();
+
+            foreach (var connectedDevice in this.connectedDevices.Values)
+                connectedDevice.Dispose();
         }
     }
 }
