@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Qlue.Logging;
+using IoStorm.Addressing;
 
 namespace IoStorm.Config
 {
@@ -102,8 +103,8 @@ namespace IoStorm.Config
             rootZoneConfig = JsonConvert.DeserializeObject<Config.RootZoneConfig>(configContent, GetJsonSettings());
             rootZoneConfig.LastSavedHashCode = configContent.GetHashCode();
 
-            var usedZoneIds = new HashSet<string>();
-            var usedNodeIds = new HashSet<string>();
+            var usedZoneIds = new HashSet<ZoneAddress>();
+            var usedNodeIds = new HashSet<NodeAddress>();
             rootZoneConfig.Validate(this.log, usedZoneIds, usedNodeIds);
 
             // Call Save in case Validate changed the config

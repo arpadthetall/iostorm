@@ -12,6 +12,7 @@ using System.Reactive.Linq;
 using System.Reactive.Concurrency;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using IoStorm.Addressing;
 
 namespace IoStorm
 {
@@ -49,7 +50,7 @@ namespace IoStorm
         private Dictionary<string, IModel> exchanges;
         private IoStorm.Serializer serializer;
         private IConnection connection;
-        private string ourDeviceId;
+        private HubAddress ourDeviceId;
         private IModel rpcModel;
         private string broastcastQueueName;
         private string rpcQueueName;
@@ -58,7 +59,7 @@ namespace IoStorm
         private CancellationTokenSource cts;
         private Task rpcReplyReceiverTask;
 
-        public RemoteHub(Qlue.Logging.ILogFactory logFactory, string hostName, string ourDeviceId, string broastcastQueueName = "vortex", string rpcQueueName = "gutter")
+        public RemoteHub(Qlue.Logging.ILogFactory logFactory, string hostName, HubAddress ourDeviceId, string broastcastQueueName = "vortex", string rpcQueueName = "gutter")
         {
             this.log = logFactory.GetLogger("RemoteHub");
             this.hostName = hostName;
@@ -276,7 +277,7 @@ namespace IoStorm
                                 continue;
 
                             var invCtx = new InvokeContext();
-                            invCtx.OriginDeviceId = payload.OriginDeviceId;
+                            invCtx.Originating = payload.OriginDeviceId;
 
                             bus.OnNext(Tuple.Create(payload.Payload, invCtx));
                         }

@@ -2,15 +2,17 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Qlue.Logging;
+using IoStorm.Addressing;
 
 namespace IoStorm.Config
 {
     public class HubConfig
     {
-        private Dictionary<string, Config.PluginConfig> pluginSettings;
+        private Dictionary<Tuple<string, InstanceAddress>, Config.PluginConfig> pluginSettings;
         private int lastSavedHashCode;
 
-        public string DeviceId { get; set; }
+        [JsonConverter(typeof(IoStorm.Addressing.JsonAddressConverter))]
+        public IoStorm.Addressing.HubAddress DeviceId { get; set; }
 
         public string Name { get; set; }
 
@@ -34,7 +36,7 @@ namespace IoStorm.Config
         public HubConfig()
         {
             Plugins = new List<PluginConfig>();
-            this.pluginSettings = new Dictionary<string, PluginConfig>();
+            this.pluginSettings = new Dictionary<Tuple<string, InstanceAddress>, PluginConfig>();
         }
 
         [JsonIgnore]
@@ -52,15 +54,15 @@ namespace IoStorm.Config
 
         internal void Validate(ILog log)
         {
-            if (string.IsNullOrEmpty(DeviceId))
+            if (DeviceId == null)
             {
-                DeviceId = IoStorm.PhysicalDeviceId.GetDeviceId();
+                DeviceId = IoStorm.PhysicalDeviceId.GetHubAddress();
             }
 
             if (Plugins == null)
                 Plugins = new List<PluginConfig>();
 
-            var usedInstanceIds = new HashSet<string>();
+            var usedInstanceIds = new HashSet<IoStorm.Addressing.InstanceAddress>();
             foreach (var pluginConfig in Plugins)
                 pluginConfig.Validate(log, usedInstanceIds);
         }
@@ -71,19 +73,19 @@ namespace IoStorm.Config
             {
                 foreach (var pluginConfig in Plugins)
                 {
-                    string key = pluginConfig.PluginId + ":" + pluginConfig.InstanceId;
+                    var key = Tuple.Create(pluginConfig.PluginId, (InstanceAddress)pluginConfig.InstanceId);
 
                     this.pluginSettings[key] = pluginConfig;
                 }
             }
         }
 
-        internal Config.PluginConfig GetPluginConfig(string pluginId, string instanceId)
+        internal Config.PluginConfig GetPluginConfig(string pluginId, InstanceAddress instanceId)
         {
             Config.PluginConfig pluginConfig;
             lock (this)
             {
-                string key = pluginId + ":" + instanceId;
+                var key = Tuple.Create(pluginId, instanceId);
                 if (!this.pluginSettings.TryGetValue(key, out pluginConfig))
                     throw new KeyNotFoundException("Instance settings not found");
             }

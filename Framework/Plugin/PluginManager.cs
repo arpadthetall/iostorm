@@ -62,7 +62,7 @@ namespace IoStorm.Plugin
             return this.pluginDiscovery.LoadPluginType(plugin.AssemblyQualifiedName);
         }
 
-        public void LoadPlugins(StormHub hub, string zoneId, IEnumerable<IoStorm.Config.PluginConfig> pluginConfigs)
+        public void LoadPlugins(StormHub hub, IEnumerable<IoStorm.Config.PluginConfig> pluginConfigs)
         {
             foreach (var pluginConfig in pluginConfigs)
             {
@@ -83,8 +83,7 @@ namespace IoStorm.Plugin
                     var devInstance = hub.AddPluginInstance(
                         plugin,
                         pluginConfig.Name,
-                        pluginConfig.InstanceId,
-                        zoneId);
+                        pluginConfig.InstanceId);
                 }
                 catch (Exception ex)
                 {

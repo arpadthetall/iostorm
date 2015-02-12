@@ -58,6 +58,10 @@
       <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
       <Name>CorePayload</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Core\Core.csproj">
+      <Project>{d32311cf-09a4-4795-9c2c-8ace2c996be9}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Framework\Framework.csproj">
       <Project>{13f28e19-a026-457c-be49-d140cb1f33d3}</Project>
       <Name>Framework</Name>

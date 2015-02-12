@@ -28,8 +28,7 @@ namespace Stormcloud.Controllers
         {
             var rabbitHost = WebConfigurationManager.AppSettings["RabbitHost"];
             var rabbitChannel = WebConfigurationManager.AppSettings["RabbitChannel"];
-            var deviceId = WebConfigurationManager.AppSettings["DeviceId"];
-
+            var deviceId = IoStorm.Addressing.HubAddress.FromString(WebConfigurationManager.AppSettings["DeviceId"]);
             //_logger.Info("Received command: {0}", command);
 
             var hub = new RemoteHub(LogFactory, rabbitHost, deviceId);

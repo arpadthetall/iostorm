@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IoStorm.Addressing;
 
 namespace IoStorm.Payload.Management
 {
     public class Zone
     {
-        public string ZoneId { get; set; }
+        public ZoneAddress ZoneId { get; set; }
 
         public string Name { get; set; }
 

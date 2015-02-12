@@ -14,7 +14,7 @@ using IoStorm.Plugin;
 namespace IoStorm.CorePlugins
 {
     [Plugin(Name = "IrMan Receiver", Description = "Receive IR signals from IrMan over serial port", Author = "IoStorm")]
-    public class IrManReceiver : BaseDevice, IDisposable
+    public class IrManReceiver : BasePlugin, IDisposable
     {
         public enum States
         {
@@ -33,7 +33,7 @@ namespace IoStorm.CorePlugins
         private DateTime lastReceivedIR;
         private int repeated;
 
-        public IrManReceiver(ILogFactory logFactory, IHub hub, string instanceId)
+        public IrManReceiver(ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;

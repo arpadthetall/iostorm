@@ -14,12 +14,18 @@ namespace IoStorm.LircSvc
         private readonly ILog _logger = LogFactory.GetLogger("LircSvc");
 
         public LircClient Client { get; private set; }
+
         public bool IsConnected { get; private set; }
+
         private string LircHost { get; set; }
+
         private int LircPort { get; set; }
+
         private string RabbitHost { get; set; }
+
         private string RabbitChannel { get; set; }
-        private string DeviceId { get; set; }
+
+        private IoStorm.Addressing.HubAddress DeviceId { get; set; }
 
         public LircSvc()
         {
@@ -38,7 +44,7 @@ namespace IoStorm.LircSvc
             LircPort = int.Parse(ConfigurationManager.AppSettings["LircPort"]);
             RabbitHost = ConfigurationManager.AppSettings["RabbitHost"];
             RabbitChannel = ConfigurationManager.AppSettings["RabbitChannel"];
-            DeviceId = ConfigurationManager.AppSettings["DeviceId"];
+            DeviceId = Addressing.HubAddress.FromString(ConfigurationManager.AppSettings["DeviceId"]);
         }
 
         protected override void OnStop()
@@ -107,7 +113,7 @@ namespace IoStorm.LircSvc
                 hub.SendPayload(payload);
                 _logger.Info("Sent {0}", command);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.ErrorException("Failed to send payload", ex);
             }

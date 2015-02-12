@@ -41,7 +41,7 @@ namespace IoStorm.Sample2
                 .ObserveOn(SynchronizationContext.Current)
                 .Subscribe(x =>
                 {
-                    listBox1.Items.Add(string.Format("Received {1} from {0}", x.Item2.OriginDeviceId, x.Item1.GetType().Name));
+                    listBox1.Items.Add(string.Format("Received {1} from {0}", x.Item2.Originating, x.Item1.GetType().Name));
                 });
         }
 

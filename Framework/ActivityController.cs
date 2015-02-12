@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using IoStorm.Addressing;
 using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -14,7 +15,7 @@ using Qlue.Logging;
 
 namespace IoStorm
 {
-    public class ActivityController : BaseDevice, IDisposable
+    public class ActivityController : BasePlugin, IDisposable
     {
         protected class ActivityActions
         {
@@ -30,38 +31,40 @@ namespace IoStorm
         {
             public string ActivityName { get; set; }
 
-            public HashSet<string> RouteIncoming { get; set; }
+            public HashSet<InstanceAddress> RouteIncoming { get; set; }
 
             public ActiveActivity()
             {
-                RouteIncoming = new HashSet<string>();
+                RouteIncoming = new HashSet<InstanceAddress>();
             }
         }
 
         private ILog log;
         private IHub hub;
-        private Dictionary<string, Dictionary<string, ActivityActions>> activitiesPerZone;
-        private Dictionary<string, ActiveActivity> currentActivityPerZone;
+        private Dictionary<ZoneAddress, Dictionary<string, ActivityActions>> activitiesPerZone;
+        private Dictionary<ZoneAddress, ActiveActivity> currentActivityPerZone;
         private Queue<Action> executionQueue;
         private ManualResetEvent executionTrigger;
         private Task executionTask;
         private CancellationTokenSource cts;
 
-        public ActivityController(ILogFactory logFactory, IHub hub, string instanceId)
+        public ActivityController(ILogFactory logFactory, IHub hub, PluginAddress instanceId)
             : base(instanceId)
         {
             this.log = logFactory.GetLogger("ActivityController");
             this.hub = hub;
 
-            this.activitiesPerZone = new Dictionary<string, Dictionary<string, ActivityActions>>();
+            this.activitiesPerZone = new Dictionary<ZoneAddress, Dictionary<string, ActivityActions>>();
 
             try
             {
-                this.currentActivityPerZone = BinaryRage.DB.Get<Dictionary<string, ActiveActivity>>("CurrentActivity", this.hub.ConfigPath);
+                this.currentActivityPerZone = BinaryRage.DB.Get<Dictionary<ZoneAddress, ActiveActivity>>("CurrentActivity", this.hub.ConfigPath);
             }
             catch
             {
-                this.currentActivityPerZone = new Dictionary<string, ActiveActivity>();
+                this.currentActivityPerZone = new Dictionary<ZoneAddress, ActiveActivity>();
+
+                BinaryRage.DB.Insert("CurrentActivity", this.currentActivityPerZone, this.hub.ConfigPath);
             }
 
             this.executionQueue = new Queue<Action>();
@@ -176,8 +179,7 @@ namespace IoStorm
                 {
                     this.hub.SendPayload(
                         originatingInstanceId: InstanceId,
-                        destinationInstanceId: input.DestinationInstanceId,
-                        destinationZoneId: input.DestinationZoneId,
+                        destination: input.Destination,
                         payload: (Payload.IPayload)payload);
                 });
         }
@@ -190,28 +192,29 @@ namespace IoStorm
             return new Action(() => System.Threading.Thread.Sleep(input.Milliseconds));
         }
 
-        public void Incoming(Payload.Activity.SelectActivity payload, InvokeContext invCtx)
+        public void IncomingZone(Payload.Activity.SelectActivity payload, InvokeContext invCtx)
         {
-            if (string.IsNullOrEmpty(invCtx.DestinationZoneId))
+            var destination = invCtx.Destination as ZoneAddress;
+            if (destination == null)
             {
                 this.log.Warn("Unknown zone");
                 return;
             }
 
-            this.log.Info("Select activity {0} in zone {1}", payload.ActivityName, invCtx.DestinationZoneId);
+            this.log.Info("Select activity {0} in zone {1}", payload.ActivityName, destination);
 
             ActiveActivity activeActivity;
 
             lock (this.currentActivityPerZone)
             {
                 ActiveActivity existingActivity;
-                if (this.currentActivityPerZone.TryGetValue(invCtx.DestinationZoneId, out existingActivity))
+                if (this.currentActivityPerZone.TryGetValue(destination, out existingActivity))
                 {
-                    foreach (var routeIncoming in existingActivity.RouteIncoming)
+                    if (existingActivity.RouteIncoming.Any())
                     {
                         this.hub.SendPayload(this, new Payload.Activity.ClearRoute
                         {
-                            IncomingInstanceId = routeIncoming
+                            IncomingInstanceId = existingActivity.RouteIncoming.ToArray()
                         });
                     }
 
@@ -222,15 +225,15 @@ namespace IoStorm
                     {
                         ActivityName = payload.ActivityName
                     };
-                this.currentActivityPerZone[invCtx.DestinationZoneId] = activeActivity;
+                this.currentActivityPerZone[destination] = activeActivity;
 
                 BinaryRage.DB.Insert("CurrentActivity", this.currentActivityPerZone, this.hub.ConfigPath);
             }
 
-            this.hub.SendPayload(this, new Payload.Activity.Feedback { CurrentActivityName = payload.ActivityName }, invCtx.DestinationZoneId);
+            this.hub.SendPayload(this, new Payload.Activity.Feedback { CurrentActivityName = payload.ActivityName }, destination);
 
             Dictionary<string, ActivityActions> activitiesInZone;
-            if (!this.activitiesPerZone.TryGetValue(invCtx.DestinationZoneId, out activitiesInZone))
+            if (!this.activitiesPerZone.TryGetValue(destination, out activitiesInZone))
                 return;
 
             ActivityActions activityActions;
@@ -250,11 +253,11 @@ namespace IoStorm
             {
                 foreach (var route in activityActions.Routes)
                 {
-                    activeActivity.RouteIncoming.Add(route.Incoming);
+                    route.Incoming.ForEach(x => activeActivity.RouteIncoming.Add(x));
 
                     this.hub.SendPayload(this, new Payload.Activity.SetRoute
                         {
-                            IncomingInstanceId = route.Incoming,
+                            IncomingInstanceId = route.Incoming.ToList(),
                             OutgoingInstanceId = route.Outgoing,
                             Payloads = route.Payloads
                         });

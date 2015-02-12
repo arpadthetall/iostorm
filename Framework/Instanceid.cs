@@ -9,15 +9,20 @@ namespace IoStorm
 {
     public static class InstanceId
     {
-        public const string InstanceType_Zone = "ZONE";
-        public const string InstanceType_Plugin = "PLUG";
-        public const string InstanceType_Node = "NODE";
-        public const string InstanceType_PhysicalDeviceId = "PDI";
-        public const string InstanceType_App = "APP";
+        //public const string InstanceType_Zone = "ZONE";
+        //public const string InstanceType_Plugin = "PLUG";
+        //public const string InstanceType_Node = "NODE";
+        //public const string InstanceType_PhysicalDeviceId = "PDI";
+        //public const string InstanceType_App = "APP";
 
-        public static string GetInstanceId(string type)
+        public static T GetInstanceId<T>() where T : IoStorm.Addressing.InstanceAddress
         {
-            return type + ":" + Guid.NewGuid().ToString("n");
+            return (T)Activator.CreateInstance(typeof(T), Guid.NewGuid().ToString("n"));
+        }
+
+        public static T GetZoneAddress<T>() where T : IoStorm.Addressing.ZoneAddress
+        {
+            return (T)Activator.CreateInstance(typeof(T), Guid.NewGuid().ToString("n"));
         }
     }
 }

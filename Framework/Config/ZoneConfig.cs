@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using Qlue.Logging;
+using IoStorm.Addressing;
 
 namespace IoStorm.Config
 {
     public class ZoneConfig
     {
-        public string ZoneId { get; set; }
+        public ZoneAddress ZoneId { get; set; }
 
         public string Name { get; set; }
 
@@ -20,17 +21,19 @@ namespace IoStorm.Config
             Nodes = new List<NodeConfig>();
         }
 
-        internal void Validate(ILog log, HashSet<string> usedZoneIds, HashSet<string> usedNodeIds)
+        internal void Validate(ILog log, HashSet<ZoneAddress> usedZoneIds, HashSet<NodeAddress> usedNodeIds)
         {
-            if (string.IsNullOrEmpty(ZoneId))
-                ZoneId = InstanceId.GetInstanceId(InstanceId.InstanceType_Zone);
+            if (ZoneId == null)
+                ZoneId = InstanceId.GetZoneAddress<ZoneAddress>();
 
             if (usedZoneIds.Contains(ZoneId))
             {
-                string newZoneId = InstanceId.GetInstanceId(InstanceId.InstanceType_Zone);
+                var newZoneId = InstanceId.GetZoneAddress<ZoneAddress>();
                 log.Warn("Duplicate ZoneId {0}, re-generating to {1}", ZoneId, newZoneId);
                 ZoneId = newZoneId;
             }
+
+            ZoneId.DebugInfo = Name;
 
             usedZoneIds.Add(ZoneId);
 

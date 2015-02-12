@@ -9,6 +9,6 @@ namespace IoStorm
 {
     public interface INode
     {
-        string InstanceId { get; }
+        IoStorm.Addressing.NodeAddress InstanceId { get; }
     }
 }

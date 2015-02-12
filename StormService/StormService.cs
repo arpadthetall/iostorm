@@ -71,10 +71,10 @@ namespace IoStorm.StormService
                 configPath: this.configPath);
 
             var activityController = this.hub.AddPluginInstance<ActivityController>("Activity Controller",
-                InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin), hubConfig.DeviceId);
+                InstanceId.GetInstanceId<IoStorm.Addressing.PluginAddress>());
 
             var routeController = this.hub.AddPluginInstance<RouteController>("Route Controller",
-                InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin), hubConfig.DeviceId);
+                InstanceId.GetInstanceId<IoStorm.Addressing.PluginAddress>());
 
             if (hubConfig.IsDirty)
                 configManager.SaveHubConfig(hubConfig);

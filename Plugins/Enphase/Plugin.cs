@@ -13,14 +13,14 @@ using IoStorm.Plugin;
 namespace IoStorm.Plugins.Enphase
 {
     [Plugin(Name = "Enphase Gateway", Description = "Enphase Gateway for Solar Panels", Author = "IoStorm")]
-    public class Plugin : BaseDevice
+    public class Plugin : BasePlugin
     {
         private ILog log;
         private IHub hub;
         private Timer pollTimer;
         private string enphaseHostName;
 
-        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;

@@ -8,13 +8,13 @@ using Qlue.Logging;
 
 namespace IoStorm.CorePlugins
 {
-    public class YamahaReceiver : BaseDevice
+    public class YamahaReceiver : BasePlugin
     {
         private ILog log;
         private IHub hub;
         private double currentVolume;
 
-        public YamahaReceiver(ILogFactory logFactory, IHub hub, string instanceId)
+        public YamahaReceiver(ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;

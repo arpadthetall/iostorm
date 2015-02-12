@@ -16,7 +16,7 @@ using Newtonsoft.Json.Linq;
 namespace IoStorm.Plugins.OscServer
 {
     [Plugin(Name = "OSC Server", Description = "OSC Server", Author = "IoStorm")]
-    public class Plugin : BaseDevice, IDisposable
+    public class Plugin : BasePlugin, IDisposable
     {
         protected class ConnectedDevice : IDisposable
         {
@@ -46,7 +46,7 @@ namespace IoStorm.Plugins.OscServer
         private Dictionary<Tuple<string, string>, Action> mappedAddresses;
         private Dictionary<IPAddress, ConnectedDevice> connectedDevices;
 
-        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;
@@ -183,7 +183,8 @@ namespace IoStorm.Plugins.OscServer
 
             return new Action(() =>
             {
-                this.hub.SendPayload(this, (Payload.IPayload)payload, destinationInstanceId: input.DestinationInstanceId, destinationZoneId: input.DestinationZoneId);
+                this.hub.SendPayload(this, (Payload.IPayload)payload,
+                    destination: input.Destination);
             });
         }
 

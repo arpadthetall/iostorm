@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Qlue.Logging;
+using IoStorm.Addressing;
 
 namespace IoStorm.Config
 {
@@ -17,7 +18,7 @@ namespace IoStorm.Config
             Zones = new List<ZoneConfig>();
         }
 
-        internal void Validate(ILog log, HashSet<string> usedZoneIds, HashSet<string> usedNodeIds)
+        internal void Validate(ILog log, HashSet<ZoneAddress> usedZoneIds, HashSet<NodeAddress> usedNodeIds)
         {
             if (Zones == null)
                 Zones = new List<ZoneConfig>();

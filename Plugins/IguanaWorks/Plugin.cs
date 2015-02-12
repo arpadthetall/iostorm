@@ -21,7 +21,7 @@ using IoStorm.IRCoder;
 namespace IoStorm.Plugins.IguanaWorks
 {
     [Plugin(Name = "IguanaWorks IR", Description = "IguanaWorks IR transceiver", Author = "IoStorm")]
-    public class Plugin : BaseDevice, IDisposable
+    public class Plugin : BasePlugin, IDisposable
     {
         private const byte STATE_MASK = 0x80;
         private const byte LENGTH_MASK = 0x7F;
@@ -45,16 +45,16 @@ namespace IoStorm.Plugins.IguanaWorks
         private List<CoderBase> decoders;
         private int firmwareVersion;
         private byte cycles;
-        private string receivesInZoneId;
+        private IoStorm.Addressing.ZoneAddress receivesInZoneId;
 
-        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;
 
             this.log = logFactory.GetLogger("IguanaWorks");
 
-            this.receivesInZoneId = hub.GetSetting(this, "ReceivesInZoneId");
+            this.receivesInZoneId = IoStorm.Addressing.ZoneAddress.FromString(hub.GetSetting(this, "ReceivesInZoneId"));
 
             this.deviceInitializationTimeout = TimeSpan.FromSeconds(5);
 

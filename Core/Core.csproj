@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3DE1327D-3EFA-495A-946E-668B47A2FA00}</ProjectGuid>
+    <ProjectGuid>{D32311CF-09A4-4795-9C2C-8ACE2C996BE9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>IoStorm.Plugins.Enphase</RootNamespace>
-    <AssemblyName>IoStorm.Enphase</AssemblyName>
+    <RootNamespace>IoStorm</RootNamespace>
+    <AssemblyName>IoStorm.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -32,10 +32,7 @@
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_build\NuGet_Packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="Qlue.Logging">
-      <HintPath>..\..\_build\NuGet_Packages\Qlue.Logging.1.0.0\lib\net45\Qlue.Logging.dll</HintPath>
+      <HintPath>..\_build\NuGet_Packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -46,33 +43,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Plugin.cs" />
-    <Compile Include="ProductionData.cs" />
+    <Compile Include="Addressing\HubAddress.cs" />
+    <Compile Include="Addressing\JsonAddressConverter.cs" />
+    <Compile Include="Addressing\PluginAddress.cs" />
+    <Compile Include="Addressing\NodeAddress.cs" />
+    <Compile Include="Addressing\StormAddress.cs" />
+    <Compile Include="Addressing\InstanceAddress.cs" />
+    <Compile Include="Addressing\ZoneAddress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\CorePayload\CorePayload.csproj">
-      <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
-      <Name>CorePayload</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Core\Core.csproj">
-      <Project>{d32311cf-09a4-4795-9c2c-8ace2c996be9}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Framework\Framework.csproj">
-      <Project>{13f28e19-a026-457c-be49-d140cb1f33d3}</Project>
-      <Name>Framework</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>MKDIR $(SolutionDir)StormService\bin\$(ConfigurationName)\Plugins
-COPY $(TargetDir)$(TargetName).* $(SolutionDir)StormService\bin\$(ConfigurationName)\Plugins\
-</PostBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

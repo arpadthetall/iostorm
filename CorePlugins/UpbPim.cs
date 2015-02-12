@@ -9,7 +9,7 @@ namespace IoStorm.CorePlugins
     // Reference: http://www.simply-automated.com/documents/UpbDescriptionV1.2a.pdf
 
     [Plugin(Name = "UPB PIM", Description = "UPB Powerline Interface Module", Author = "IoStorm")]
-    public class UpbPim : BaseDevice, IDisposable
+    public class UpbPim : BasePlugin, IDisposable
     {
         public class UpbPimMessage : Payload.UpbCommand.UpbMessage
         {
@@ -522,7 +522,7 @@ namespace IoStorm.CorePlugins
         private Tuple<RawSendCommand, string>[] initData;
         private int initState;
 
-        public UpbPim(ILogFactory logFactory, IHub hub, string instanceId)
+        public UpbPim(ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;

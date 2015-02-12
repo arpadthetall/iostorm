@@ -181,7 +181,7 @@ namespace IoStorm.Nodes
             {
                 this.hub.SendPayload(
                     originatingInstanceId: this.config.InstanceId,
-                    destinationInstanceId: this.config.PluginInstanceId,
+                    destination: this.config.PluginInstanceId,
                     payload: new Payload.IRCommand
                     {
                         PortId = this.outputPort,
@@ -223,7 +223,7 @@ namespace IoStorm.Nodes
             }
         }
 
-        public string InstanceId
+        public IoStorm.Addressing.NodeAddress InstanceId
         {
             get { return this.config.InstanceId; }
         }

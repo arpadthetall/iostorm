@@ -11,24 +11,25 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Qlue.Logging;
+using IoStorm.Addressing;
 
 namespace IoStorm
 {
-    public class RouteController : BaseDevice
+    public class RouteController : BasePlugin
     {
         [Serializable]
         protected class RouteInformation
         {
-            public string DestinationInstanceId { get; set; }
+            public StormAddress DestinationInstanceId { get; set; }
 
             public List<string> Payloads { get; set; }
         }
 
         private ILog log;
         private IHub hub;
-        private Dictionary<string, RouteInformation> routes;
+        private Dictionary<InstanceAddress, RouteInformation> routes;
 
-        public RouteController(ILogFactory logFactory, IHub hub, string instanceId)
+        public RouteController(ILogFactory logFactory, IHub hub, PluginAddress instanceId)
             : base(instanceId)
         {
             this.log = logFactory.GetLogger("RouteController");
@@ -36,11 +37,13 @@ namespace IoStorm
 
             try
             {
-                this.routes = BinaryRage.DB.Get<Dictionary<string, RouteInformation>>("Routing", this.hub.ConfigPath);
+                this.routes = BinaryRage.DB.Get<Dictionary<InstanceAddress, RouteInformation>>("Routing", this.hub.ConfigPath);
             }
-            catch (DirectoryNotFoundException)
+            catch
             {
-                this.routes = new Dictionary<string, RouteInformation>();
+                this.routes = new Dictionary<InstanceAddress, RouteInformation>();
+
+                BinaryRage.DB.Insert("Routing", this.routes, this.hub.ConfigPath);
             }
         }
 
@@ -54,9 +57,9 @@ namespace IoStorm
 
             lock (this.routes)
             {
-                foreach (string instanceId in payload.IncomingInstanceId.Split(','))
+                foreach (var instanceAddress in payload.IncomingInstanceId)
                 {
-                    this.routes[instanceId.Trim()] = routeInfo;
+                    this.routes[instanceAddress] = routeInfo;
                 }
 
                 BinaryRage.DB.Insert("Routing", this.routes, this.hub.ConfigPath);
@@ -67,15 +70,15 @@ namespace IoStorm
         {
             lock (this.routes)
             {
-                foreach (string instanceId in payload.IncomingInstanceId.Split(','))
+                foreach (var instanceAddress in payload.IncomingInstanceId)
                 {
-                    if (this.routes.ContainsKey(instanceId.Trim()))
-                        this.routes.Remove(instanceId.Trim());
+                    if (this.routes.ContainsKey(instanceAddress))
+                        this.routes.Remove(instanceAddress);
                 }
             }
         }
 
-        public void Incoming(Payload.IPayload payload, InvokeContext invCtx)
+        public void IncomingZone(Payload.IPayload payload, InvokeContext invCtx)
         {
             string payloadType = payload.GetType().FullName;
 
@@ -83,7 +86,7 @@ namespace IoStorm
             {
                 RouteInformation routeInfo;
 
-                if (this.routes.TryGetValue(invCtx.OriginDeviceId, out routeInfo))
+                if (this.routes.TryGetValue(invCtx.Originating, out routeInfo))
                 {
                     foreach (string routedPayload in routeInfo.Payloads)
                     {
@@ -91,7 +94,7 @@ namespace IoStorm
                         {
                             // Match
                             this.hub.SendPayload(this.InstanceId, payload,
-                                destinationInstanceId: routeInfo.DestinationInstanceId);
+                                destination: routeInfo.DestinationInstanceId);
                         }
                     }
                 }

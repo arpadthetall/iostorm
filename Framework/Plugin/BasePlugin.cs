@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IoStorm.Addressing;
 
 namespace IoStorm
 {
-    public abstract class BaseDevice : IPlugin
+    public abstract class BasePlugin : IPlugin
     {
-        public string InstanceId { get; private set; }
+        public PluginAddress InstanceId { get; private set; }
 
-        public BaseDevice(string instanceId)
+        public BasePlugin(PluginAddress instanceId)
         {
             InstanceId = instanceId;
         }

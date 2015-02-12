@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 namespace IoStorm.Plugins.Rainforest
 {
     [Plugin(Name = "Rainforest Eagle", Description = "Rainforest Automation Eagle for Smart Meter Power consumption", Author = "IoStorm")]
-    public class Plugin : BaseDevice
+    public class Plugin : BasePlugin
     {
         private ILog log;
         private IHub hub;
@@ -22,7 +22,7 @@ namespace IoStorm.Plugins.Rainforest
         private string eagleHostName;
         private string eagleMacId;
 
-        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;

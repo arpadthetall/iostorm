@@ -4,7 +4,7 @@ using Qlue.Logging;
 
 namespace IoStorm.CorePlugins
 {
-    public class SerialSwitcher : BaseDevice, IDisposable
+    public class SerialSwitcher : BasePlugin, IDisposable
     {
         public enum States
         {
@@ -17,7 +17,7 @@ namespace IoStorm.CorePlugins
         private SerialLineManager serialManager;
         private States state;
 
-        public SerialSwitcher(ILogFactory logFactory, IHub hub, string instanceId)
+        public SerialSwitcher(ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;

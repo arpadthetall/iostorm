@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Qlue.Logging;
+using IoStorm.Addressing;
 
 namespace IoStorm.Config
 {
@@ -9,7 +10,7 @@ namespace IoStorm.Config
     {
         private bool dirty;
 
-        public string InstanceId { get; set; }
+        public IoStorm.Addressing.PluginAddress InstanceId { get; set; }
 
         public string PluginId { get; set; }
 
@@ -25,16 +26,16 @@ namespace IoStorm.Config
             Settings = new Dictionary<string, string>();
         }
 
-        internal void Validate(ILog log, HashSet<string> usedInstanceIds)
+        internal void Validate(ILog log, HashSet<InstanceAddress> usedInstanceIds)
         {
-            if (string.IsNullOrEmpty(InstanceId))
-                InstanceId = IoStorm.InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin);
+            if (InstanceId == null)
+                InstanceId = IoStorm.InstanceId.GetInstanceId<IoStorm.Addressing.PluginAddress>();
 
             if (usedInstanceIds.Contains(InstanceId))
             {
-                string newZoneId = IoStorm.InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Plugin);
-                log.Warn("Duplicate InstanceId {0}, re-generating to {1} for plugin {2}", InstanceId, newZoneId, PluginId);
-                InstanceId = newZoneId;
+                var newPluginId = IoStorm.InstanceId.GetInstanceId<IoStorm.Addressing.PluginAddress>();
+                log.Warn("Duplicate InstanceId {0}, re-generating to {1} for plugin {2}", InstanceId, newPluginId, PluginId);
+                InstanceId = newPluginId;
             }
 
             usedInstanceIds.Add(InstanceId);

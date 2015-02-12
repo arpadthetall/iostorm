@@ -5,13 +5,13 @@ using ZWaveApi.Net;
 namespace IoStorm.Plugins.ZWave
 {
     [Plugin(Name = "ZWave", Description = "ZWave", Author = "IoStorm")]
-    public class Plugin : BaseDevice
+    public class Plugin : BasePlugin
     {
         private readonly ZWaveController _controller = null;
         private Qlue.Logging.ILog log;
         private IHub hub;
 
-        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             var comPort = this.hub.GetSetting(this, "ZWaveComPortB");

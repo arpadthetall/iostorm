@@ -10,13 +10,13 @@ using IoStorm.Plugin;
 namespace IoStorm.Sonos
 {
     [Plugin(Name = "Sonos", Description = "Sonos", Author = "IoStorm")]
-    public class Plugin : BaseDevice
+    public class Plugin : BasePlugin
     {
         private Qlue.Logging.ILog log;
         private IHub hub;
         private SonosDiscovery discovery;
 
-        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, string instanceId)
+        public Plugin(Qlue.Logging.ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.hub = hub;

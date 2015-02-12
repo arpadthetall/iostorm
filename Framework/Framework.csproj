@@ -112,7 +112,7 @@
     <Compile Include="Plugin\PluginManager.cs" />
     <Compile Include="Plugin\RemoteLoader.cs" />
     <Compile Include="RemoteHub.cs" />
-    <Compile Include="Plugin\BaseDevice.cs" />
+    <Compile Include="Plugin\BasePlugin.cs" />
     <Compile Include="PhysicalDeviceId.cs" />
     <Compile Include="Interface\IHub.cs" />
     <Compile Include="Interface\IPlugin.cs" />
@@ -129,6 +129,10 @@
     <ProjectReference Include="..\CorePayload\CorePayload.csproj">
       <Project>{5411b38e-68a1-4917-81e4-46024b30e9ec}</Project>
       <Name>CorePayload</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Core\Core.csproj">
+      <Project>{d32311cf-09a4-4795-9c2c-8ace2c996be9}</Project>
+      <Name>Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

@@ -3,28 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IoStorm.Addressing;
 
 namespace IoStorm.Payload
 {
     public class InternalMessage
     {
-        public string OriginatingZoneId { get; set; }
+        public InstanceAddress Originating { get; set; }
 
-        public string DestinationZoneId { get; set; }
-
-        public string OriginatingInstanceId { get; set; }
-
-        public string DestinationInstanceId { get; set; }
+        public StormAddress Destination { get; set; }
 
         public IPayload Payload { get; set; }
 
-        public InternalMessage(string originatingInstanceId, IPayload payload, string destinationInstanceId, string originatingZoneId, string destinationZoneId)
+        public InternalMessage(InstanceAddress originatingInstanceId, IPayload payload, StormAddress destination)
         {
-            OriginatingInstanceId = originatingInstanceId;
+            Originating = originatingInstanceId;
             Payload = payload;
-            DestinationInstanceId = destinationInstanceId;
-            OriginatingZoneId = originatingZoneId;
-            DestinationZoneId = destinationZoneId;
+            Destination = destination;
         }
     }
 }

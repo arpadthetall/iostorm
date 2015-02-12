@@ -4,12 +4,13 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
+using IoStorm.Addressing;
 
 namespace IoStorm
 {
     public static class PhysicalDeviceId
     {
-        public static string GetDeviceId()
+        public static HubAddress GetHubAddress()
         {
             var nic = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(x => x.OperationalStatus == OperationalStatus.Up &&
@@ -26,10 +27,10 @@ namespace IoStorm
             if (nic == null)
             {
                 // None?
-                return InstanceId.InstanceType_PhysicalDeviceId + ":" + Guid.NewGuid().ToString("n");
+                return new HubAddress("GUID_" + Guid.NewGuid().ToString("n"));
             }
 
-            return InstanceId.InstanceType_PhysicalDeviceId + ":" + nic.GetPhysicalAddress().ToString();
+            return new HubAddress("MAC_" + nic.GetPhysicalAddress().ToString());
         }
     }
 }

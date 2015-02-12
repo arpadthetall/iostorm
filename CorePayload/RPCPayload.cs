@@ -8,7 +8,7 @@ namespace IoStorm.Payload
 {
     public class RPCPayload
     {
-        public string OriginDeviceId { get; set; }
+        public IoStorm.Addressing.InstanceAddress OriginDeviceId { get; set; }
 
         public IPayload Request { get; set; }
     }

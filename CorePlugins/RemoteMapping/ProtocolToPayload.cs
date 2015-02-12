@@ -8,13 +8,13 @@ using IoStorm.IRProtocol;
 
 namespace IoStorm.CorePlugins.RemoteMapping
 {
-    public class ProtocolToPayload : BaseDevice
+    public class ProtocolToPayload : BasePlugin
     {
         private ILog log;
         private IHub hub;
         private Dictionary<Payload.IIRProtocol, Func<Payload.IPayload>> irToPayload;
 
-        public ProtocolToPayload(ILogFactory logFactory, IHub hub, string instanceId)
+        public ProtocolToPayload(ILogFactory logFactory, IHub hub, IoStorm.Addressing.PluginAddress instanceId)
             : base(instanceId)
         {
             this.log = logFactory.GetLogger("ProtocolToPayload");

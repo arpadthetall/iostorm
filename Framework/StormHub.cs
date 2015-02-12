@@ -13,6 +13,8 @@ using Microsoft.Practices.Unity;
 using Qlue.Logging;
 using System.Reflection;
 using Newtonsoft.Json;
+using IoStorm.Addressing;
+using Newtonsoft.Json.Linq;
 
 namespace IoStorm
 {
@@ -29,7 +31,7 @@ namespace IoStorm
         private ISubject<Payload.InternalMessage> localQueue;
         private IObservable<Tuple<Payload.IPayload, InvokeContext>> externalIncomingQueue;
         private IObserver<Payload.InternalMessage> broadcastQueue;
-        protected Dictionary<string, PluginInstance> pluginInstances;
+        protected Dictionary<PluginAddress, PluginInstance> pluginInstances;
         private List<IPlugin> runningInstances;
         private List<INode> runningNodes;
         private Config.HubConfig hubConfig;
@@ -70,7 +72,7 @@ namespace IoStorm
 
                 this.externalIncomingQueue.Subscribe(p =>
                 {
-                    this.log.Debug("Received external payload {0} ({1})", p.Item2.OriginDeviceId, p.Item1.GetDebugInfo());
+                    this.log.Debug("Received external payload {0} ({1})", p.Item2.Originating, p.Item1.GetDebugInfo());
                 });
             }
 
@@ -81,8 +83,9 @@ namespace IoStorm
                     // Send locally
                     this.localQueue.OnNext(p);
 
+                    //TODO: What if we have a remote node?
                     if (!string.IsNullOrEmpty(this.hubConfig.UpstreamHub) &&
-                        !string.IsNullOrEmpty(p.DestinationZoneId) &&
+                        (p.Destination as ZoneAddress) != null &&
                         p.Payload is Payload.IRemotePayload)
                     {
                         // Broadcast to remote hub
@@ -97,16 +100,16 @@ namespace IoStorm
                     }
                 });
 
-            this.pluginInstances = new Dictionary<string, PluginInstance>();
+            this.pluginInstances = new Dictionary<PluginAddress, PluginInstance>();
 
             // Wire-up the storm hub itself
             WireUpPlugin(this, this.externalIncomingQueue, this.localQueue.AsObservable());
 
             // Load plugins
-            this.pluginManager.LoadPlugins(this, this.hubConfig.DeviceId, this.hubConfig.Plugins);
+            this.pluginManager.LoadPlugins(this, this.hubConfig.Plugins);
         }
 
-        internal Tuple<PluginInstance, IPlugin> AddPluginInstance(string pluginId, string name, string instanceId, string zoneId)
+        internal Tuple<PluginInstance, IPlugin> AddPluginInstance(string pluginId, string name, PluginAddress instanceId)
         {
             if (this.pluginInstances.ContainsKey(instanceId))
                 throw new ArgumentException("Duplicate InstanceId");
@@ -126,7 +129,7 @@ namespace IoStorm
             return Tuple.Create(pluginInstance, plugin);
         }
 
-        public Tuple<PluginInstance, IPlugin> AddPluginInstance<T>(string name, string instanceId, string zoneId) where T : IPlugin
+        public Tuple<PluginInstance, IPlugin> AddPluginInstance<T>(string name, PluginAddress instanceId) where T : IPlugin
         {
             string pluginId = typeof(T).FullName;
 
@@ -148,12 +151,12 @@ namespace IoStorm
             return Tuple.Create(pluginInstance, plugin);
         }
 
-        public Tuple<PluginInstance, IPlugin> AddPluginInstance(AvailablePlugin plugin, string name, string instanceId, string zoneId)
+        public Tuple<PluginInstance, IPlugin> AddPluginInstance(AvailablePlugin plugin, string name, PluginAddress instanceId)
         {
-            return AddPluginInstance(plugin.PluginId, name, instanceId, zoneId);
+            return AddPluginInstance(plugin.PluginId, name, instanceId);
         }
 
-        public string InstanceId
+        public PluginAddress InstanceId
         {
             get { return this.hubConfig.DeviceId; }
         }
@@ -215,13 +218,44 @@ namespace IoStorm
                 if (parameters.Length > 1 && parameters[1].ParameterType != typeof(InvokeContext))
                     continue;
 
+                //TODO: What should we filter here?
                 externalIncoming
                     .Subscribe(x => InvokeIncoming(x.Item1, x.Item2, method, parameters, plugin));
 
                 // Filter out our own messages
                 internalIncoming
-                    .Where(x => x.OriginatingInstanceId != plugin.InstanceId &&
-                        (string.IsNullOrEmpty(x.DestinationInstanceId) || x.DestinationInstanceId == plugin.InstanceId))
+                    .Where(x => x.Originating != plugin.InstanceId &&
+                        (x.Destination == null || plugin.InstanceId.Equals(x.Destination)))
+                    .Subscribe(x => InvokeIncoming(x, method, parameters, plugin));
+            }
+
+            methods = plugin.GetType().GetMethods().Where(x => x.Name == "IncomingZone");
+
+            foreach (var method in methods)
+            {
+                var parameters = method.GetParameters();
+
+                if (parameters.Length < 1)
+                {
+                    // Unsupported signature
+                    continue;
+                }
+
+                var payloadType = parameters.First().ParameterType;
+
+                if (!typeof(Payload.IPayload).IsAssignableFrom(payloadType))
+                    continue;
+
+                if (parameters.Length > 1 && parameters[1].ParameterType != typeof(InvokeContext))
+                    continue;
+
+                //TODO: What should we filter here?
+                externalIncoming
+                    .Subscribe(x => InvokeIncoming(x.Item1, x.Item2, method, parameters, plugin));
+
+                // Filter out our own messages
+                internalIncoming
+                    .Where(x => x.Originating != plugin.InstanceId)
                     .Subscribe(x => InvokeIncoming(x, method, parameters, plugin));
             }
         }
@@ -256,8 +290,8 @@ namespace IoStorm
 
                 // Filter out our own messages
                 internalIncoming
-                    .Where(x => x.OriginatingInstanceId != node.InstanceId &&
-                        (string.IsNullOrEmpty(x.DestinationInstanceId) || x.DestinationInstanceId == node.InstanceId))
+                    .Where(x => x.Originating != node.InstanceId &&
+                        (x.Destination == null || node.InstanceId.Equals(x.Destination)))
                     .Subscribe(x => InvokeIncoming(x, method, parameters, node));
             }
         }
@@ -292,8 +326,8 @@ namespace IoStorm
                 {
                     this.log.Trace("Invoke internal message {0} from {1} to {2} into {3}",
                         intMessage.Payload.GetType().FullName,
-                        intMessage.OriginatingInstanceId,
-                        intMessage.DestinationInstanceId,
+                        intMessage.Originating,
+                        intMessage.Destination,
                         instance.GetType().FullName);
 
                     if (parameters.Length > 1)
@@ -330,6 +364,8 @@ namespace IoStorm
 
         public IPlugin LoadPlugin(PluginInstance pluginInstance, Type type, params ParameterOverride[] overrides)
         {
+            pluginInstance.InstanceId.DebugInfo = pluginInstance.PluginId;
+
             var allOverrides = new List<ResolverOverride>();
             allOverrides.Add(new DependencyOverride<IHub>(this));
             allOverrides.Add(new ParameterOverride("instanceId", pluginInstance.InstanceId));
@@ -416,19 +452,17 @@ namespace IoStorm
             this.runningNodes.Add(nodeInstance);
         }
 
-        public void SendPayload(IPlugin sender, Payload.IPayload payload, string destinationZoneId, string destinationInstanceId)
+        public void SendPayload(IPlugin sender, Payload.IPayload payload, StormAddress destination)
         {
-            SendPayload(sender.InstanceId, payload, destinationZoneId, destinationInstanceId);
+            SendPayload(sender.InstanceId, payload, destination);
         }
 
-        public void SendPayload(string originatingInstanceId, Payload.IPayload payload, string destinationZoneId, string destinationInstanceId)
+        public void SendPayload(InstanceAddress originatingInstanceId, Payload.IPayload payload, StormAddress destination)
         {
             this.broadcastQueue.OnNext(new Payload.InternalMessage(
                 originatingInstanceId: originatingInstanceId,
-                destinationInstanceId: destinationInstanceId,
-                payload: payload,
-                originatingZoneId: null,
-                destinationZoneId: destinationZoneId));
+                destination: destination,
+                payload: payload));
         }
 
         public string GetSetting(IPlugin device, string key, string defaultValue)
@@ -436,6 +470,18 @@ namespace IoStorm
             var pluginConfig = this.hubConfig.GetPluginConfig(device.GetType().FullName, device.InstanceId);
 
             return pluginConfig.GetSetting(key, defaultValue);
+        }
+
+        public T GetSetting<T>(IPlugin device, string key, T defaultValue) where T : class
+        {
+            var pluginConfig = this.hubConfig.GetPluginConfig(device.GetType().FullName, device.InstanceId);
+
+            string content = pluginConfig.GetSetting(key, null);
+
+            if(string.IsNullOrEmpty(content))
+                return defaultValue;
+
+            return JsonConvert.DeserializeObject<T>(content);
         }
 
         public Payload.IPayload Rpc(Payload.IPayload request)

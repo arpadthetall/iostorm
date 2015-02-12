@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using IoStorm.Addressing;
 
 namespace IoStorm.Config
 {
@@ -11,7 +12,7 @@ namespace IoStorm.Config
     {
         public string Name { get; set; }
 
-        public string ZoneId { get; set; }
+        public ZoneAddress ZoneId { get; set; }
 
         public List<Route> Routes { get; set; }
 
@@ -20,9 +21,7 @@ namespace IoStorm.Config
 
     public class ActivitySendPayload
     {
-        public string DestinationZoneId { get; set; }
-        
-        public string DestinationInstanceId { get; set; }
+        public StormAddress Destination { get; set; }
 
         public string Payload { get; set; }
 
@@ -36,9 +35,9 @@ namespace IoStorm.Config
 
     public class Route
     {
-        public string Incoming { get; set; }
+        public List<InstanceAddress> Incoming { get; set; }
 
-        public string Outgoing { get; set; }
+        public StormAddress Outgoing { get; set; }
 
         public List<string> Payloads { get; set; }
     }

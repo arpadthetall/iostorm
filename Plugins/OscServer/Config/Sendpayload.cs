@@ -9,9 +9,7 @@ namespace IoStorm.Plugins.OscServer.Config
 {
     public class SendPayload
     {
-        public string DestinationZoneId { get; set; }
-
-        public string DestinationInstanceId { get; set; }
+        public IoStorm.Addressing.StormAddress Destination { get; set; }
 
         public string Payload { get; set; }
 

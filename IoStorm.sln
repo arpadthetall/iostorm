@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZWave", "Plugins\ZWave\ZWav
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZWaveApi.Net", "lib\ZWaveApi.Net\ZWaveApi.Net.csproj", "{386B3761-F3F5-4699-8AA7-F7B8861C33DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{D32311CF-09A4-4795-9C2C-8ACE2C996BE9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -113,6 +115,10 @@ Global
 		{386B3761-F3F5-4699-8AA7-F7B8861C33DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{386B3761-F3F5-4699-8AA7-F7B8861C33DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{386B3761-F3F5-4699-8AA7-F7B8861C33DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D32311CF-09A4-4795-9C2C-8ACE2C996BE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D32311CF-09A4-4795-9C2C-8ACE2C996BE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D32311CF-09A4-4795-9C2C-8ACE2C996BE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D32311CF-09A4-4795-9C2C-8ACE2C996BE9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

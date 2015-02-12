@@ -9,13 +9,13 @@ namespace IoStorm
     [Serializable]
     public class PluginInstance
     {
-        public string InstanceId { get; private set; }
+        public Addressing.PluginAddress InstanceId { get; private set; }
 
         public string PluginId { get; private set; }
 
         public string Name { get; set; }
 
-        public PluginInstance(string pluginId, string instanceId)
+        public PluginInstance(string pluginId, Addressing.PluginAddress instanceId)
         {
             PluginId = pluginId;
             InstanceId = instanceId;

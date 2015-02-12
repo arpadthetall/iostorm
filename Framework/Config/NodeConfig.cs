@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Qlue.Logging;
+using IoStorm.Addressing;
 
 namespace IoStorm.Config
 {
     public class NodeConfig
     {
-        public string InstanceId { get; set; }
+        public IoStorm.Addressing.NodeAddress InstanceId { get; set; }
 
         // Available via this plugin instance id
-        public string PluginInstanceId { get; set; }
+        public PluginAddress PluginInstanceId { get; set; }
 
         public string Name { get; set; }
 
@@ -27,17 +28,19 @@ namespace IoStorm.Config
             Settings = new Dictionary<string, string>();
         }
 
-        internal void Validate(ILog log, HashSet<string> usedInstanceIds)
+        internal void Validate(ILog log, HashSet<NodeAddress> usedInstanceIds)
         {
-            if (string.IsNullOrEmpty(InstanceId))
-                InstanceId = IoStorm.InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Node);
+            if (InstanceId == null)
+                InstanceId = IoStorm.InstanceId.GetInstanceId<IoStorm.Addressing.NodeAddress>();
 
             if (usedInstanceIds.Contains(InstanceId))
             {
-                string newZoneId = IoStorm.InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_Node);
-                log.Warn("Duplicate InstanceId {0}, re-generating to {1} for node {2}", InstanceId, newZoneId, Name);
-                InstanceId = newZoneId;
+                var newNodeId = IoStorm.InstanceId.GetInstanceId<NodeAddress>();
+                log.Warn("Duplicate InstanceId {0}, re-generating to {1} for node {2}", InstanceId, newNodeId, Name);
+                InstanceId = newNodeId;
             }
+
+            InstanceId.DebugInfo = Name;
 
             usedInstanceIds.Add(InstanceId);
 

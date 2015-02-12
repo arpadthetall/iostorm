@@ -23,7 +23,7 @@ namespace IoStorm.Sample2
 
             log.Info("Start up");
 
-            string deviceId = IoStorm.InstanceId.GetInstanceId(IoStorm.InstanceId.InstanceType_App);
+            var deviceId = IoStorm.InstanceId.GetInstanceId<IoStorm.Addressing.HubAddress>();
 
             using (var remoteHub = new RemoteHub(logFactory, "192.168.1.113", deviceId))
             {
